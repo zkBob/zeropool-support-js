@@ -3,7 +3,6 @@ import { Account, KeyPair, connect } from 'near-api-js';
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { AccountBalance } from 'near-api-js/lib/account';
 
-
 import { LocalAccount } from '../local-account';
 import { Config, Environment, getConfig } from './config';
 
@@ -25,7 +24,7 @@ export class NearClient {
     public async login(localAccount: LocalAccount) {
         localAccount.requireAuth();
 
-        const privateKey = localAccount.getNearPrivateKey();
+        const privateKey = localAccount.getRegularPrivateKey();
         const address = localAccount.getNearAddress();
 
         await this.keyStore.setKey(this.config.networkId, address, KeyPair.fromString(privateKey));

@@ -1,25 +1,41 @@
 import AES from 'crypto-js/aes';
 import Utf8 from 'crypto-js/enc-utf8';
 import bcrypt from 'bcryptjs';
+import { CoinType, TW } from '@trustwallet/wallet-core';
 
+
+import { Wallet } from './wallet';
 import { parseSeedPhrase, encodeKeys as encodeKeys } from './utils';
 
 const LOCK_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
-interface PrivateCache {
-    seed: string;
-    secretKey: string;
-    publicKey: string;
-}
+export class LocalAccountStorage {
+    prefix: string;
 
-interface AccountStorage {
-    get(accountName: string, field: string): string;
-    set(accountName: string, field: string, value: string);
-}
+    constructor(prefix: string) {
+        this.prefix = prefix;
+    }
 
-class LocalAccountStorage implements AccountStorage {
+    getAllAccounts(): string[] {
+        const accs = localStorage.getItem(`${this.prefix}.accounts`);
+
+        if (!accs) {
+            return [];
+        }
+
+        return JSON.parse(accs);
+    }
+
+    addAccount(name: string) {
+        const accs = new Set(this.getAllAccounts());
+        accs.add(name);
+
+        const newAccs = JSON.stringify(new Array(accs));
+        localStorage.setItem(`${this.prefix}.accounts`, newAccs);
+    }
+
     get(accountName: string, field: string): string {
-        const val = localStorage.getItem(`zconsole.${accountName}.${field}`);
+        const val = localStorage.getItem(`${this.prefix}.${accountName}.${field}`);
 
         if (!val) {
             throw new Error(`Field ${accountName}.${field} is not set`);
@@ -27,40 +43,43 @@ class LocalAccountStorage implements AccountStorage {
 
         return val;
     }
+
     set(accountName: string, field: string, value: string) {
-        localStorage.setItem(`zconsole.${accountName}.${field}`, value);
+        localStorage.setItem(`${this.prefix}.${accountName}.${field}`, value);
     }
 }
 
+export class Auth {
+    private seed: string;
+    private lockTimeout?: ReturnType<typeof setTimeout>;
+    private storage: LocalAccountStorage;
+    readonly accountName: string;
+}
+
+export class AuthenticatedAccount {
+    private seed: string;
+}
+
 // TODO: Extract timeout management code
-/**
- * A class for managing seed-based multi-accounts.
- *
- */
 export class LocalAccount {
-    private cache: PrivateCache;
+    private seed: string;
     private lockTimeout?: ReturnType<typeof setTimeout>;
     readonly accountName: string;
-    private storage: AccountStorage;
+    private storage: LocalAccountStorage;
+    private wallets: { [key in CoinType]: Wallet; };
 
-    constructor(accountName: string) {
+    constructor(accountName: string, storage: LocalAccountStorage) {
         this.accountName = accountName;
-        this.storage = new LocalAccountStorage();
+        this.storage = storage;
     }
 
     public async login(seed: string, password: string) {
-        const keyPair = parseSeedPhrase(seed);
-        const { secretKey, publicKey } = encodeKeys(keyPair)
+        // const keyPair = parseSeedPhrase(seed);
+        // const { secretKey, publicKey } = encodeKeys(keyPair)
 
-        this.cache = {
-            seed,
-            secretKey,
-            publicKey,
-        };
+        this.seed = seed;
 
-        const cacheJson = JSON.stringify(this.cache);
-
-        this.storage.set(this.accountName, 'cache', await AES.encrypt(cacheJson, password).toString());
+        this.storage.set(this.accountName, 'seed', await AES.encrypt(seed, password).toString());
         this.storage.set(this.accountName, 'pwHash', await bcrypt.hash(password, await bcrypt.genSalt(10)));
 
         this.setAccountTimeout(LOCK_TIMEOUT);
@@ -72,15 +91,12 @@ export class LocalAccount {
 
     public getSeed(password: string): string {
         this.checkPassword(password);
-
-        const cache = this.decryptCache(password);
-        return cache.seed;
+        return this.decryptSeed(password);
     }
 
     public unlockAccount(password: string) {
         this.checkPassword(password);
-
-        this.cache = this.decryptCache(password);
+        this.seed = this.decryptSeed(password);
     }
 
     public checkPassword(password: String) {
@@ -93,11 +109,12 @@ export class LocalAccount {
         this.setAccountTimeout(LOCK_TIMEOUT);
     }
 
-    public getRegularAddress(chainId: string): string {
+    public getRegularAddress(coinType: CoinType): string {
         this.requireAuth();
 
-        const path = `m/44'/${chainId}'/0'`;
-        const pair = parseSeedPhrase(this.cache.seed, path);
+        // TOOD: proper path for each coin
+        const path = `m/44'/${coinType}'/0'`;
+        const pair = parseSeedPhrase(this.seed, path);
 
         // TODO: Ability to specify encoding?
         const address = Buffer.from(pair.publicKey).toString('hex');
@@ -105,28 +122,19 @@ export class LocalAccount {
         return address;
     }
 
-    public exportRegularPrivateKey(chainId: string, password: string): string {
+    public exportRegularPrivateKey(coinType: CoinType, password: string): string {
         this.unlockAccount(password);
 
-        const path = `m/44'/${chainId}'/0'`;
-        const pair = parseSeedPhrase(this.cache.seed, path);
+        // TOOD: proper path for each coin
+        const path = `m/44'/${coinType}'/0'`;
+        const pair = parseSeedPhrase(this.seed, path);
         const { secretKey } = encodeKeys(pair);
 
         return secretKey;
     }
 
-    public getNearPrivateKey(): string {
-        this.requireAuth();
-        return this.cache.secretKey;
-    }
-
-    public getNearAddress(): string {
-        this.requireAuth();
-        return this.getRegularAddress('397');
-    }
-
     public isLocked(): boolean {
-        return !this.cache;
+        return !this.seed;
     }
 
     public requireAuth() {
@@ -147,10 +155,10 @@ export class LocalAccount {
         }, ms);
     }
 
-    private decryptCache(password: string): PrivateCache {
-        const cipherText = this.storage.get(this.accountName, 'cache');
+    private decryptSeed(password: string): string {
+        const cipherText = this.storage.get(this.accountName, 'seed');
         const data = AES.decrypt(cipherText, password).toString(Utf8);
 
-        return JSON.parse(data);
+        return data;
     }
 }
