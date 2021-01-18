@@ -1,40 +1,33 @@
 import { CoinType } from '@trustwallet/wallet-core';
-import { Coin } from '../coin';
-import { Environment } from './config';
-import { NearClient } from './client';
-import { parseSeedPhrase } from '../../utils';
 import bs58 from 'bs58';
+import { Observable } from 'rxjs';
+import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
 
-const PATH = `m/44'/${CoinType.near}'/0'`;
+import { Coin } from '../coin';
+import { Config } from './config';
+import { NearClient } from './client';
+import { parseSeedPhrase, SignKeyPair } from '../../utils';
+import { Transaction } from '../transaction';
 
 export class NearCoin implements Coin {
-  private seed: string;
   private client: NearClient;
+  private keypair: SignKeyPair;
 
-  constructor(env: Environment, seed: string) {
-    this.seed = seed;
-    this.client = new NearClient(env, this.getAddress(), this.getPrivateKey());
+  constructor(seed: string, config: Config) {
+    this.client = new NearClient(config, this.getAddress(), this.getPrivateKey());
+    this.keypair = parseSeedPhrase(seed, CoinType.derivationPath(CoinType.near));
   }
 
   getPrivateKey(): string {
-    const pair = parseSeedPhrase(this.seed, PATH);
-    const secretKey = 'ed25519:' + bs58.encode(Buffer.from(pair.secretKey));
-
-    return secretKey;
+    return 'ed25519:' + bs58.encode(Buffer.from(this.keypair.secretKey));
   }
 
   getPublicKey(): string {
-    const pair = parseSeedPhrase(this.seed, PATH);
-    const publicKey = 'ed25519:' + bs58.encode(Buffer.from(pair.publicKey));
-
-    return publicKey;
+    return 'ed25519:' + bs58.encode(Buffer.from(this.keypair.publicKey));
   }
 
   getAddress(): string {
-    const pair = parseSeedPhrase(this.seed, PATH);
-    const address = Buffer.from(pair.publicKey).toString('hex');
-
-    return address;
+    return Buffer.from(this.keypair.publicKey).toString('hex');
   }
 
   async getBalance(): Promise<string> {
@@ -42,11 +35,38 @@ export class NearCoin implements Coin {
     return balance.available;
   }
 
+  /**
+   * Transfer NEAR
+   * @param to
+   * @param amount in yoctoNEAR
+   */
   async transfer(to: string, amount: string) {
     await this.client.transfer(to, amount);
   }
 
   coinType(): CoinType {
     return CoinType.near;
+  }
+
+  getTransactions(from: number, to: number): Promise<Transaction[]> {
+    throw new Error('Method not implemented.');
+  }
+
+  subscribe(): Observable<Transaction> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Convert human-readable NEAR to yoctoNEAR
+   **/
+  toBaseUnit(amount: string): string {
+    return parseNearAmount(amount)!;
+  }
+
+  /**
+  * Convert yoctoNEAR to human-readable NEAR
+  **/
+  fromBaseUnit(amount: string): string {
+    return formatNearAmount(amount);
   }
 }

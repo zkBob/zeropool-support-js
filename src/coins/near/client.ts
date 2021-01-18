@@ -3,7 +3,7 @@ import { Account, KeyPair, connect } from 'near-api-js';
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { AccountBalance } from 'near-api-js/lib/account';
 
-import { Config, Environment, getConfig } from './config';
+import { Config } from './config';
 
 export class NearClient {
   private keyStore: KeyStore;
@@ -12,9 +12,9 @@ export class NearClient {
   private privateKey: string;
   public nearAccount?: Account;
 
-  constructor(env: Environment, address: string, privateKey: string) {
+  constructor(config: Config, address: string, privateKey: string) {
     this.keyStore = new InMemoryKeyStore();
-    this.config = getConfig(env);
+    this.config = config;
     this.address = address;
     this.privateKey = privateKey;
   }
