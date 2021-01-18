@@ -73,7 +73,11 @@ export class EthereumCoin implements Coin {
         }
 
         const interval = setInterval(async () => {
-          tx = await web3.eth.getTransaction(txHash);
+          try {
+            tx = await web3.eth.getTransaction(txHash);
+          } catch (e) {
+            clearInterval(interval);
+          }
 
           if (tx.transactionIndex !== null) {
             subscriber.next(convertTransaction(tx));
