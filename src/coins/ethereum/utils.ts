@@ -7,6 +7,8 @@ export function convertTransaction(tx: Web3Transaction, timestamp: number, custo
     amount: tx.value,
     from: tx.from,
     to: tx.to || '',
-    timestamp,
+    timestamp: tx.,
+    blockHash: tx.blockHash || '',
+    hash: tx.hash,
   };
 }

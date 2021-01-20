@@ -5,6 +5,8 @@ export enum TxStatus {
 }
 
 export class Transaction {
+  hash: string;
+  blockHash: string;
   status: TxStatus;
   amount: string;
   from: string;

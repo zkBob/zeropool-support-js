@@ -9,6 +9,8 @@ import { Transaction } from '../transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
 
+const TX_CHECK_INTERVAL = 10 * 1000; // TODO: What's the optimal interval for this?
+
 export class EthereumCoin implements Coin {
   private web3: Web3;
   private web3ws: Web3;
@@ -76,10 +78,20 @@ export class EthereumCoin implements Coin {
           }
 
           if (tx.transactionIndex !== null) {
-            subscriber.next(convertTransaction(tx));
+            const block = await web3.eth.getBlock(tx.blockNumber!);
+
+            let timestamp;
+            if (typeof block.timestamp == 'string') {
+              timestamp = parseInt(block.timestamp);
+            } else {
+              timestamp = block.timestamp;
+            }
+
+            subscriber.next(convertTransaction(tx, timestamp));
+
             clearInterval(interval);
           }
-        }, 10 * 1000); // TODO: What's the optimal interval for this?
+        }, TX_CHECK_INTERVAL); // TODO: What's the optimal interval for this?
       })
         .on('error', error => {
           subscriber.error(error);
