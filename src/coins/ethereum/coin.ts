@@ -50,11 +50,22 @@ export class EthereumCoin implements Coin {
     });
   }
 
-  public async getTransactions(from: number, to: number): Promise<Transaction[]> {
-    const [startBlock, endBlock] = await Promise.all([this.getBlockByTime(from), this.getBlockByTime(to)]);
-    const nativeTxs = await this.fetchAccountTransactions(this.getAddress(), startBlock, endBlock);
+  public async getTransactions(limit: number, offset: number): Promise<Transaction[]> {
+    const latesBlock = await this.web3.eth.getBlockNumber();
+    let txs: Transaction[] = [];
 
-    return nativeTxs.map(convertTransaction);
+    // TODO: Optimize
+    while (true) {
+      const otherTxs = (await this.fetchAccountTransactions(latesBlock, latesBlock - 100))
+        .slice(0, limit);
+      txs.concat(otherTxs);
+
+      if (txs.length >= limit + offset) {
+        break;
+      }
+    }
+
+    return txs.slice(offset);
   }
 
   public async subscribe(): Promise<Observable<Transaction>> {
@@ -113,98 +124,24 @@ export class EthereumCoin implements Coin {
     return this.web3.utils.toWei(amount);
   }
 
-  private async fetchAccountTransactions(address: string, startBlockNumber: number, endBlockNumber?: number): Promise<Web3Transaction[]> {
-    if (!endBlockNumber) {
-      endBlockNumber = await this.web3.eth.getBlockNumber();
-    }
+  private async fetchAccountTransactions(startBlockNumber: number, endBlockNumber: number): Promise<Transaction[]> {
+    const address = this.getAddress();
+    let transactions: Transaction[] = [];
 
-    let transactions: Web3Transaction[] = [];
-
-    for (let i = startBlockNumber; i <= endBlockNumber; i++) {
+    // TODO: Parallelize scan
+    for (let i = startBlockNumber; i >= endBlockNumber; --i) {
       const block = await this.web3.eth.getBlock(i, true);
       if (block != null && block.transactions != null) {
         for (const tx of block.transactions) {
           if (address == tx.from || address == tx.to) {
-            transactions.push(tx);
+            const timestamp = (typeof block.timestamp == 'string') ? parseInt(block.timestamp) : block.timestamp;
+            const newTx = convertTransaction(tx, timestamp);
+            transactions.push(newTx);
           }
         }
       }
     }
 
     return transactions;
-  }
-
-  // Based on https://github.com/ethfinex/efx-trustless-vol/blob/5a27906b71617fdb236a2b8f300e4a9e7d417e40/src/lib/getBlockByTime.js#L10
-  private async getBlockByTime(targetTimestamp: number): Promise<number> {
-    // TODO: Make limits configurable?
-    const lowerLimitStamp = targetTimestamp - 60;
-    const higherLimitStamp = targetTimestamp + 60;
-
-    // decreasing average block size will decrease precision and also
-    // decrease the amount of requests made in order to find the closest
-    // block
-    let averageBlockTime = 17 * 1.5
-
-    // get current block number
-    const currentBlockNumber = await this.web3.eth.getBlockNumber();
-    let block = await this.web3.eth.getBlock(currentBlockNumber);
-    let blockNumber = currentBlockNumber;
-
-    while (block.timestamp > targetTimestamp) {
-      const timestamp = (typeof block.timestamp == 'string') ? parseInt(block.timestamp) : block.timestamp;
-      let decreaseBlocks = (timestamp - targetTimestamp) / averageBlockTime;
-
-      if (decreaseBlocks < 1) {
-        break
-      }
-
-      blockNumber -= decreaseBlocks
-
-      block = await this.web3.eth.getBlock(blockNumber);
-    }
-
-    // if we undershoot the day
-    if (lowerLimitStamp && block.timestamp < lowerLimitStamp) {
-      while (block.timestamp < lowerLimitStamp) {
-        blockNumber += 1
-
-        block = await this.web3.eth.getBlock(blockNumber);
-      }
-    }
-
-    if (higherLimitStamp) {
-      // if we ended with a block higher than we can
-      // walk block by block to find the correct one
-      if (block.timestamp >= higherLimitStamp) {
-        while (block.timestamp >= higherLimitStamp) {
-          blockNumber -= 1;
-
-          block = await this.web3.eth.getBlock(blockNumber);
-        }
-      }
-
-      // if we ended up with a block lower than the upper limit
-      // walk block by block to make sure it's the correct one
-      if (block.timestamp < higherLimitStamp) {
-
-        while (block.timestamp < higherLimitStamp) {
-          blockNumber += 1;
-
-          if (blockNumber > currentBlockNumber) break;
-
-          const tempBlock = await this.web3.eth.getBlock(blockNumber);
-
-          // can't be equal or higher than upper limit as we want
-          // to find the last block before that limit
-          if (tempBlock.timestamp >= higherLimitStamp) {
-            break;
-          }
-
-          block = tempBlock;
-        }
-      }
-    }
-
-    return block.number;
   }
 }
