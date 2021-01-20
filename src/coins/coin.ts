@@ -3,7 +3,6 @@ import { Transaction } from './transaction';
 import { Observable } from 'rxjs';
 
 export interface Coin {
-  coinType(): CoinType;
   getPrivateKey(): string;
   getPublicKey(): string;
   getAddress(): string;
@@ -21,15 +20,15 @@ export interface Coin {
 
   /**
    * Get all transactions between two timestamps
-   * @param from timestamp
-   * @param to timestamp
+   * @param from in seconds
+   * @param to in seconds
    */
   getTransactions(from: number, to: number): Promise<Transaction[]>;
 
   /**
    * Subscribe to account events
    */
-  subscribe(): Observable<Transaction>;
+  subscribe(): Promise<Observable<Transaction>>;
 
   /**
    * Convert human-readable representation of coin to smallest non-divisible (base) representation.

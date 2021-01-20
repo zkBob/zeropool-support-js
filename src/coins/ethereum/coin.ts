@@ -36,10 +36,6 @@ export class EthereumCoin implements Coin {
     return this.account.address;
   }
 
-  public coinType(): CoinType {
-    return CoinType.ethereum;
-  }
-
   public async getBalance(): Promise<string> {
     return await this.web3.eth.getBalance(this.getAddress());
   }
@@ -59,7 +55,7 @@ export class EthereumCoin implements Coin {
     return nativeTxs.map(convertTransaction);
   }
 
-  public subscribe(): Observable<Transaction> {
+  public async subscribe(): Promise<Observable<Transaction>> {
     const web3 = this.web3;
     const sub = this.web3ws.eth.subscribe('pendingTransactions');
     const address = this.getAddress();
