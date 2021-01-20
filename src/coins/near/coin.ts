@@ -1,72 +1,177 @@
-import { CoinType } from '@trustwallet/wallet-core';
 import bs58 from 'bs58';
+import BN from 'bn.js';
 import { Observable } from 'rxjs';
+import { CoinType } from '@trustwallet/wallet-core';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
+import { Account, KeyPair, connect } from 'near-api-js';
+import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 
 import { Coin } from '../coin';
 import { Config } from './config';
-import { NearClient } from './client';
 import { parseSeedPhrase, SignKeyPair } from '../../utils';
-import { Transaction } from '../transaction';
+import { Transaction, TxStatus } from '../transaction';
+
+const POLL_INTERVAL = 10 * 60 * 1000;
+const TX_LIMIT = 10;
 
 export class NearCoin implements Coin {
-  private client: NearClient;
+  private keyStore: KeyStore;
+  public account: Account;
   private keypair: SignKeyPair;
+  private config: Config;
+  private lastTxTimestamp: number = 0;
 
   constructor(seed: string, config: Config) {
-    this.client = new NearClient(config, this.getAddress(), this.getPrivateKey());
+    this.keyStore = new InMemoryKeyStore();
     this.keypair = parseSeedPhrase(seed, CoinType.derivationPath(CoinType.near));
+    this.config = config;
   }
 
-  getPrivateKey(): string {
+  public getPrivateKey(): string {
     return 'ed25519:' + bs58.encode(Buffer.from(this.keypair.secretKey));
   }
 
-  getPublicKey(): string {
+  public getPublicKey(): string {
     return 'ed25519:' + bs58.encode(Buffer.from(this.keypair.publicKey));
   }
 
-  getAddress(): string {
+  public getAddress(): string {
     return Buffer.from(this.keypair.publicKey).toString('hex');
   }
 
-  async getBalance(): Promise<string> {
-    const balance = await this.client.getBalance();
+  public async getBalance(): Promise<string> {
+    await this.ensureAccount();
+    const balance = await this.account.getAccountBalance();
     return balance.available;
   }
 
   /**
-   * Transfer NEAR
    * @param to
    * @param amount in yoctoNEAR
    */
-  async transfer(to: string, amount: string) {
-    await this.client.transfer(to, amount);
+  public async transfer(to: string, amount: string) {
+    await this.ensureAccount();
+    await this.account.sendMoney(to, new BN(amount));
   }
 
-  coinType(): CoinType {
-    return CoinType.near;
+  public async getTransactions(limit?: number, offset?: number): Promise<Transaction[]> {
+    await this.ensureAccount();
+
+    const url = new URL(`/account/${this.getAddress()}/activity`, this.config.explorerUrl);
+
+    if (limit) {
+      url.searchParams.append('limit', limit.toString());
+    }
+
+    if (offset) {
+      url.searchParams.append('offset', offset.toString());
+    }
+
+    const res = await fetch(url.toString());
+    const json = await res.json();
+
+    let txs: Transaction[] = [];
+
+    for (const action of json) {
+      // Convert timestamp to seconds since near presents it in nanoseconds
+      const timestamp = parseInt(action.block_timestamp) / 1000000;
+      if (action['action_kind'] == 'TRANSFER') {
+        txs.push({
+          status: TxStatus.Completed,
+          amount: action.args.deposit,
+          from: action.signer_id,
+          to: action.receiver_id,
+          timestamp: timestamp,
+          blockHash: action.block_hash,
+          hash: action.hash,
+        });
+      }
+    }
+
+    return txs;
   }
 
-  getTransactions(from: number, to: number): Promise<Transaction[]> {
-    throw new Error('Method not implemented.');
+  public async subscribe(): Promise<Observable<Transaction>> {
+    await this.ensureAccount();
+
+    const latestTxs = await this.getTransactions(1);
+
+    if (latestTxs.length == 1) {
+      this.lastTxTimestamp = latestTxs[0].timestamp;
+    }
+
+    return new Observable(subscriber => {
+      const interval = setInterval(async () => {
+        try {
+          const txs = await this.fetchNewTransactions(TX_LIMIT, 0);
+
+          for (const tx of txs) {
+            subscriber.next(tx);
+          }
+        } catch (e) {
+          subscriber.error(e);
+        }
+      }, POLL_INTERVAL);
+
+      return function unsubscribe() {
+        clearInterval(interval);
+      }
+    });
   }
 
-  subscribe(): Observable<Transaction> {
-    throw new Error('Method not implemented.');
+  private async fetchNewTransactions(limit: number, offset: number): Promise<Transaction[]> {
+    const txs = await this.getTransactions(limit, offset);
+    const txIdx = txs.findIndex(tx => tx.timestamp === this.lastTxTimestamp);
+
+    if (txIdx == -1) {
+      const otherTxs = await this.fetchNewTransactions(limit, offset + limit);
+      txs.concat(otherTxs);
+      return txs;
+    } else if (txIdx > 0) {
+      return txs.slice(0, txIdx);
+    }
+
+    return [];
   }
 
   /**
    * Convert human-readable NEAR to yoctoNEAR
    **/
-  toBaseUnit(amount: string): string {
+  public toBaseUnit(amount: string): string {
     return parseNearAmount(amount)!;
   }
 
   /**
   * Convert yoctoNEAR to human-readable NEAR
   **/
-  fromBaseUnit(amount: string): string {
+  public fromBaseUnit(amount: string): string {
     return formatNearAmount(amount);
+  }
+
+  private async getAccountData(): Promise<any> {
+    return await this.account.connection.provider.query({
+      request_type: 'view_account',
+      finality: 'final',
+      account_id: this.getAddress(),
+    });
+  }
+
+  private async init(): Promise<void> {
+    await this.keyStore.setKey(
+      this.config.networkId,
+      this.getAddress(),
+      KeyPair.fromString(this.getPrivateKey())
+    );
+
+    const options = { ...this.config, deps: { keyStore: this.keyStore } };
+    const near = await connect(options);
+
+    this.account = await near.account(this.getAddress());
+  }
+
+  private async ensureAccount(): Promise<void> {
+    if (!this.account) {
+      this.init();
+    }
   }
 }
