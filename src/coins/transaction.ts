@@ -9,4 +9,6 @@ export class Transaction {
   amount: string;
   from: string;
   to: string;
+  /** UNIX timestamp in seconds */
+  timestamp: number;
 }
