@@ -8,25 +8,23 @@ export interface Coin {
   getAddress(): string;
 
   /**
-   * Get native coin balance
+   * Get native coin balance.
    */
   getBalance(): Promise<string>;
   /**
-   * Transfer native coin
+   * Transfer native coin.
    * @param to destination address
    * @param amount as base unit
    */
   transfer(to: string, amount: string): Promise<void>;
 
   /**
-   * Get all transactions between two timestamps
-   * @param from in seconds
-   * @param to in seconds
+   * Fetch account transactions.
    */
-  getTransactions(from: number, to: number): Promise<Transaction[]>;
+  getTransactions(limit?: number, offset?: number): Promise<Transaction[]>;
 
   /**
-   * Subscribe to account events
+   * Subscribe to account events.
    */
   subscribe(): Promise<Observable<Transaction>>;
 
