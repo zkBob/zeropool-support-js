@@ -14,3 +14,9 @@ export class Transaction {
   /** UNIX timestamp in seconds */
   timestamp: number;
 }
+
+export class TxFee {
+  gas: string;
+  gasPrice: string;
+  fee: string;
+}

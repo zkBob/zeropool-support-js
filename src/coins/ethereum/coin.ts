@@ -5,9 +5,10 @@ import { Observable } from 'rxjs';
 
 import { Coin } from '../coin';
 import { parseSeedPhrase, SignKeyPair } from '../../utils';
-import { Transaction } from '../transaction';
+import { Transaction, TxFee } from '../transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
+import BN from 'bn.js';
 
 const TX_CHECK_INTERVAL = 10 * 1000; // TODO: What's the optimal interval for this?
 
@@ -122,6 +123,22 @@ export class EthereumCoin implements Coin {
 
   public fromBaseUnit(amount: string): string {
     return this.web3.utils.toWei(amount);
+  }
+
+  public async estimateTxFee(): Promise<TxFee> {
+    const gas = await this.web3.eth.estimateGas({
+      from: this.getAddress(),
+      to: this.getAddress(),
+      value: this.toBaseUnit('1'),
+    });
+    const gasPrice = await this.web3.eth.getGasPrice();
+    const fee = new BN(gas).mul(new BN(gasPrice));
+
+    return {
+      gas: gas.toString(),
+      gasPrice,
+      fee: this.fromBaseUnit(fee.toString()),
+    };
   }
 
   private async fetchAccountTransactions(startBlockNumber: number, endBlockNumber: number): Promise<Transaction[]> {

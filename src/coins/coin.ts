@@ -1,5 +1,5 @@
 import { CoinType } from '@trustwallet/wallet-core';
-import { Transaction } from './transaction';
+import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
 
 export interface Coin {
@@ -39,4 +39,9 @@ export interface Coin {
   * @param amount
   */
   fromBaseUnit(amount: string): string;
+
+  /**
+   * Get estimated transaction fee.
+   */
+  estimateTxFee(): Promise<TxFee>;
 }

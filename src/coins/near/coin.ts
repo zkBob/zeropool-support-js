@@ -5,11 +5,12 @@ import { CoinType } from '@trustwallet/wallet-core';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
 import { Account, KeyPair, connect } from 'near-api-js';
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
 import { Coin } from '../coin';
 import { Config } from './config';
 import { parseSeedPhrase, SignKeyPair } from '../../utils';
-import { Transaction, TxStatus } from '../transaction';
+import { Transaction, TxFee, TxStatus } from '../transaction';
 
 const POLL_INTERVAL = 10 * 60 * 1000;
 const TX_LIMIT = 10;
@@ -20,6 +21,7 @@ export class NearCoin implements Coin {
   private keypair: SignKeyPair;
   private config: Config;
   private lastTxTimestamp: number = 0;
+  private rpc: JsonRpcProvider;
 
   constructor(seed: string, config: Config) {
     this.keyStore = new InMemoryKeyStore();
@@ -148,12 +150,22 @@ export class NearCoin implements Coin {
     return formatNearAmount(amount);
   }
 
-  private async getAccountData(): Promise<any> {
-    return await this.account.connection.provider.query({
-      request_type: 'view_account',
-      finality: 'final',
-      account_id: this.getAddress(),
-    });
+  public async estimateTxFee(): Promise<TxFee> {
+    const status = await this.account.connection.provider.status();
+    const latestBlock = status.sync_info.latest_block_hash;
+
+    const res = (await this.rpc.sendJsonRpc('gas_price', [latestBlock])).gas_price;
+
+    const gasPrice = new BN(res);
+    const gas = new BN('30000000000000'); // FIXME
+    const fee = gas.mul(gasPrice).toString();
+    const feeFormatted = formatNearAmount(fee);
+
+    return {
+      gas: gas.toString(),
+      gasPrice: gasPrice.toString(),
+      fee: feeFormatted,
+    };
   }
 
   private async init(): Promise<void> {
@@ -167,6 +179,7 @@ export class NearCoin implements Coin {
     const near = await connect(options);
 
     this.account = await near.account(this.getAddress());
+    this.rpc = new JsonRpcProvider(this.config.nodeUrl);
   }
 
   private async ensureAccount(): Promise<void> {
