@@ -23,9 +23,9 @@ export class NearCoin implements Coin {
   private lastTxTimestamp: number = 0;
   private rpc: JsonRpcProvider;
 
-  constructor(seed: string, config: Config) {
+  constructor(seed: string, config: Config, account: number) {
     this.keyStore = new InMemoryKeyStore();
-    this.keypair = parseSeedPhrase(seed, CoinType.derivationPath(CoinType.near));
+    this.keypair = parseSeedPhrase(seed, CoinType.near, account);
     this.config = config;
   }
 

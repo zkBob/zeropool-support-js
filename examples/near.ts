@@ -4,9 +4,9 @@ import devConfig from 'zeropool-api-js/config.dev'; // you might prefer to use y
 
 async function example() {
   const mnemonic = generateMnemonic();
-  const hdWallet = new HDWallet(mnemonic, [CoinType.near], devConfig);
+  const hdWallet = new HDWallet(mnemonic, { [CoinType.near]: 1 }, devConfig);
 
-  const near = hdWallet.getCoin(CoinType.near);
+  const near = hdWallet.getCoin(CoinType.near, 0);
   let balance = await near.getBalance();
 
   console.log('Balance: ', balance);

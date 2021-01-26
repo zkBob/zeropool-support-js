@@ -18,8 +18,8 @@ export class EthereumCoin implements Coin {
   private account: Account;
   private keypair: SignKeyPair;
 
-  constructor(seed: string, config: Config) {
-    this.keypair = parseSeedPhrase(seed, CoinType.derivationPath(CoinType.ethereum));
+  constructor(seed: string, config: Config, account: number) {
+    this.keypair = parseSeedPhrase(seed, CoinType.ethereum, account);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
 
@@ -57,8 +57,7 @@ export class EthereumCoin implements Coin {
 
     // TODO: Optimize
     while (true) {
-      const otherTxs = (await this.fetchAccountTransactions(latesBlock, latesBlock - 100))
-        .slice(0, limit);
+      const otherTxs = (await this.fetchAccountTransactions(latesBlock, latesBlock - 100));
       txs.concat(otherTxs);
 
       if (txs.length >= limit + offset) {

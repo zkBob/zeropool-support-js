@@ -6,20 +6,33 @@ import { Config } from './config';
 
 export class HDWallet {
   public seed: string;
-  private coins: { [key in CoinType]?: Coin; };
+  private coins: { [key in CoinType]?: Coin[]; } = {};
 
-  constructor(seed: string, coins: CoinType[], config: Config) {
+  constructor(seed: string, coins: { [key in CoinType]?: number; }, config: Config) {
     this.seed = seed;
-    this.coins = {};
 
-    for (let coin of coins) {
+    for (const key in coins) {
+      const coin = CoinType[key];
+      const accounts = coins[coin];
+
+      if (!this.coins[coin]) {
+        this.coins[coin] = [];
+      }
+
       switch (coin) {
         case CoinType.near: {
-          this.coins[coin] = new NearCoin(seed, config.near);
+          for (let account = 0; account < accounts; ++account) {
+            this.coins[coin].push(new NearCoin(seed, config.near, account));
+          }
+
           break;
         }
         case CoinType.ethereum: {
-          this.coins[coin] = new EthereumCoin(seed, config.ethereum);
+          for (let account = 0; account < accounts; ++account) {
+            this.coins[coin].push(new EthereumCoin(seed, config.ethereum, account));
+          }
+
+          break;
         }
         default: {
           throw new Error(`CoinType ${coin} is not implemented`);
@@ -28,21 +41,21 @@ export class HDWallet {
     }
   }
 
-  public getRegularAddress(coinType: CoinType): string {
-    return this.getCoin(coinType).getAddress();
+  public getRegularAddress(coinType: CoinType, account: number): string | undefined {
+    return this.getCoin(coinType, account)?.getAddress();
   }
 
-  public getRegularPrivateKey(coinType: CoinType): string {
-    return this.getCoin(coinType).getPrivateKey();
+  public getRegularPrivateKey(coinType: CoinType, account: number): string | undefined {
+    return this.getCoin(coinType, account)?.getPrivateKey();
   }
 
-  public getCoin(coinType: CoinType): Coin {
+  public getCoin(coinType: CoinType, account: number): Coin | undefined {
     const coin = this.coins[coinType];
 
     if (!coin) {
       throw new Error(`Coin ${coinType} is not initialized`);
     }
 
-    return coin;
+    return coin[account];
   }
 }
