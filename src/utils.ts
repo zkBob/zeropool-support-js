@@ -3,15 +3,11 @@
 import { SignKeyPair, sign } from 'tweetnacl';
 import { derivePath } from 'near-hd-key';
 import bip39 from 'bip39-light';
+import { CoinType } from '@trustwallet/wallet-core';
 
-const KEY_DERIVATION_PATH = "m/44'/397'/0'"
+export { SignKeyPair };
 
-export interface FormattedKeyPair {
-  publicKey: string,
-  secretKey: string,
-}
-
-export function parseSeedPhrase(phrase: string, path?: string): SignKeyPair {
+export function parseSeedPhrase(phrase: string, coin: CoinType, account: number): SignKeyPair {
   const words = phrase
     .trim()
     .split(/\s+/)
@@ -22,8 +18,10 @@ export function parseSeedPhrase(phrase: string, path?: string): SignKeyPair {
   // validate mnemonic
   bip39.mnemonicToEntropy(fullMnemonic);
 
+  const path = CoinType.derivationPath(coin);
+
   const seed = bip39.mnemonicToSeed(fullMnemonic);
-  const { key } = derivePath(path || KEY_DERIVATION_PATH, seed.toString('hex'));
+  const { key } = derivePath(path, seed.toString('hex'));
   const keyPair = sign.keyPair.fromSeed(key);
 
   return keyPair;
