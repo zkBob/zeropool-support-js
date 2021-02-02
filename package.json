@@ -1,13 +1,14 @@
 {
   "name": "zeropool-api-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "author": "Dmitry Vdovin <voidxnull@gmail.com>",
   "homepage": "https://github.com/zeropoolnetwork/zeropool-console",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "scripts": {
     "build": "tsc",
