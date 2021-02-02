@@ -1,9 +1,9 @@
 import Web3 from 'web3';
 import { Account, Transaction as Web3Transaction } from 'web3-core';
-import { CoinType } from '@trustwallet/wallet-core';
 import { Observable } from 'rxjs';
 
 import { Coin } from '../coin';
+import { CoinType } from '../coin-type';
 import { parseSeedPhrase, SignKeyPair } from '../../utils';
 import { Transaction, TxFee } from '../transaction';
 import { convertTransaction } from './utils';

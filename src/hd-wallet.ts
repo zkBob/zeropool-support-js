@@ -1,5 +1,5 @@
-import { CoinType } from '@trustwallet/wallet-core';
 import { Coin } from './coins/coin';
+import { CoinType } from './coins/coin-type';
 import { NearCoin } from './coins/near';
 import { EthereumCoin } from './coins/ethereum';
 import { Config } from './config';

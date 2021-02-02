@@ -1,13 +1,13 @@
 import bs58 from 'bs58';
 import BN from 'bn.js';
 import { Observable } from 'rxjs';
-import { CoinType } from '@trustwallet/wallet-core';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
 import { Account, KeyPair, connect } from 'near-api-js';
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
 import { Coin } from '../coin';
+import { CoinType } from '../coin-type';
 import { Config } from './config';
 import { parseSeedPhrase, SignKeyPair } from '../../utils';
 import { Transaction, TxFee, TxStatus } from '../transaction';
