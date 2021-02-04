@@ -1,10 +1,10 @@
 import Web3 from 'web3';
 import { Account, Transaction as Web3Transaction } from 'web3-core';
-import { CoinType } from '@trustwallet/wallet-core';
 import { Observable } from 'rxjs';
 
 import { Coin } from '../coin';
-import { parseSeedPhrase, SignKeyPair } from '../../utils';
+import { CoinType } from '../coin-type';
+import { parseSeedPhrase, HDKey } from '../../utils';
 import { Transaction, TxFee } from '../transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
@@ -16,14 +16,14 @@ export class EthereumCoin implements Coin {
   private web3: Web3;
   private web3ws: Web3;
   private account: Account;
-  private keypair: SignKeyPair;
+  private keypair: HDKey;
 
   constructor(seed: string, config: Config, account: number) {
     this.keypair = parseSeedPhrase(seed, CoinType.ethereum, account);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
 
-    const privateKey = Buffer.from(this.keypair.secretKey).toString('hex');
+    const privateKey = '0x' + this.keypair.privateKey.toString('hex');
     this.account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
   }
 
@@ -32,7 +32,7 @@ export class EthereumCoin implements Coin {
   }
 
   public getPublicKey(): string {
-    return Buffer.from(this.keypair.publicKey).toString('hex');
+    return this.keypair.publicKey.toString('hex');
   }
 
   public getAddress(): string {

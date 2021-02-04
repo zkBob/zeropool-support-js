@@ -1,30 +1,27 @@
-// Based on https://github.com/near/near-seed-phrase/blob/master/index.js
-
-import { SignKeyPair, sign } from 'tweetnacl';
-import { derivePath } from 'near-hd-key';
 import bip39 from 'bip39-light';
-import { CoinType } from '@trustwallet/wallet-core';
+import * as HDKey from 'hdkey';
 
-export { SignKeyPair };
+import { CoinType } from './coins/coin-type';
 
-export function parseSeedPhrase(phrase: string, coin: CoinType, account: number): SignKeyPair {
-  const words = phrase
+export { HDKey };
+
+// TODO: Utilize bip32 hierarchy instead of calling this method each time a private key is needed.
+export function parseSeedPhrase(mnemonic: string, coin: CoinType, accountIdx: number): HDKey {
+  const words = mnemonic
     .trim()
     .split(/\s+/)
-    .map(part => part.toLowerCase());
-
-  const fullMnemonic = words.join(' ');
+    .map(part => part.toLowerCase())
+    .join(' ');
 
   // validate mnemonic
-  bip39.mnemonicToEntropy(fullMnemonic);
+  bip39.mnemonicToEntropy(words);
 
-  const path = CoinType.derivationPath(coin);
+  const path = CoinType.derivationPath(coin, accountIdx);
+  const seed = bip39.mnemonicToSeed(words);
+  const hdkey = HDKey.fromMasterSeed(seed);
+  const child = hdkey.derive(path);
 
-  const seed = bip39.mnemonicToSeed(fullMnemonic);
-  const { key } = derivePath(path, seed.toString('hex'));
-  const keyPair = sign.keyPair.fromSeed(key);
-
-  return keyPair;
+  return child;
 }
 
 export function generateMnemonic(): string {

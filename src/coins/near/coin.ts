@@ -1,15 +1,15 @@
 import bs58 from 'bs58';
 import BN from 'bn.js';
 import { Observable } from 'rxjs';
-import { CoinType } from '@trustwallet/wallet-core';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
 import { Account, KeyPair, connect } from 'near-api-js';
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
 import { Coin } from '../coin';
+import { CoinType } from '../coin-type';
 import { Config } from './config';
-import { parseSeedPhrase, SignKeyPair } from '../../utils';
+import { parseSeedPhrase, HDKey } from '../../utils';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 
 const POLL_INTERVAL = 10 * 60 * 1000;
@@ -18,7 +18,7 @@ const TX_LIMIT = 10;
 export class NearCoin implements Coin {
   private keyStore: KeyStore;
   public account: Account;
-  private keypair: SignKeyPair;
+  private keypair: HDKey;
   private config: Config;
   private lastTxTimestamp: number = 0;
   private rpc: JsonRpcProvider;
@@ -30,7 +30,7 @@ export class NearCoin implements Coin {
   }
 
   public getPrivateKey(): string {
-    return 'ed25519:' + bs58.encode(Buffer.from(this.keypair.secretKey));
+    return 'ed25519:' + bs58.encode(this.keypair.privateKey);
   }
 
   public getPublicKey(): string {

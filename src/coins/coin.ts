@@ -1,4 +1,3 @@
-import { CoinType } from '@trustwallet/wallet-core';
 import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
 
