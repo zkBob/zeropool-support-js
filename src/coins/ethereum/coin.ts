@@ -1,27 +1,31 @@
 import Web3 from 'web3';
 import { Account, Transaction as Web3Transaction } from 'web3-core';
 import { Observable } from 'rxjs';
+import BN from 'bn.js';
 
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { parseSeedPhrase, HDKey } from '../../utils';
-import { Transaction, TxFee } from '../transaction';
+import { Transaction, TxFee, TxStatus } from '../transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
-import BN from 'bn.js';
+import { LocalTxStorage } from './storage';
 
 const TX_CHECK_INTERVAL = 10 * 1000; // TODO: What's the optimal interval for this?
+const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 
 export class EthereumCoin implements Coin {
   private web3: Web3;
   private web3ws: Web3;
   private account: Account;
   private keypair: HDKey;
+  private txStorage: LocalTxStorage;
 
   constructor(seed: string, config: Config, account: number) {
     this.keypair = parseSeedPhrase(seed, CoinType.ethereum, account);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
+    this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX)
 
     const privateKey = '0x' + this.keypair.privateKey.toString('hex');
     this.account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
@@ -44,28 +48,43 @@ export class EthereumCoin implements Coin {
   }
 
   public async transfer(to: string, amount: string) {
-    await this.web3.eth.sendTransaction({
-      from: this.getAddress(),
+    const from = this.getAddress();
+    const nonce = await this.web3.eth.getTransactionCount(this.getAddress());
+    const gas = await this.web3.eth.estimateGas({ from, to, value: amount });
+    const gasPrice = await this.web3.eth.getGasPrice();
+    const signed = await this.web3.eth.accounts.signTransaction({
+      from,
       to,
       value: amount,
-    });
+      nonce,
+      gas,
+      gasPrice,
+    }, this.getPrivateKey())
+
+    const receipt = await this.web3.eth.sendSignedTransaction(signed.rawTransaction!);
+    const block = await this.web3.eth.getBlock(receipt.blockNumber);
+
+    let timestamp;
+    if (typeof block.timestamp == 'string') {
+      timestamp = parseInt(block.timestamp);
+    } else {
+      timestamp = block.timestamp;
+    }
+
+    let status = TxStatus.Completed;
+    if (!receipt.status) {
+      status = TxStatus.Error;
+    }
+
+    const nativeTx = await this.web3.eth.getTransaction(receipt.transactionHash);
+    const tx = convertTransaction(nativeTx, timestamp, status);
+
+    this.txStorage.add(this.getAddress(), tx);
   }
 
   public async getTransactions(limit: number, offset: number): Promise<Transaction[]> {
-    const latesBlock = await this.web3.eth.getBlockNumber();
-    let txs: Transaction[] = [];
-
-    // TODO: Optimize
-    while (true) {
-      const otherTxs = (await this.fetchAccountTransactions(latesBlock, latesBlock - 100));
-      txs.concat(otherTxs);
-
-      if (txs.length >= limit + offset) {
-        break;
-      }
-    }
-
-    return txs.slice(offset);
+    const txs = this.txStorage.list(this.getAddress());
+    return txs.slice(offset, offset + limit);
   }
 
   public async subscribe(): Promise<Observable<Transaction>> {
@@ -75,21 +94,22 @@ export class EthereumCoin implements Coin {
 
     const obs: Observable<Transaction> = new Observable(subscriber => {
       sub.on('data', async txHash => {
-        let tx = await web3.eth.getTransaction(txHash);
+        let nativeTx = await web3.eth.getTransaction(txHash);
 
-        if ((tx.to && tx.to.toLowerCase() != address) && tx.from.toLowerCase() != address) {
+        if ((nativeTx.to && nativeTx.to.toLowerCase() != address) && nativeTx.from.toLowerCase() != address) {
           return;
         }
 
+        // Periodically check status of the transaction
         const interval = setInterval(async () => {
           try {
-            tx = await web3.eth.getTransaction(txHash);
+            nativeTx = await web3.eth.getTransaction(txHash);
           } catch (e) {
             clearInterval(interval);
           }
 
-          if (tx.transactionIndex !== null) {
-            const block = await web3.eth.getBlock(tx.blockNumber!);
+          if (nativeTx.transactionIndex !== null) {
+            const block = await web3.eth.getBlock(nativeTx.blockNumber!);
 
             let timestamp;
             if (typeof block.timestamp == 'string') {
@@ -98,7 +118,11 @@ export class EthereumCoin implements Coin {
               timestamp = block.timestamp;
             }
 
-            subscriber.next(convertTransaction(tx, timestamp));
+            const tx = convertTransaction(nativeTx, timestamp);
+
+            // Relevant transaction found, update tx cache and notify listeners
+            this.txStorage.add(this.getAddress(), tx);
+            subscriber.next(tx);
 
             clearInterval(interval);
           }
@@ -140,6 +164,11 @@ export class EthereumCoin implements Coin {
     };
   }
 
+  /**
+   * Scans blocks for account transactions (both from and to)
+   * @param startBlockNumber
+   * @param endBlockNumber
+   */
   private async fetchAccountTransactions(startBlockNumber: number, endBlockNumber: number): Promise<Transaction[]> {
     const address = this.getAddress();
     let transactions: Transaction[] = [];
