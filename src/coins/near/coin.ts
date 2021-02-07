@@ -172,7 +172,7 @@ export class NearCoin implements Coin {
     await this.keyStore.setKey(
       this.config.networkId,
       this.getAddress(),
-      KeyPair.fromString(this.getPrivateKey())
+      KeyPair.fromString('ED25519:' + this.keypair.privateKey)
     );
 
     const options = { ...this.config, deps: { keyStore: this.keyStore } };
@@ -184,7 +184,7 @@ export class NearCoin implements Coin {
 
   private async ensureAccount(): Promise<void> {
     if (!this.account) {
-      this.init();
+      await this.init();
     }
   }
 }
