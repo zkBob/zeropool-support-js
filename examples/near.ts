@@ -1,6 +1,5 @@
-import { HDWallet, CoinType } from 'zeropool-api-js';
+import { HDWallet, CoinType, devConfig } from 'zeropool-api-js';
 import { generateMnemonic } from 'zeropool-api-js/lib/utils';
-import devConfig from 'zeropool-api-js/src/config.dev'; // you might prefer to use your own
 
 async function example() {
   const mnemonic = generateMnemonic();

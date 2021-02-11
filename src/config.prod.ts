@@ -1,4 +1,6 @@
-module.exports = {
+import { Config } from "./config";
+
+const config: Config = {
   near: {
     networkId: 'mainnet',
     nodeUrl: 'https://rpc.mainnet.near.org',
@@ -11,3 +13,5 @@ module.exports = {
     wsProviderUrl: 'wss://main.eth.linkpool.io/ws',
   },
 };
+
+export default config;
