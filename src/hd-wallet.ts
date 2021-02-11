@@ -4,18 +4,25 @@ import { NearCoin } from './coins/near';
 import { EthereumCoin } from './coins/ethereum';
 import { Config } from './config';
 
+const ONE_FOR_ALL_COINS = {
+  [CoinType.ethereum]: [0],
+  [CoinType.near]: [0],
+};
+
+export type AccountIndex = number;
+
 export class HDWallet {
   public seed: string;
   private coins: { [key in CoinType]?: Coin[]; } = {};
   private config: Config;
 
-  constructor(seed: string, coins: { [key in CoinType]?: number; }, config: Config) {
+  constructor(seed: string, config: Config, coins: { [key in CoinType]?: AccountIndex[]; } = ONE_FOR_ALL_COINS) {
     this.seed = seed;
     this.config = config;
 
-    for (const [key, numAddresses] of Object.entries(coins)) {
+    for (const [key, accounts] of Object.entries(coins)) {
       const coin: CoinType = Number(key);
-      this.enableCoin(coin, numAddresses!);
+      this.enableCoin(coin, accounts!);
     }
   }
 
@@ -41,20 +48,20 @@ export class HDWallet {
     }, {});
   }
 
-  public enableCoin(coin: CoinType, numAddresses: number) {
+  public enableCoin(coin: CoinType, accounts: number[]) {
     const instances: Coin[] = [];
 
     switch (coin) {
       case CoinType.near: {
-        for (let address = 0; address < numAddresses; ++address) {
-          instances.push(new NearCoin(this.seed, this.config.near, address));
+        for (const account of accounts) {
+          instances[account] = new NearCoin(this.seed, this.config.near, account);
         }
 
         break;
       }
       case CoinType.ethereum: {
-        for (let address = 0; address < numAddresses; ++address) {
-          instances.push(new EthereumCoin(this.seed, this.config.ethereum, address));
+        for (const account of accounts) {
+          instances[account] = new EthereumCoin(this.seed, this.config.ethereum, account);
         }
 
         break;
