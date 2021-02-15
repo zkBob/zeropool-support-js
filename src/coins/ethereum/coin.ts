@@ -5,7 +5,7 @@ import BN from 'bn.js';
 
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
-import { parseSeedPhrase, HDKey } from '../../utils';
+import { parseMnemonic, HDKey } from '../../utils';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
@@ -22,7 +22,7 @@ export class EthereumCoin implements Coin {
   private txStorage: LocalTxStorage;
 
   constructor(seed: string, config: Config, account: number) {
-    this.keypair = parseSeedPhrase(seed, CoinType.ethereum, account);
+    this.keypair = parseMnemonic(seed, CoinType.ethereum, account);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX)

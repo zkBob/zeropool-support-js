@@ -6,7 +6,7 @@ import { CoinType } from './coins/coin-type';
 export { HDKey };
 
 // TODO: Utilize bip32 hierarchy instead of calling this method each time a private key is needed.
-export function parseSeedPhrase(mnemonic: string, coin: CoinType, accountIdx: number): HDKey {
+export function parseMnemonic(mnemonic: string, coin: CoinType, accountIdx: number): HDKey {
   const words = mnemonic
     .trim()
     .split(/\s+/)
@@ -26,4 +26,13 @@ export function parseSeedPhrase(mnemonic: string, coin: CoinType, accountIdx: nu
 
 export function generateMnemonic(): string {
   return bip39.generateMnemonic();
+}
+
+export function validateMnemonic(mnemonic: string): boolean {
+  try {
+    bip39.mnemonicToEntropy(mnemonic);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }

@@ -9,7 +9,7 @@ import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Config } from './config';
-import { parseSeedPhrase, HDKey } from '../../utils';
+import { parseMnemonic, HDKey } from '../../utils';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 
 const POLL_INTERVAL = 10 * 60 * 1000;
@@ -25,7 +25,7 @@ export class NearCoin implements Coin {
 
   constructor(seed: string, config: Config, account: number) {
     this.keyStore = new InMemoryKeyStore();
-    this.keypair = parseSeedPhrase(seed, CoinType.near, account);
+    this.keypair = parseMnemonic(seed, CoinType.near, account);
     this.config = config;
   }
 
