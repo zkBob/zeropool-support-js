@@ -140,12 +140,20 @@ export class EthereumCoin implements Coin {
     return obs;
   }
 
+  /**
+   * Converts ether to Wei.
+   * @param amount in Ether
+   */
   public toBaseUnit(amount: string): string {
-    return this.web3.utils.fromWei(amount);
+    return this.web3.utils.toWei(amount, 'ether');
   }
 
+  /**
+   * Converts Wei to ether.
+   * @param amount in Wei
+   */
   public fromBaseUnit(amount: string): string {
-    return this.web3.utils.toWei(amount);
+    return this.web3.utils.fromWei(amount, 'ether');
   }
 
   public async estimateTxFee(): Promise<TxFee> {
