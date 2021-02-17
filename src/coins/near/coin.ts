@@ -1,15 +1,20 @@
 import bs58 from 'bs58';
+import bip39 from 'bip39-light';
 import BN from 'bn.js';
+import { derivePath } from 'ed25519-hd-key';
+import { sign } from 'tweetnacl';;
+
 import { Observable } from 'rxjs';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
-import { Account, KeyPair, connect } from 'near-api-js';
+import { Account, connect } from 'near-api-js';
+import { KeyPairEd25519 } from 'near-api-js/lib/utils/key_pair';
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Config } from './config';
-import { parseMnemonic, HDKey } from '../../utils';
+import { preprocessMnemonic } from '../../utils';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 
 const POLL_INTERVAL = 10 * 60 * 1000;
@@ -18,27 +23,36 @@ const TX_LIMIT = 10;
 export class NearCoin implements Coin {
   private keyStore: KeyStore;
   public account: Account;
-  private keypair: HDKey;
+  private keypair: KeyPairEd25519;
   private config: Config;
   private lastTxTimestamp: number = 0;
   private rpc: JsonRpcProvider;
 
-  constructor(seed: string, config: Config, account: number) {
+  constructor(mnemonic: string, config: Config, account: number) {
     this.keyStore = new InMemoryKeyStore();
-    this.keypair = parseMnemonic(seed, CoinType.near, account);
+
     this.config = config;
+
+    const processed = preprocessMnemonic(mnemonic);
+    const path = CoinType.derivationPath(CoinType.near, account);
+    const seed = bip39.mnemonicToSeed(processed);
+    const { key } = derivePath(path, seed.toString('hex'));
+    const naclKeypair = sign.keyPair.fromSeed(key);
+    const privateKey = bs58.encode(Buffer.from(naclKeypair.secretKey));
+
+    this.keypair = KeyPairEd25519.fromString(privateKey) as KeyPairEd25519;
   }
 
   public getPrivateKey(): string {
-    return 'ed25519:' + bs58.encode(this.keypair.privateKey);
+    return 'ed25519:' + bs58.encode(this.keypair.secretKey);
   }
 
   public getPublicKey(): string {
-    return 'ed25519:' + bs58.encode(Buffer.from(this.keypair.publicKey));
+    return 'ed25519:' + bs58.encode(this.keypair.getPublicKey().data);
   }
 
   public getAddress(): string {
-    return Buffer.from(this.keypair.publicKey).toString('hex');
+    return Buffer.from(this.keypair.getPublicKey().data).toString('hex');
   }
 
   public async getBalance(): Promise<string> {
@@ -172,7 +186,7 @@ export class NearCoin implements Coin {
     await this.keyStore.setKey(
       this.config.networkId,
       this.getAddress(),
-      KeyPair.fromString('ED25519:' + this.keypair.privateKey)
+      this.keypair,
     );
 
     const options = { ...this.config, deps: { keyStore: this.keyStore } };
