@@ -13,8 +13,8 @@ export class HDWallet {
     this.seed = seed;
     this.config = config;
 
-    for (const key of Object.entries(coins)) {
-      const coin: CoinType = Number(key);
+    for (const value of coins) {
+      const coin: CoinType = Number(value);
       this.enableCoin(coin);
     }
   }
