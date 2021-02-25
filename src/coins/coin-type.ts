@@ -1,6 +1,7 @@
 export enum CoinType {
   ethereum = 60,
   near = 397,
+  waves = 5741564,
 }
 
 export namespace CoinType {
@@ -14,6 +15,8 @@ export namespace CoinType {
         return `m/44'/60'`;
       case CoinType.near:
         return `m/44'/397'`;
+      case CoinType.waves:
+        return `m/44'/5741564'`
     }
   }
 
@@ -23,6 +26,8 @@ export namespace CoinType {
         return `/${account}'/0/0`;
       case CoinType.near:
         return `/${account}'`;
+      case CoinType.waves:
+        return `/${account}'/0'/0'`
     }
   }
 }

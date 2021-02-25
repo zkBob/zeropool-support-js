@@ -12,6 +12,7 @@ const config: Config = {
     httpProviderUrl: 'https://main-rpc.linkpool.io',
     wsProviderUrl: 'wss://main.eth.linkpool.io/ws',
   },
+  waves: {},
 };
 
 export default config;

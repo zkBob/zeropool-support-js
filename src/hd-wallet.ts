@@ -1,7 +1,10 @@
 import { Coin } from './coins/coin';
 import { CoinType } from './coins/coin-type';
+
 import { NearCoin } from './coins/near';
 import { EthereumCoin } from './coins/ethereum';
+import { WavesCoin } from './coins/waves';
+
 import { Config } from './config';
 
 export class HDWallet {
@@ -48,12 +51,14 @@ export class HDWallet {
     switch (coin) {
       case CoinType.near: {
         this.coins[coin] = new NearCoin(this.seed, this.config.near);
-
         break;
       }
       case CoinType.ethereum: {
         this.coins[coin] = new EthereumCoin(this.seed, this.config.ethereum);
-
+        break;
+      }
+      case CoinType.waves: {
+        this.coins[coin] = new WavesCoin(this.seed, this.config.waves);
         break;
       }
       default: {

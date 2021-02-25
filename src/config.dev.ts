@@ -12,6 +12,7 @@ const config: Config = {
     httpProviderUrl: 'https://kovan.infura.io/v3/e3c6db75d33d410aa2271816551817a7',
     wsProviderUrl: 'wss://kovan.infura.io/ws/v3/e3c6db75d33d410aa2271816551817a7',
   },
+  waves: {},
 }
 
 export default config;
