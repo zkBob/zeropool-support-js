@@ -41,7 +41,7 @@ export class AccountCache {
       return account;
     }
 
-    const keypair = this.root.derive(CoinType.accountPath(CoinType.ethereum, accountNumber));
+    const keypair = this.root.derive('m' + CoinType.accountPath(CoinType.ethereum, accountNumber));
     account = new CachedAccount(keypair, this.web3);
     this.accounts[accountNumber] = account;
 

@@ -13,22 +13,6 @@ export function preprocessMnemonic(mnemonic: string): string {
     .join(' ');
 }
 
-// TODO: Utilize bip32 hierarchy instead of calling this method each time a private key is needed.
-export function parseMnemonic(mnemonic: string, coin: CoinType, accountIdx: number): HDKey {
-  const processed = preprocessMnemonic(mnemonic);
-
-  // validate mnemonic
-  bip39.mnemonicToEntropy(processed);
-
-  const path = CoinType.derivationPath(coin, accountIdx);
-  const seed = bip39.mnemonicToSeed(processed);
-
-  const hdkey = HDKey.fromMasterSeed(seed);
-  const child = hdkey.derive(path);
-
-  return child;
-}
-
 export function generateMnemonic(): string {
   return bip39.generateMnemonic();
 }
