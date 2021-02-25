@@ -9,7 +9,7 @@ export declare class HDWallet {
     getRegularAddress(coinType: CoinType, account: number): string | undefined;
     getRegularPrivateKey(coinType: CoinType, account: number): string | undefined;
     getBalances(account: number): Promise<{
-        [key in CoinType]?: string;
+        [key in CoinType]?: string | Error;
     }>;
     enableCoin(coin: CoinType): void;
     disableCoin(coin: CoinType): void;

@@ -27,10 +27,13 @@ export class HDWallet {
     return this.getCoin(coinType)?.getPrivateKey(account);
   }
 
-  public async getBalances(account: number): Promise<{ [key in CoinType]?: string; }> {
-    const promises = Object.keys(this.coins).map(coinType => {
-      const coin = this.getCoin(CoinType[coinType])!;
-      return coin.getBalance(account).then(balance => [coinType, balance]);
+  public async getBalances(account: number): Promise<{ [key in CoinType]?: string | Error; }> {
+    const promises = Object.keys(this.coins).map(coinTypeStr => {
+      const coinType: CoinType = parseInt(coinTypeStr);
+      const coin = this.getCoin(coinType)!;
+      return coin.getBalance(account)
+        .then(balance => [coinType, balance])
+        .catch((err) => [coinType, err]);
     });
 
     const pairs = await Promise.all(promises);
