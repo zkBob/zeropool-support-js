@@ -1,27 +1,27 @@
 import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
 export interface Coin {
-    getPrivateKey(): string;
-    getPublicKey(): string;
-    getAddress(): string;
+    getPrivateKey(account: number): string;
+    getPublicKey(account: number): string;
+    getAddress(account: number): string;
     /**
      * Get native coin balance.
      */
-    getBalance(): Promise<string>;
+    getBalance(account: number): Promise<string>;
     /**
      * Transfer native coin.
      * @param to destination address
      * @param amount as base unit
      */
-    transfer(to: string, amount: string): Promise<void>;
+    transfer(account: number, to: string, amount: string): Promise<void>;
     /**
      * Fetch account transactions.
      */
-    getTransactions(limit?: number, offset?: number): Promise<Transaction[]>;
+    getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
     /**
      * Subscribe to account events.
      */
-    subscribe(): Promise<Observable<Transaction>>;
+    subscribe(account: number): Promise<Observable<Transaction>>;
     /**
      * Convert human-readable representation of coin to smallest non-divisible (base) representation.
      * @param amount

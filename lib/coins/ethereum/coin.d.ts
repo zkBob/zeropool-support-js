@@ -5,17 +5,16 @@ import { Config } from './config';
 export declare class EthereumCoin implements Coin {
     private web3;
     private web3ws;
-    private account;
-    private keypair;
     private txStorage;
-    constructor(seed: string, config: Config, account: number);
-    getPrivateKey(): string;
-    getPublicKey(): string;
-    getAddress(): string;
-    getBalance(): Promise<string>;
-    transfer(to: string, amount: string): Promise<void>;
-    getTransactions(limit: number, offset: number): Promise<Transaction[]>;
-    subscribe(): Promise<Observable<Transaction>>;
+    private accounts;
+    constructor(mnemonic: string, config: Config);
+    getPrivateKey(account: number): string;
+    getPublicKey(account: number): string;
+    getAddress(account: number): string;
+    getBalance(account: number): Promise<string>;
+    transfer(account: number, to: string, amount: string): Promise<void>;
+    getTransactions(account: number, limit: number, offset: number): Promise<Transaction[]>;
+    subscribe(account: number): Promise<Observable<Transaction>>;
     /**
      * Converts ether to Wei.
      * @param amount in Ether
@@ -27,10 +26,4 @@ export declare class EthereumCoin implements Coin {
      */
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
-    /**
-     * Scans blocks for account transactions (both from and to)
-     * @param startBlockNumber
-     * @param endBlockNumber
-     */
-    private fetchAccountTransactions;
 }
