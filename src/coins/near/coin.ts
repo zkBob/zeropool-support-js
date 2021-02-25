@@ -1,63 +1,57 @@
 import bs58 from 'bs58';
-import bip39 from 'bip39-light';
 import BN from 'bn.js';
-import { derivePath } from 'ed25519-hd-key';
-import { sign } from 'tweetnacl';;
+
 
 import { Observable } from 'rxjs';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
-import { Account, connect } from 'near-api-js';
-import { KeyPairEd25519 } from 'near-api-js/lib/utils/key_pair';
+
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
 import { Coin } from '../coin';
-import { CoinType } from '../coin-type';
 import { Config } from './config';
-import { preprocessMnemonic } from '../../utils';
 import { Transaction, TxFee, TxStatus } from '../transaction';
+import { AccountCache } from './account';
 
 const POLL_INTERVAL = 10 * 60 * 1000;
 const TX_LIMIT = 10;
 
+
 export class NearCoin implements Coin {
   private keyStore: KeyStore;
-  public account: Account;
-  private keypair: KeyPairEd25519;
   private config: Config;
   private lastTxTimestamp: number = 0;
   private rpc: JsonRpcProvider;
+  private accounts: AccountCache;
+  private mnemonic: string;
 
-  constructor(mnemonic: string, config: Config, account: number) {
+  constructor(mnemonic: string, config: Config) {
+    this.mnemonic = mnemonic;
     this.keyStore = new InMemoryKeyStore();
-
     this.config = config;
-
-    const processed = preprocessMnemonic(mnemonic);
-    const path = CoinType.derivationPath(CoinType.near, account);
-    const seed = bip39.mnemonicToSeed(processed);
-    const { key } = derivePath(path, seed.toString('hex'));
-    const naclKeypair = sign.keyPair.fromSeed(key);
-    const privateKey = bs58.encode(Buffer.from(naclKeypair.secretKey));
-
-    this.keypair = KeyPairEd25519.fromString(privateKey) as KeyPairEd25519;
+    this.accounts = new AccountCache();
+    this.rpc = new JsonRpcProvider(this.config.nodeUrl);
   }
 
-  public getPrivateKey(): string {
-    return 'ed25519:' + bs58.encode(this.keypair.secretKey);
+  public getPrivateKey(account: number): string {
+    const keypair = this.accounts.getOrCreate(this.mnemonic, account).keypair;
+    return 'ed25519:' + bs58.encode(keypair.secretKey);
   }
 
-  public getPublicKey(): string {
-    return 'ed25519:' + bs58.encode(this.keypair.getPublicKey().data);
+  public getPublicKey(account: number): string {
+    const keypair = this.accounts.getOrCreate(this.mnemonic, account).keypair;
+    return 'ed25519:' + bs58.encode(keypair.getPublicKey().data);
   }
 
-  public getAddress(): string {
-    return Buffer.from(this.keypair.getPublicKey().data).toString('hex');
+  public getAddress(account: number): string {
+    const keypair = this.accounts.getOrCreate(this.mnemonic, account).keypair;
+    return Buffer.from(keypair.getPublicKey().data).toString('hex');
   }
 
-  public async getBalance(): Promise<string> {
-    await this.ensureAccount();
-    const balance = await this.account.getAccountBalance();
+  public async getBalance(accountIndex: number): Promise<string> {
+    const account = await this.accounts.getOrInit(this.mnemonic, accountIndex, this.config, this.keyStore);
+    const balance = await account.account!.getAccountBalance();
+
     return balance.available;
   }
 
@@ -65,15 +59,15 @@ export class NearCoin implements Coin {
    * @param to
    * @param amount in yoctoNEAR
    */
-  public async transfer(to: string, amount: string) {
-    await this.ensureAccount();
-    await this.account.sendMoney(to, new BN(amount));
+  public async transfer(accountIndex: number, to: string, amount: string) {
+    const account = await this.accounts.getOrInit(this.mnemonic, accountIndex, this.config, this.keyStore);
+    await account.account!.sendMoney(to, new BN(amount));
   }
 
-  public async getTransactions(limit?: number, offset?: number): Promise<Transaction[]> {
-    await this.ensureAccount();
+  public async getTransactions(accountIndex: number, limit?: number, offset?: number): Promise<Transaction[]> {
+    const account = await this.accounts.getOrInit(this.mnemonic, accountIndex, this.config, this.keyStore);
 
-    const url = new URL(`/account/${this.getAddress()}/activity`, this.config.explorerUrl);
+    const url = new URL(`/account/${this.getAddress(accountIndex)}/activity`, this.config.explorerUrl);
 
     if (limit) {
       url.searchParams.append('limit', limit.toString());
@@ -108,8 +102,6 @@ export class NearCoin implements Coin {
   }
 
   public async subscribe(): Promise<Observable<Transaction>> {
-    await this.ensureAccount();
-
     const latestTxs = await this.getTransactions(1);
 
     if (latestTxs.length == 1) {
@@ -165,7 +157,8 @@ export class NearCoin implements Coin {
   }
 
   public async estimateTxFee(): Promise<TxFee> {
-    const status = await this.account.connection.provider.status();
+    const account = await this.accounts.getOrInit(this.mnemonic, 0, this.config, this.keyStore);
+    const status = await account.account!.connection.provider.status();
     const latestBlock = status.sync_info.latest_block_hash;
 
     const res = (await this.rpc.sendJsonRpc('gas_price', [latestBlock])).gas_price;
@@ -180,25 +173,5 @@ export class NearCoin implements Coin {
       gasPrice: gasPrice.toString(),
       fee: feeFormatted,
     };
-  }
-
-  private async init(): Promise<void> {
-    await this.keyStore.setKey(
-      this.config.networkId,
-      this.getAddress(),
-      this.keypair,
-    );
-
-    const options = { ...this.config, deps: { keyStore: this.keyStore } };
-    const near = await connect(options);
-
-    this.account = await near.account(this.getAddress());
-    this.rpc = new JsonRpcProvider(this.config.nodeUrl);
-  }
-
-  private async ensureAccount(): Promise<void> {
-    if (!this.account) {
-      await this.init();
-    }
   }
 }
