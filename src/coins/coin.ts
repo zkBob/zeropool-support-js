@@ -1,47 +1,65 @@
 import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
 
-export interface Coin {
-  getPrivateKey(account: number): string;
-  getPublicKey(account: number): string;
-  getAddress(account: number): string;
+export abstract class Coin {
+  abstract getPrivateKey(account: number): string;
+  abstract getPublicKey(account: number): string;
+  abstract getAddress(account: number): string;
 
   /**
    * Get native coin balance.
    */
-  getBalance(account: number): Promise<string>;
+  abstract getBalance(account: number): Promise<string>;
+
+  /**
+   * Get balances for specified number of accounts with offset.
+   * @param numAccounts
+   * @param offset
+   */
+  public async getBalances(numAccounts: number, offset: number = 0): Promise<(string | Error)[]> {
+    const promises: Promise<string | Error>[] = [];
+
+    for (let account = offset; account < numAccounts; ++account) {
+      const promise = this.getBalance(account)
+        .catch(err => err);
+
+      promises.push(promise);
+    }
+
+    return Promise.all(promises);
+  }
 
   /**
    * Transfer native coin.
    * @param to destination address
    * @param amount as base unit
    */
-  transfer(account: number, to: string, amount: string): Promise<void>;
+  abstract transfer(account: number, to: string, amount: string): Promise<void>;
 
   /**
    * Fetch account transactions.
    */
-  getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
+  abstract getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
 
   /**
    * Subscribe to account events.
    */
-  subscribe(account: number): Promise<Observable<Transaction>>;
+  abstract subscribe(account: number): Promise<Observable<Transaction>>;
 
   /**
    * Convert human-readable representation of coin to smallest non-divisible (base) representation.
    * @param amount
    */
-  toBaseUnit(amount: string): string;
+  abstract toBaseUnit(amount: string): string;
 
   /**
   * Convert coin represented with smallest non-divisible units to a human-readable representation.
   * @param amount
   */
-  fromBaseUnit(amount: string): string;
+  abstract fromBaseUnit(amount: string): string;
 
   /**
    * Get estimated transaction fee.
    */
-  estimateTxFee(): Promise<TxFee>;
+  abstract estimateTxFee(): Promise<TxFee>;
 }

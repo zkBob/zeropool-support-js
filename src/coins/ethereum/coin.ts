@@ -13,13 +13,14 @@ import { AccountCache } from './account';
 const TX_CHECK_INTERVAL = 10 * 1000; // TODO: What's the optimal interval for this?
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 
-export class EthereumCoin implements Coin {
+export class EthereumCoin extends Coin {
   private web3: Web3;
   private web3ws: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
 
   constructor(mnemonic: string, config: Config) {
+    super();
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);

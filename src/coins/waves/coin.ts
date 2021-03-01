@@ -3,23 +3,24 @@ import { Coin } from '../coin';
 import { Config } from './config';
 import { Transaction, TxFee } from '../transaction';
 
-export class WavesCoin implements Coin {
+export class WavesCoin extends Coin {
   private mnemonic: string;
   private config: Config;
 
   constructor(mnemonic: string, config: Config) {
+    super();
     this.mnemonic = mnemonic;
     this.config = config;
   }
 
   getPrivateKey(account: number): string {
-    throw new Error('Method not implemented.');
+    return 'TODO';
   }
   getPublicKey(account: number): string {
-    throw new Error('Method not implemented.');
+    return 'TODO';
   }
   getAddress(account: number): string {
-    throw new Error('Method not implemented.');
+    return 'TODO';
   }
   async getBalance(account: number): Promise<string> {
     return '0';

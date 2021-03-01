@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 import { Coin } from '../coin';
 import { Transaction, TxFee } from '../transaction';
 import { Config } from './config';
-export declare class EthereumCoin implements Coin {
+export declare class EthereumCoin extends Coin {
     private web3;
     private web3ws;
     private txStorage;

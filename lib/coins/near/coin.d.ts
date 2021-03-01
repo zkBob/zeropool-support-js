@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 import { Coin } from '../coin';
 import { Config } from './config';
 import { Transaction, TxFee } from '../transaction';
-export declare class NearCoin implements Coin {
+export declare class NearCoin extends Coin {
     private keyStore;
     private config;
     private lastTxTimestamp;

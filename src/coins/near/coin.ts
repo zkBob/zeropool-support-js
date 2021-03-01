@@ -17,7 +17,7 @@ const POLL_INTERVAL = 10 * 60 * 1000;
 const TX_LIMIT = 10;
 
 
-export class NearCoin implements Coin {
+export class NearCoin extends Coin {
   private keyStore: KeyStore;
   private config: Config;
   private lastTxTimestamp: number = 0;
@@ -26,6 +26,7 @@ export class NearCoin implements Coin {
   private mnemonic: string;
 
   constructor(mnemonic: string, config: Config) {
+    super();
     this.mnemonic = mnemonic;
     this.keyStore = new InMemoryKeyStore();
     this.config = config;

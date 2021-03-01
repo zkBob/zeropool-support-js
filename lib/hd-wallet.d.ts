@@ -8,8 +8,8 @@ export declare class HDWallet {
     constructor(seed: string, config: Config, coins: CoinType[]);
     getRegularAddress(coinType: CoinType, account: number): string | undefined;
     getRegularPrivateKey(coinType: CoinType, account: number): string | undefined;
-    getBalances(account: number): Promise<{
-        [key in CoinType]?: string | Error;
+    getBalances(numAccounts: number, offset?: number): Promise<{
+        [key in CoinType]?: (string | Error)[];
     }>;
     enableCoin(coin: CoinType): void;
     disableCoin(coin: CoinType): void;
