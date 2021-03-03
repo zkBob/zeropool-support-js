@@ -27,10 +27,7 @@ export abstract class Coin {
 
     for (let account = offset; account < numAccounts; ++account) {
       const promise = this.getBalance(account)
-        .catch(err => {
-          console.error(`Failed to get ${this.getCoinType()} balance:`, err);
-          return '0';
-        })
+        .catch(_err => '0') // TODO: Log errors
         .then((balance) => ({
           address: this.getAddress(account),
           balance,
