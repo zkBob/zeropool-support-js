@@ -1,5 +1,10 @@
 import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
+import { CoinType } from './coin-type';
+export declare class Balance {
+    address: string;
+    balance: string;
+}
 export declare abstract class Coin {
     abstract getPrivateKey(account: number): string;
     abstract getPublicKey(account: number): string;
@@ -13,7 +18,7 @@ export declare abstract class Coin {
      * @param numAccounts
      * @param offset
      */
-    getBalances(numAccounts: number, offset?: number): Promise<(string | Error)[]>;
+    getBalances(numAccounts: number, offset?: number): Promise<Balance[]>;
     /**
      * Transfer native coin.
      * @param to destination address
@@ -42,4 +47,5 @@ export declare abstract class Coin {
      * Get estimated transaction fee.
      */
     abstract estimateTxFee(): Promise<TxFee>;
+    abstract getCoinType(): CoinType;
 }

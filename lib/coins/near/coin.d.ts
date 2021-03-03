@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { Coin } from '../coin';
 import { Config } from './config';
 import { Transaction, TxFee } from '../transaction';
+import { CoinType } from '../coin-type';
 export declare class NearCoin extends Coin {
     private keyStore;
     private config;
@@ -31,4 +32,5 @@ export declare class NearCoin extends Coin {
     **/
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
+    getCoinType(): CoinType;
 }

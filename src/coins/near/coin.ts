@@ -12,6 +12,7 @@ import { Coin } from '../coin';
 import { Config } from './config';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 import { AccountCache } from './account';
+import { CoinType } from '../coin-type';
 
 const POLL_INTERVAL = 10 * 60 * 1000;
 const TX_LIMIT = 10;
@@ -174,5 +175,9 @@ export class NearCoin extends Coin {
       gasPrice: gasPrice.toString(),
       fee: feeFormatted,
     };
+  }
+
+  public getCoinType(): CoinType {
+    return CoinType.near;
   }
 }

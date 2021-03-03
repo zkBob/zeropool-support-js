@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { Coin } from '../coin';
+import { CoinType } from '../coin-type';
 import { Transaction, TxFee } from '../transaction';
 import { Config } from './config';
 export declare class EthereumCoin extends Coin {
@@ -26,4 +27,5 @@ export declare class EthereumCoin extends Coin {
      */
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
+    getCoinType(): CoinType;
 }

@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { Coin } from '../coin';
+import { CoinType } from '../coin-type';
 import { Config } from './config';
 import { Transaction, TxFee } from '../transaction';
 
@@ -44,4 +45,7 @@ export class WavesCoin extends Coin {
     throw new Error('Method not implemented.');
   }
 
+  public getCoinType(): CoinType {
+    return CoinType.waves;
+  }
 }

@@ -1,4 +1,4 @@
-import { Coin } from './coins/coin';
+import { Coin, Balance } from './coins/coin';
 import { CoinType } from './coins/coin-type';
 
 import { NearCoin } from './coins/near';
@@ -29,13 +29,10 @@ export class HDWallet {
     return this.getCoin(coinType)?.getPrivateKey(account);
   }
 
-  public async getBalances(numAccounts: number, offset: number = 0): Promise<{ [key in CoinType]?: (string | Error)[]; }> {
-    const promises = Object.entries(this.coins).map(([coinTypeStr, coin]) => {
-      const coinType = coinTypeStr as CoinType;
-
+  public async getBalances(numAccounts: number, offset: number = 0): Promise<{ [key in CoinType]?: Balance[]; }> {
+    const promises = Object.entries(this.coins).map(([coinType, coin]) => {
       return coin!.getBalances(numAccounts, offset)
-        .then(balances => [coinType, balances])
-        .catch(err => [coinType, err]);
+        .then((balances): [CoinType, Balance[]] => [coinType as CoinType, balances]);
     });
 
     const pairs = await Promise.all(promises);

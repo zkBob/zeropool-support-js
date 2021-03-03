@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import BN from 'bn.js';
 
 import { Coin } from '../coin';
+import { CoinType } from '../coin-type';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
@@ -166,6 +167,10 @@ export class EthereumCoin extends Coin {
       gasPrice,
       fee: this.fromBaseUnit(fee.toString()),
     };
+  }
+
+  public getCoinType(): CoinType {
+    return CoinType.ethereum;
   }
 
   // /**

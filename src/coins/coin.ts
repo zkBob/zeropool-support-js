@@ -1,5 +1,11 @@
 import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
+import { CoinType } from './coin-type';
+
+export class Balance {
+  public address: string;
+  public balance: string;
+}
 
 export abstract class Coin {
   abstract getPrivateKey(account: number): string;
@@ -16,12 +22,19 @@ export abstract class Coin {
    * @param numAccounts
    * @param offset
    */
-  public async getBalances(numAccounts: number, offset: number = 0): Promise<(string | Error)[]> {
-    const promises: Promise<string | Error>[] = [];
+  public async getBalances(numAccounts: number, offset: number = 0): Promise<Balance[]> {
+    const promises: Promise<Balance>[] = [];
 
     for (let account = offset; account < numAccounts; ++account) {
       const promise = this.getBalance(account)
-        .catch(err => err);
+        .catch(err => {
+          console.error(`Failed to get ${this.getCoinType()} balance:`, err);
+          return '0';
+        })
+        .then((balance) => ({
+          address: this.getAddress(account),
+          balance,
+        }));
 
       promises.push(promise);
     }
@@ -62,4 +75,6 @@ export abstract class Coin {
    * Get estimated transaction fee.
    */
   abstract estimateTxFee(): Promise<TxFee>;
+
+  abstract getCoinType(): CoinType;
 }
