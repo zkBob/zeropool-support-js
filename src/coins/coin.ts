@@ -25,7 +25,7 @@ export abstract class Coin {
   public async getBalances(numAccounts: number, offset: number = 0): Promise<Balance[]> {
     const promises: Promise<Balance>[] = [];
 
-    for (let account = offset; account < numAccounts; ++account) {
+    for (let account = offset; account < offset + numAccounts; ++account) {
       const promise = this.getBalance(account)
         .catch(_err => '0') // TODO: Log errors
         .then((balance) => ({
