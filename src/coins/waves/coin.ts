@@ -55,7 +55,9 @@ export class WavesCoin extends Coin {
     const address = this.getAddress(account);
     let txList = await this.api.transactions.fetchTransactions(address, offset + limit);
 
-    return txList.slice(offset, offset + limit).map((tx) => {
+    return txList.slice(offset, offset + limit).map((transaction) => {
+      const tx = transaction as any; // FIXME: type handling, there are multiple types of tx
+
       let to, from;
       if (tx.recipient) {
         to = tx.recipient;
