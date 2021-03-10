@@ -1,48 +1,141 @@
 import { Observable } from 'rxjs';
+import { nodeInteraction, broadcast, transfer } from "@waves/waves-transactions";
+import { create } from '@waves/node-api-js';
+
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Config } from './config';
-import { Transaction, TxFee } from '../transaction';
+import { Transaction, TxFee, TxStatus } from '../transaction';
+import { AccountCache } from './account';
+
+const POLL_INTERVAL = 10 * 60 * 1000;
+const TX_LIMIT = 10;
 
 export class WavesCoin extends Coin {
-  private mnemonic: string;
   private config: Config;
+  private accounts: AccountCache;
+  private api: ReturnType<typeof create>;
+  private lastTxTimestamps: number[] = [];
 
   constructor(mnemonic: string, config: Config) {
-    super();
+    super(mnemonic);
     this.mnemonic = mnemonic;
     this.config = config;
+    this.api = create(config.nodeUrl);
   }
 
   getPrivateKey(account: number): string {
-    return 'TODO';
+    return this.accounts.getOrCreate(account).privateKey;
   }
+
   getPublicKey(account: number): string {
-    return 'TODO';
+    return this.accounts.getOrCreate(account).publicKey;
   }
+
   getAddress(account: number): string {
-    return 'TODO';
+    return this.accounts.getOrCreate(account).address;
   }
+
   async getBalance(account: number): Promise<string> {
-    return '0';
+    const balance = await nodeInteraction.balance(this.getAddress(account), this.config.nodeUrl);
+    return balance.toString();
   }
-  transfer(account: number, to: string, amount: string): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async transfer(account: number, to: string, amount: string): Promise<void> {
+    const money = {
+      recipient: to,
+      amount,
+    }
+
+    const transferTx = transfer(money, { privateKey: this.getPrivateKey(account) });
+    await broadcast(transferTx, this.config.nodeUrl);
   }
-  getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]> {
-    throw new Error('Method not implemented.');
+
+  async getTransactions(account: number, limit: number = 10, offset: number = 0): Promise<Transaction[]> {
+    const address = this.getAddress(account);
+    let txList = await this.api.transactions.fetchTransactions(address, offset + limit);
+
+    return txList.slice(offset, offset + limit).map((tx) => {
+      let to, from;
+      if (tx.recipient) {
+        to = tx.recipient;
+        from = tx.sender;
+      } else if (tx.sender === address) {
+        to = tx.sender;
+        from = address;
+      } else {
+        to = address;
+        from = tx.sender;
+      }
+
+      return {
+        hash: tx.id,
+        blockHash: '', // FIXME
+        status: TxStatus.Completed, // FIXME: get tx status
+        amount: tx.amount,
+        from,
+        to,
+        timestamp: tx.timestamp,
+      };
+    });
   }
-  subscribe(account: number): Promise<Observable<Transaction>> {
-    throw new Error('Method not implemented.');
+
+  public async subscribe(account: number): Promise<Observable<Transaction>> {
+    const latestTxs = await this.getTransactions(1);
+
+    if (latestTxs.length == 1) {
+      this.lastTxTimestamps[account] = latestTxs[0].timestamp;
+    }
+
+    return new Observable(subscriber => {
+      const interval = setInterval(async () => {
+        try {
+          const txs = await this.fetchNewTransactions(account, TX_LIMIT, 0);
+
+          for (const tx of txs) {
+            subscriber.next(tx);
+          }
+        } catch (e) {
+          subscriber.error(e);
+        }
+      }, POLL_INTERVAL);
+
+      return function unsubscribe() {
+        clearInterval(interval);
+      }
+    });
   }
+
+  private async fetchNewTransactions(account: number, limit: number, offset: number): Promise<Transaction[]> {
+    const txs = await this.getTransactions(account, limit, offset);
+    const txIdx = txs.findIndex(tx => tx.timestamp === this.lastTxTimestamps[account]);
+
+    if (txIdx == -1) {
+      const otherTxs = await this.fetchNewTransactions(account, limit, offset + limit);
+      txs.concat(otherTxs);
+      return txs;
+    } else if (txIdx > 0) {
+      return txs.slice(0, txIdx);
+    }
+
+    return [];
+  }
+
   toBaseUnit(amount: string): string {
-    throw new Error('Method not implemented.');
+    return (parseFloat(amount) * 10000000).toString();
   }
+
   fromBaseUnit(amount: string): string {
-    throw new Error('Method not implemented.');
+    return (parseInt(amount) / 10000000).toString();
   }
-  estimateTxFee(): Promise<TxFee> {
-    throw new Error('Method not implemented.');
+
+  // TODO: Estimate fee for private transactions
+  async estimateTxFee(): Promise<TxFee> {
+    return {
+      gas: '1',
+      gasPrice: '100000',
+      fee: '100000',
+    };
   }
 
   public getCoinType(): CoinType {
