@@ -4,8 +4,10 @@ import { CoinType } from '../coin-type';
 import { Config } from './config';
 import { Transaction, TxFee } from '../transaction';
 export declare class WavesCoin extends Coin {
-    private mnemonic;
     private config;
+    private accounts;
+    private api;
+    private lastTxTimestamps;
     constructor(mnemonic: string, config: Config);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
@@ -14,6 +16,7 @@ export declare class WavesCoin extends Coin {
     transfer(account: number, to: string, amount: string): Promise<void>;
     getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
     subscribe(account: number): Promise<Observable<Transaction>>;
+    private fetchNewTransactions;
     toBaseUnit(amount: string): string;
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
