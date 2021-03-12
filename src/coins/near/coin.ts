@@ -21,7 +21,7 @@ const TX_LIMIT = 10;
 export class NearCoin extends Coin {
   private keyStore: KeyStore;
   private config: Config;
-  private lastTxTimestamp: number = 0;
+  private lastTxTimestamps: number[] = [];
   private rpc: JsonRpcProvider;
   private accounts: AccountCache;
   private mnemonic: string;
@@ -67,8 +67,6 @@ export class NearCoin extends Coin {
   }
 
   public async getTransactions(accountIndex: number, limit?: number, offset?: number): Promise<Transaction[]> {
-    const account = await this.accounts.getOrInit(this.mnemonic, accountIndex, this.config, this.keyStore);
-
     const url = new URL(`/account/${this.getAddress(accountIndex)}/activity`, this.config.explorerUrl);
 
     if (limit) {
@@ -103,17 +101,17 @@ export class NearCoin extends Coin {
     return txs;
   }
 
-  public async subscribe(): Promise<Observable<Transaction>> {
+  public async subscribe(account: number): Promise<Observable<Transaction>> { // FIXME: Use account index
     const latestTxs = await this.getTransactions(1);
 
     if (latestTxs.length == 1) {
-      this.lastTxTimestamp = latestTxs[0].timestamp;
+      this.lastTxTimestamps[account] = latestTxs[0].timestamp;
     }
 
     return new Observable(subscriber => {
       const interval = setInterval(async () => {
         try {
-          const txs = await this.fetchNewTransactions(TX_LIMIT, 0);
+          const txs = await this.fetchNewTransactions(account, TX_LIMIT, 0);
 
           for (const tx of txs) {
             subscriber.next(tx);
@@ -129,12 +127,12 @@ export class NearCoin extends Coin {
     });
   }
 
-  private async fetchNewTransactions(limit: number, offset: number): Promise<Transaction[]> {
-    const txs = await this.getTransactions(limit, offset);
-    const txIdx = txs.findIndex(tx => tx.timestamp === this.lastTxTimestamp);
+  private async fetchNewTransactions(account: number, limit: number, offset: number): Promise<Transaction[]> {
+    const txs = await this.getTransactions(account, limit, offset);
+    const txIdx = txs.findIndex(tx => tx.timestamp === this.lastTxTimestamps[account]);
 
     if (txIdx == -1) {
-      const otherTxs = await this.fetchNewTransactions(limit, offset + limit);
+      const otherTxs = await this.fetchNewTransactions(account, limit, offset + limit);
       txs.concat(otherTxs);
       return txs;
     } else if (txIdx > 0) {
