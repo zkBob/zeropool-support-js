@@ -6,10 +6,9 @@ import { CoinType } from '../coin-type';
 export declare class NearCoin extends Coin {
     private keyStore;
     private config;
-    private lastTxTimestamp;
+    private lastTxTimestamps;
     private rpc;
     private accounts;
-    private mnemonic;
     constructor(mnemonic: string, config: Config);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
@@ -21,7 +20,7 @@ export declare class NearCoin extends Coin {
      */
     transfer(accountIndex: number, to: string, amount: string): Promise<void>;
     getTransactions(accountIndex: number, limit?: number, offset?: number): Promise<Transaction[]>;
-    subscribe(): Promise<Observable<Transaction>>;
+    subscribe(account: number): Promise<Observable<Transaction>>;
     private fetchNewTransactions;
     /**
      * Convert human-readable NEAR to yoctoNEAR

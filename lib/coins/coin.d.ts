@@ -9,6 +9,9 @@ export declare abstract class Coin {
     abstract getPrivateKey(account: number): string;
     abstract getPublicKey(account: number): string;
     abstract getAddress(account: number): string;
+    protected mnemonic: string;
+    constructor(mnemonic: string);
+    getPrivateAddress(account: number, index: number): string;
     /**
      * Get native coin balance.
      */

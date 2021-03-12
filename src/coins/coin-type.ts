@@ -1,3 +1,5 @@
+export const ZEROPOOL_PURPOSE = 2448;
+
 // Using strings here for better debuggability
 export enum CoinType {
   ethereum = 'ethereum',
@@ -10,15 +12,16 @@ export namespace CoinType {
     return CoinType.chainPath(coin) + CoinType.accountPath(coin, account);
   }
 
+  export function privateDerivationPath(coin: CoinType, account: number): string {
+    return CoinType.privateChainPath(coin) + CoinType.accountPath(coin, account);
+  }
+
   export function chainPath(coin: CoinType): string {
-    switch (coin) {
-      case CoinType.ethereum:
-        return `m/44'/60'`;
-      case CoinType.near:
-        return `m/44'/397'`;
-      case CoinType.waves:
-        return `m/44'/5741564'`
-    }
+    return `m/44'/${CoinType.coinNumber(coin)}'`;
+  }
+
+  export function privateChainPath(coin: CoinType): string {
+    return `m/${ZEROPOOL_PURPOSE}'/${CoinType.coinNumber(coin)}'`;
   }
 
   export function accountPath(coin: CoinType, account: number): string {

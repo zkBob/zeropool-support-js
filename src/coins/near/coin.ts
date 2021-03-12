@@ -24,10 +24,9 @@ export class NearCoin extends Coin {
   private lastTxTimestamps: number[] = [];
   private rpc: JsonRpcProvider;
   private accounts: AccountCache;
-  private mnemonic: string;
 
   constructor(mnemonic: string, config: Config) {
-    super();
+    super(mnemonic);
     this.mnemonic = mnemonic;
     this.keyStore = new InMemoryKeyStore();
     this.config = config;

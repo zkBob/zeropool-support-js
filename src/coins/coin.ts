@@ -1,6 +1,7 @@
 import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
 import { CoinType } from './coin-type';
+import { Pubkey } from 'hdwallet-babyjub';
 
 export class Balance {
   public address: string;
@@ -11,6 +12,24 @@ export abstract class Coin {
   abstract getPrivateKey(account: number): string;
   abstract getPublicKey(account: number): string;
   abstract getAddress(account: number): string;
+
+  protected mnemonic: string;
+
+  constructor(mnemonic: string) {
+    this.mnemonic = mnemonic;
+  }
+
+  getPrivateAddress(account: number, index: number): string {
+    const path = CoinType.privateDerivationPath(this.getCoinType(), account);
+    console.warn('TODO getPrivateAddress');
+
+    const { K } = Pubkey(this.mnemonic, path);
+
+    // TODO: Derive with libzeropool-wasm
+    // const { k } = Privkey(this.mnemonic, path);
+
+    return '';
+  }
 
   /**
    * Get native coin balance.
