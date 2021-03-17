@@ -2,14 +2,14 @@ import bip39 from 'bip39-light';
 import Web3 from 'web3';
 import { Account } from 'web3-core';
 
-import { preprocessMnemonic, HDKey } from '../../utils';
+import { preprocessMnemonic, Secp256k1HDKey } from '../../utils';
 import { CoinType } from '../coin-type';
 
 export class CachedAccount {
   public account: Account;
-  public keypair: HDKey;
+  public keypair: Secp256k1HDKey;
 
-  constructor(keypair: HDKey, web3: Web3) {
+  constructor(keypair: Secp256k1HDKey, web3: Web3) {
     this.keypair = keypair;
     const privateKey = '0x' + this.keypair.privateKey.toString('hex');
     this.account = web3.eth.accounts.privateKeyToAccount(privateKey);
@@ -17,7 +17,7 @@ export class CachedAccount {
 }
 
 export class AccountCache {
-  private root: HDKey;
+  private root: Secp256k1HDKey;
   private accounts: CachedAccount[] = [];
   private web3: Web3;
 
@@ -30,7 +30,7 @@ export class AccountCache {
     const path = CoinType.chainPath(CoinType.ethereum);
     const seed = bip39.mnemonicToSeed(processed);
 
-    const hdkey = HDKey.fromMasterSeed(seed);
+    const hdkey = Secp256k1HDKey.fromMasterSeed(seed);
     this.root = hdkey.derive(path);
     this.web3 = web3;
   }

@@ -1,10 +1,10 @@
 import Web3 from 'web3';
 import { Account } from 'web3-core';
-import { HDKey } from '../../utils';
+import { Secp256k1HDKey } from '../../utils';
 export declare class CachedAccount {
     account: Account;
-    keypair: HDKey;
-    constructor(keypair: HDKey, web3: Web3);
+    keypair: Secp256k1HDKey;
+    constructor(keypair: Secp256k1HDKey, web3: Web3);
 }
 export declare class AccountCache {
     private root;

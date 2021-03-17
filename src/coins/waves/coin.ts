@@ -53,6 +53,7 @@ export class WavesCoin extends Coin {
 
   async getTransactions(account: number, limit: number = 10, offset: number = 0): Promise<Transaction[]> {
     const address = this.getAddress(account);
+    // TODO: Find a more efficient way to fetch the transaction log with an offset
     let txList = await this.api.transactions.fetchTransactions(address, offset + limit);
 
     return txList.slice(offset, offset + limit).map((transaction) => {
