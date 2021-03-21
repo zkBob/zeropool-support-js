@@ -28,4 +28,17 @@ export declare class EthereumCoin extends Coin {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     getCoinType(): CoinType;
+    /**
+     * Scans blocks for account transactions (both from and to).
+     * @param startBlockNumber
+     * @param endBlockNumber
+     * @param batchSize maximum number of parallel scans
+     */
+    private fetchAccountTransactions;
+    /**
+     * Scan block for account transactions.
+     * @param address
+     * @param blockNumber
+     */
+    private scanBlock;
 }

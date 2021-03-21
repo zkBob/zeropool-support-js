@@ -13,6 +13,7 @@ import { AccountCache } from './account';
 
 const TX_CHECK_INTERVAL = 10 * 1000; // TODO: What's the optimal interval for this?
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
+const MAX_SCAN_TASKS = 100;
 
 export class EthereumCoin extends Coin {
   private web3: Web3;
@@ -173,29 +174,54 @@ export class EthereumCoin extends Coin {
     return CoinType.ethereum;
   }
 
-  // /**
-  //  * Scans blocks for account transactions (both from and to)
-  //  * @param startBlockNumber
-  //  * @param endBlockNumber
-  //  */
-  // private async fetchAccountTransactions(account: number, startBlockNumber: number, endBlockNumber: number): Promise<Transaction[]> {
-  //   const address = this.getAddress(account);
-  //   let transactions: Transaction[] = [];
+  /**
+   * Scans blocks for account transactions (both from and to).
+   * @param startBlockNumber
+   * @param endBlockNumber
+   * @param batchSize maximum number of parallel scans
+   */
+  private async fetchAccountTransactions(account: number, startBlockNumber: number, endBlockNumber: number, batchSize: number = MAX_SCAN_TASKS): Promise<Transaction[]> {
+    if (endBlockNumber > startBlockNumber) {
+      throw new Error('startBlockNumber must be higher than endBlockNumber');
+    }
 
-  //   // TODO: Parallelize scan
-  //   for (let i = startBlockNumber; i >= endBlockNumber; --i) {
-  //     const block = await this.web3.eth.getBlock(i, true);
-  //     if (block != null && block.transactions != null) {
-  //       for (const tx of block.transactions) {
-  //         if (address == tx.from || address == tx.to) {
-  //           const timestamp = (typeof block.timestamp == 'string') ? parseInt(block.timestamp) : block.timestamp;
-  //           const newTx = convertTransaction(tx, timestamp);
-  //           transactions.push(newTx);
-  //         }
-  //       }
-  //     }
-  //   }
+    const address = this.getAddress(account);
+    let transactions: Transaction[] = [];
 
-  //   return transactions;
-  // }
+    for (let batch = 0; batch < startBlockNumber - endBlockNumber; batch += batchSize) {
+      let promises: Promise<Transaction[]>[] = [];
+      for (let currentBlock = startBlockNumber - batch * batchSize; currentBlock >= endBlockNumber - batch * batchSize; --currentBlock) {
+        promises.push(this.scanBlock(address, currentBlock));
+      }
+
+      const results = await Promise.all(promises);
+      for (let txs of results) {
+        transactions.push(...txs);
+      }
+    }
+
+    return transactions;
+  }
+
+  /**
+   * Scan block for account transactions.
+   * @param address
+   * @param blockNumber
+   */
+  private async scanBlock(address: string, blockNumber: number): Promise<Transaction[]> {
+    let transactions: Transaction[] = [];
+
+    const block = await this.web3.eth.getBlock(blockNumber, true);
+    if (block != null && block.transactions != null) {
+      for (const tx of block.transactions) {
+        if (address == tx.from || address == tx.to) {
+          const timestamp = (typeof block.timestamp == 'string') ? parseInt(block.timestamp) : block.timestamp;
+          const newTx = convertTransaction(tx, timestamp);
+          transactions.push(newTx);
+        }
+      }
+    }
+
+    return transactions;
+  }
 }
