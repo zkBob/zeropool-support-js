@@ -160,10 +160,10 @@ export class NearCoin extends Coin {
     const status = await account.account!.connection.provider.status();
     const latestBlock = status.sync_info.latest_block_hash;
 
-    const res = (await this.rpc.sendJsonRpc('gas_price', [latestBlock])).gas_price;
+    const res = await this.rpc.gasPrice(latestBlock);
 
-    const gasPrice = new BN(res);
-    const gas = new BN('30000000000000'); // FIXME
+    const gasPrice = new BN(res.gas_price);
+    const gas = new BN('30000000000000');
     const fee = gas.mul(gasPrice).toString();
     const feeFormatted = formatNearAmount(fee);
 

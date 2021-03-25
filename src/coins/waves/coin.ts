@@ -22,6 +22,7 @@ export class WavesCoin extends Coin {
     this.mnemonic = mnemonic;
     this.config = config;
     this.api = create(config.nodeUrl);
+    this.accounts = new AccountCache(mnemonic);
   }
 
   getPrivateKey(account: number): string {
