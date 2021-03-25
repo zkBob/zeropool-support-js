@@ -1,4 +1,5 @@
-import { Config } from "./config";
+import { Config } from './config';
+import { ChainId as WavesChainId } from './coins/waves/config';
 
 const config: Config = {
   near: {
@@ -14,6 +15,7 @@ const config: Config = {
   },
   waves: {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',
+    chainId: WavesChainId.Testnet,
   },
 }
 
