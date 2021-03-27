@@ -43,12 +43,12 @@ export class WavesCoin extends Coin {
   }
 
   async transfer(account: number, to: string, amount: string): Promise<void> {
-    const money = {
+    const txParams = {
       recipient: to,
       amount,
     }
 
-    const transferTx = transfer(money, { privateKey: this.getPrivateKey(account) });
+    const transferTx = transfer(txParams, { privateKey: this.getPrivateKey(account) });
     await broadcast(transferTx, this.config.nodeUrl);
   }
 

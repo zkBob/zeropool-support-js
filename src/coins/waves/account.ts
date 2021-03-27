@@ -28,7 +28,7 @@ export class CachedAccount {
   }
 
   get privateKey(): string {
-    return bs58.encode(Buffer.from(this.keypair.secretKey));
+    return bs58.encode(Buffer.from(this.keypair.secretKey.slice(0, 32)));
   }
 
   get publicKey(): string {
