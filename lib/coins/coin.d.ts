@@ -1,5 +1,5 @@
-import { Transaction, TxFee } from './transaction';
 import { Observable } from 'rxjs';
+import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
 export declare class Balance {
     address: string;
@@ -11,7 +11,7 @@ export declare abstract class Coin {
     abstract getAddress(account: number): string;
     protected mnemonic: string;
     constructor(mnemonic: string);
-    getPrivateAddress(account: number, index: number): string;
+    generatePrivateAddress(account: number): string;
     /**
      * Get native coin balance.
      */
