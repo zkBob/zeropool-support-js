@@ -3,7 +3,7 @@ import { generateMnemonic } from 'zeropool-api-js/lib/utils';
 
 async function example() {
   const mnemonic = generateMnemonic();
-  const hdWallet = new HDWallet(mnemonic, { [CoinType.near]: 1 }, devConfig);
+  const hdWallet = new HDWallet(mnemonic, [CoinType.near], devConfig);
 
   const near = hdWallet.getCoin(CoinType.near, 0);
   let balance = await near.getBalance();

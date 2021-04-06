@@ -1,4 +1,4 @@
-export declare class Config {
+export interface Config {
     networkId: string;
     nodeUrl: string;
     walletUrl?: string;

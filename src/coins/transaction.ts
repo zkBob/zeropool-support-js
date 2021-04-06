@@ -4,7 +4,7 @@ export enum TxStatus {
   Error,
 }
 
-export class Transaction {
+export interface Transaction {
   hash: string;
   blockHash: string;
   status: TxStatus;
@@ -15,7 +15,7 @@ export class Transaction {
   timestamp: number;
 }
 
-export class TxFee {
+export interface TxFee {
   gas: string;
   gasPrice: string;
   fee: string;

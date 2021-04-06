@@ -3,7 +3,7 @@ export declare enum TxStatus {
     Pending = 1,
     Error = 2
 }
-export declare class Transaction {
+export interface Transaction {
     hash: string;
     blockHash: string;
     status: TxStatus;
@@ -13,7 +13,7 @@ export declare class Transaction {
     /** UNIX timestamp in seconds */
     timestamp: number;
 }
-export declare class TxFee {
+export interface TxFee {
     gas: string;
     gasPrice: string;
     fee: string;
