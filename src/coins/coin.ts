@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import { Pubkey } from 'hdwallet-babyjub';
 import { deriveAddress } from 'libzeropool-wasm';
 
 import { Transaction, TxFee } from './transaction';
