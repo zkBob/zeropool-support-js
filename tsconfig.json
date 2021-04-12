@@ -4,7 +4,7 @@
     "strictNullChecks": true,
     "target": "es5",
     "outDir": "lib",
-    "module": "commonjs",
+    "module": "ES2020",
     "moduleResolution": "node",
     "sourceMap": true,
     "esModuleInterop": true,
