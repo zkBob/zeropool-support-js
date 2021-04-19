@@ -81,6 +81,12 @@ export class EthereumCoin extends Coin {
   }
 
   public async getTransactions(account: number, limit: number, offset: number): Promise<Transaction[]> {
+    const numTx = await this.web3.eth.getTransactionCount(this.getAddress(account));
+
+    if (numTx === 0) {
+      return [];
+    }
+
     const txs = this.txStorage.list(this.getAddress(account));
     return txs.slice(offset, offset + limit);
   }
