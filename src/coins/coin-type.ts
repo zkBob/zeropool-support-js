@@ -12,15 +12,11 @@ export namespace CoinType {
     return CoinType.chainPath(coin) + CoinType.accountPath(coin, account);
   }
 
-  export function privateDerivationPath(coin: CoinType, account: number): string {
-    return CoinType.privateChainPath(coin) + CoinType.accountPath(coin, account);
-  }
-
   export function chainPath(coin: CoinType): string {
     return `m/44'/${CoinType.coinNumber(coin)}'`;
   }
 
-  export function privateChainPath(coin: CoinType): string {
+  export function privateDerivationPath(coin: CoinType): string {
     return `m/${ZEROPOOL_PURPOSE}'/${CoinType.coinNumber(coin)}'`;
   }
 

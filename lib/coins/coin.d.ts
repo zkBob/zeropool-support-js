@@ -11,7 +11,7 @@ export declare abstract class Coin {
     abstract getAddress(account: number): string;
     protected mnemonic: string;
     constructor(mnemonic: string);
-    generatePrivateAddress(account: number): string;
+    generatePrivateAddress(): string;
     /**
      * Get native coin balance.
      */

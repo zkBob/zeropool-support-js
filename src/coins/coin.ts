@@ -21,9 +21,9 @@ export abstract class Coin {
     this.mnemonic = mnemonic;
   }
 
-  generatePrivateAddress(account: number): string {
-    const path = CoinType.privateDerivationPath(this.getCoinType(), account);
-    const pair = deriveEd25519(path, this.mnemonic, account);
+  generatePrivateAddress(): string {
+    const path = CoinType.privateDerivationPath(this.getCoinType());
+    const pair = deriveEd25519(path, this.mnemonic);
 
     return deriveAddress(pair.publicKey);
   }

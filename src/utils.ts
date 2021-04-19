@@ -18,7 +18,7 @@ export function generateMnemonic(): string {
   return bip39.generateMnemonic();
 }
 
-export function deriveEd25519(path: string, mnemonic: string, account: number): SignKeyPair {
+export function deriveEd25519(path: string, mnemonic: string): SignKeyPair {
   const processed = preprocessMnemonic(mnemonic);
   const seed = bip39.mnemonicToSeed(processed);
   const { key } = derivePath(path, seed.toString('hex'));
