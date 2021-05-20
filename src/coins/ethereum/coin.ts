@@ -1,7 +1,10 @@
 import Web3 from 'web3';
-
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
 import { Observable } from 'rxjs';
 import BN from 'bn.js';
+import { decryptNote, decryptPair } from 'libzeropool-wasm';
+import bs64 from 'base64-js';
 
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
@@ -10,16 +13,20 @@ import { convertTransaction } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
+import contract from './Pool.json';
 
-const TX_CHECK_INTERVAL = 10 * 1000; // TODO: What's the optimal interval for this?
+const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 const MAX_SCAN_TASKS = 100;
+const ABI = contract.abi as AbiItem[];
 
 export class EthereumCoin extends Coin {
   private web3: Web3;
   private web3ws: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
+  private contract: Contract;
+  private config: Config;
 
   constructor(mnemonic: string, config: Config) {
     super(mnemonic);
@@ -27,6 +34,12 @@ export class EthereumCoin extends Coin {
     this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
+    this.contract = new this.web3.eth.Contract(ABI, config.contractAddress);
+    this.config = config;
+  }
+
+  public async init() {
+    await this.fetchNotes();
   }
 
   public getPrivateKey(account: number): string {
@@ -178,6 +191,44 @@ export class EthereumCoin extends Coin {
 
   public getCoinType(): CoinType {
     return CoinType.ethereum;
+  }
+
+  public async deposit() {
+    this.contract.methods.deposit();
+  }
+
+  private async fetchNotes() {
+    const sk = this.getPrivateSecretKey();
+    const events = await this.contract.getPastEvents('allEvents', {
+      fromBlock: this.config.contractBlock,
+      toBlock: 'latest'
+    });
+
+    for (const event of events) {
+      const message = event.raw.data;
+      const data = bs64.toByteArray(message);
+
+      try {
+        // FIXME: Mind offset
+        // FIXME: Go through all commitments
+        const pair = decryptPair(data, sk);
+        if (pair) {
+          // TODO: Update account if needed
+          // Store note
+        } else {
+          const note = decryptNote(data, sk);
+
+          if (!note) {
+            continue;
+          }
+
+          // TODO: Store note
+        }
+
+      } catch (e) {
+        continue;
+      }
+    }
   }
 
   /**

@@ -1,0 +1,641 @@
+{
+    "_format": "hh-sol-artifact-1",
+    "contractName": "Pool",
+    "sourceName": "contracts/Pool.sol",
+    "abi": [
+        {
+            "inputs": [
+                {
+                    "internalType": "contract IParameters",
+                    "name": "_params",
+                    "type": "address"
+                },
+                {
+                    "internalType": "contract IERC20",
+                    "name": "_token",
+                    "type": "address"
+                },
+                {
+                    "internalType": "contract IMintable",
+                    "name": "_voucher_token",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_denominator",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "contract IOperatorManager",
+                    "name": "_operatorManager",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "bytes",
+                    "name": "message",
+                    "type": "bytes"
+                }
+            ],
+            "name": "Message",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "denominator",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "bytes1[152]",
+                    "name": "pub",
+                    "type": "bytes1[152]"
+                },
+                {
+                    "internalType": "bytes1[4]",
+                    "name": "data",
+                    "type": "bytes1[4]"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "message",
+                    "type": "bytes"
+                },
+                {
+                    "components": [
+                        {
+                            "internalType": "uint8",
+                            "name": "v",
+                            "type": "uint8"
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "r",
+                            "type": "bytes32"
+                        },
+                        {
+                            "internalType": "bytes32",
+                            "name": "s",
+                            "type": "bytes32"
+                        }
+                    ],
+                    "internalType": "struct Pool.Signature",
+                    "name": "sign",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "newRoot",
+                    "type": "uint256"
+                },
+                {
+                    "components": [
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "A",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "X",
+                                    "type": "uint256[2]"
+                                },
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "Y",
+                                    "type": "uint256[2]"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G2Point",
+                            "name": "B",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "C",
+                            "type": "tuple"
+                        }
+                    ],
+                    "internalType": "struct Groth16.Proof",
+                    "name": "txProof",
+                    "type": "tuple"
+                },
+                {
+                    "components": [
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "A",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "X",
+                                    "type": "uint256[2]"
+                                },
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "Y",
+                                    "type": "uint256[2]"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G2Point",
+                            "name": "B",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "C",
+                            "type": "tuple"
+                        }
+                    ],
+                    "internalType": "struct Groth16.Proof",
+                    "name": "treeProof",
+                    "type": "tuple"
+                }
+            ],
+            "name": "deposit",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "nullifiers",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "operatorManager",
+            "outputs": [
+                {
+                    "internalType": "contract IOperatorManager",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "params",
+            "outputs": [
+                {
+                    "internalType": "contract IParameters",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "roots",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "token",
+            "outputs": [
+                {
+                    "internalType": "contract IERC20",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "bytes1[152]",
+                    "name": "pub",
+                    "type": "bytes1[152]"
+                },
+                {
+                    "internalType": "bytes1[4]",
+                    "name": "data",
+                    "type": "bytes1[4]"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "message",
+                    "type": "bytes"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "newRoot",
+                    "type": "uint256"
+                },
+                {
+                    "components": [
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "A",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "X",
+                                    "type": "uint256[2]"
+                                },
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "Y",
+                                    "type": "uint256[2]"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G2Point",
+                            "name": "B",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "C",
+                            "type": "tuple"
+                        }
+                    ],
+                    "internalType": "struct Groth16.Proof",
+                    "name": "txProof",
+                    "type": "tuple"
+                },
+                {
+                    "components": [
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "A",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "X",
+                                    "type": "uint256[2]"
+                                },
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "Y",
+                                    "type": "uint256[2]"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G2Point",
+                            "name": "B",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "C",
+                            "type": "tuple"
+                        }
+                    ],
+                    "internalType": "struct Groth16.Proof",
+                    "name": "treeProof",
+                    "type": "tuple"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "txnumber",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "voucher_token",
+            "outputs": [
+                {
+                    "internalType": "contract IMintable",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "bytes1[152]",
+                    "name": "pub",
+                    "type": "bytes1[152]"
+                },
+                {
+                    "internalType": "bytes1[60]",
+                    "name": "data",
+                    "type": "bytes1[60]"
+                },
+                {
+                    "internalType": "bytes",
+                    "name": "message",
+                    "type": "bytes"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "newRoot",
+                    "type": "uint256"
+                },
+                {
+                    "components": [
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "A",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "X",
+                                    "type": "uint256[2]"
+                                },
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "Y",
+                                    "type": "uint256[2]"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G2Point",
+                            "name": "B",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "C",
+                            "type": "tuple"
+                        }
+                    ],
+                    "internalType": "struct Groth16.Proof",
+                    "name": "txProof",
+                    "type": "tuple"
+                },
+                {
+                    "components": [
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "A",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "X",
+                                    "type": "uint256[2]"
+                                },
+                                {
+                                    "internalType": "uint256[2]",
+                                    "name": "Y",
+                                    "type": "uint256[2]"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G2Point",
+                            "name": "B",
+                            "type": "tuple"
+                        },
+                        {
+                            "components": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "X",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "Y",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "internalType": "struct Pairing.G1Point",
+                            "name": "C",
+                            "type": "tuple"
+                        }
+                    ],
+                    "internalType": "struct Groth16.Proof",
+                    "name": "treeProof",
+                    "type": "tuple"
+                }
+            ],
+            "name": "withdraw",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "payable",
+            "type": "function"
+        }
+    ],
+    "linkReferences": {},
+    "deployedLinkReferences": {}
+}

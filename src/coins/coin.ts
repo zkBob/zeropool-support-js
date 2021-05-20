@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { deriveAddress } from 'libzeropool-wasm';
+import { deriveAddress, deriveSecretKey } from 'libzeropool-wasm';
 
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
@@ -26,6 +26,13 @@ export abstract class Coin {
     const pair = deriveEd25519(path, this.mnemonic);
 
     return deriveAddress(pair.publicKey);
+  }
+
+  getPrivateSecretKey(): Uint8Array {
+    const path = CoinType.privateDerivationPath(this.getCoinType());
+    const pair = deriveEd25519(path, this.mnemonic);
+
+    return deriveSecretKey(pair.secretKey);
   }
 
   /**
@@ -90,4 +97,8 @@ export abstract class Coin {
   abstract estimateTxFee(): Promise<TxFee>;
 
   abstract getCoinType(): CoinType;
+
+  async getNotes(): Promise<[string]> {
+    throw new Error('unimplemented');
+  }
 }

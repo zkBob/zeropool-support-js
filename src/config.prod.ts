@@ -12,6 +12,8 @@ const config: Config = {
   ethereum: {
     httpProviderUrl: 'https://main-rpc.linkpool.io',
     wsProviderUrl: 'wss://main.eth.linkpool.io/ws',
+    contractAddress: '',
+    contractBlock: 0,
   },
   waves: {
     nodeUrl: 'https://nodes.wavesplatform.com',

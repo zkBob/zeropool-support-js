@@ -12,6 +12,8 @@ const config: Config = {
   ethereum: {
     httpProviderUrl: 'https://kovan.infura.io/v3/e3c6db75d33d410aa2271816551817a7',
     wsProviderUrl: 'wss://kovan.infura.io/ws/v3/e3c6db75d33d410aa2271816551817a7',
+    contractAddress: '',
+    contractBlock: 0,
   },
   waves: {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',
