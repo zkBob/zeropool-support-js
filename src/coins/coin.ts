@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { deriveAddress, deriveSecretKey } from 'libzeropool-wasm';
+import { AccountContext, deriveSecretKey } from 'libzeropool-wasm';
 
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
@@ -16,16 +16,17 @@ export abstract class Coin {
   abstract getAddress(account: number): string;
 
   protected mnemonic: string;
+  protected privateAccount: AccountContext;
 
   constructor(mnemonic: string) {
     this.mnemonic = mnemonic;
+
+    const sk = this.getPrivateSecretKey();
+    this.privateAccount = new AccountContext(sk);
   }
 
   generatePrivateAddress(): string {
-    const path = CoinType.privateDerivationPath(this.getCoinType());
-    const pair = deriveEd25519(path, this.mnemonic);
-
-    return deriveAddress(pair.publicKey);
+    return this.privateAccount.deriveNewAddress();
   }
 
   getPrivateSecretKey(): Uint8Array {

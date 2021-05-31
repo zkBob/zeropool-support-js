@@ -8,7 +8,10 @@ export declare class EthereumCoin extends Coin {
     private web3ws;
     private txStorage;
     private accounts;
+    private contract;
+    private config;
     constructor(mnemonic: string, config: Config);
+    init(): Promise<void>;
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
     getAddress(account: number): string;
@@ -28,6 +31,8 @@ export declare class EthereumCoin extends Coin {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     getCoinType(): CoinType;
+    deposit(): Promise<void>;
+    private fetchNotes;
     /**
      * Scans blocks for account transactions (both from and to).
      * @param startBlockNumber

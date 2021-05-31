@@ -3,7 +3,6 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 import { Observable } from 'rxjs';
 import BN from 'bn.js';
-import { decryptNote, decryptPair } from 'libzeropool-wasm';
 import bs64 from 'base64-js';
 
 import { Coin } from '../coin';
@@ -210,13 +209,12 @@ export class EthereumCoin extends Coin {
 
       try {
         // FIXME: Mind offset
-        // FIXME: Go through all commitments
-        const pair = decryptPair(data, sk);
+        const pair = this.privateAccount.decryptPair(data);
         if (pair) {
           // TODO: Update account if needed
           // Store note
         } else {
-          const note = decryptNote(data, sk);
+          const note = this.privateAccount.decryptNote(data);
 
           if (!note) {
             continue;
