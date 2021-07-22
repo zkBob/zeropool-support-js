@@ -38,7 +38,8 @@ export class EthereumCoin extends Coin {
   }
 
   public async init() {
-    await this.fetchNotes();
+    await super.init();
+    // await this.fetchNotes();
   }
 
   public getPrivateKey(account: number): string {
@@ -214,7 +215,7 @@ export class EthereumCoin extends Coin {
           // TODO: Update account if needed
           // Store note
         } else {
-          const note = this.privateAccount.decryptNote(data);
+          const note = this.privateAccount.decryptNotes(data);
 
           if (!note) {
             continue;

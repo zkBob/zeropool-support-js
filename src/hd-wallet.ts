@@ -12,13 +12,14 @@ export class HDWallet {
   private coins: { [key in CoinType]?: Coin; } = {};
   private config: Config;
 
-  constructor(seed: string, config: Config, coins: CoinType[]) {
+  constructor(seed: string, config: Config) {
     this.seed = seed;
     this.config = config;
+  }
 
-    for (const coin of coins) {
-      this.enableCoin(coin as CoinType);
-    }
+  public async init(coinTypes: CoinType[]) {
+    const promises = coinTypes.map(coin => this.enableCoin(coin as CoinType));
+    await Promise.all(promises);
   }
 
   public getRegularAddress(coinType: CoinType, account: number): string | undefined {
@@ -43,24 +44,29 @@ export class HDWallet {
     }, {});
   }
 
-  public enableCoin(coin: CoinType) {
-    switch (coin) {
+  public async enableCoin(coinType: CoinType) {
+    let coin: Coin;
+    switch (coinType) {
       case CoinType.near: {
-        this.coins[coin] = new NearCoin(this.seed, this.config.near);
+        coin = new NearCoin(this.seed, this.config.near);
         break;
       }
       case CoinType.ethereum: {
-        this.coins[coin] = new EthereumCoin(this.seed, this.config.ethereum);
+        coin = new EthereumCoin(this.seed, this.config.ethereum);
         break;
       }
       case CoinType.waves: {
-        this.coins[coin] = new WavesCoin(this.seed, this.config.waves);
+        coin = new WavesCoin(this.seed, this.config.waves);
         break;
       }
       default: {
-        throw new Error(`CoinType ${coin} is not implemented`);
+        throw new Error(`CoinType ${coinType} is not implemented`);
       }
     }
+
+    await coin.init();
+
+    this.coins[coinType] = coin;
   }
 
   public disableCoin(coin: CoinType) {
