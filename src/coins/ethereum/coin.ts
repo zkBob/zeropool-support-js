@@ -13,6 +13,7 @@ import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import contract from './Pool.json';
+import { Output } from 'libzeropool-rs-wasm-bundler';
 
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
@@ -193,12 +194,77 @@ export class EthereumCoin extends Coin {
     return CoinType.ethereum;
   }
 
-  public async deposit() {
-    this.contract.methods.deposit();
+  public async transferPrivate(account: number, outputs: Output[]): Promise<void> {
+    // await this.fetchNotes();
+
+    // const address = this.getAddress(0);
+    // const newPrivateAddress = this.privateAccount.generateAddress();
+
+    // // Check balance
+    // const totalOut = outputs.reduce((acc, cur) => {
+    //   const amount = BigInt(cur.amount);
+    //   return acc + amount;
+    // }, BigInt(0));
+
+    // const curBalance = BigInt(await this.getBalance(account));
+
+    // if (totalOut > curBalance) {
+    //   throw new Error('Cannot transfer more than you have');
+    // }
+
+    // // TODO: Check if there needs to be a merge
+
+    // // Create a transaction
+    // const txData = await this.privateAccount.createTx(outputs);
+
+    // // TODO: Check 
+    // // await this.contract.methods.transact().send({ from: address });
+
+    // const privateBalance = BigInt(this.getPrivateBalance());
+    // if (privateBalance < totalOut) {
+    //   const selector = Pool.interface.getSighash("transact"); // FIXME: Use ABI
+    //   const nullifier = txData.public.nullifier;
+    //   const out_commit = txData.public.out_commit;
+    //   const transfer_index = "000000000000";
+    //   const enery_amount = "0000000000000000000000000000";
+    //   const token_amount = "0000000000000000";
+    //   const transact_proof = rand_fr_hex_list(8);
+    //   const root_after = rand_fr_hex();
+    //   const tree_proof = rand_fr_hex_list(8);
+    //   const tx_type = "01"; // transaction
+    //   const memo_size = "30"; // memo block size
+    //   const memo_fee = "0000000000000000"; // here is smart contract level metadata, only fee for 01 type
+    //   const memo_message = rand_bigint_hex(parseInt(memo_size, 16) - memo_fee.length / 2); //here is encrypted tx metadata, used on client only
+
+    //   const data = [
+    //     selector, nullifier, out_commit, transfer_index, enery_amount, token_amount, transact_proof,
+    //     root_after, tree_proof,
+    //     tx_type,
+    //     memo_size, memo_fee, memo_message
+    //   ].join("");
+
+    //   await this.web3.eth.call({
+    //     from: address,
+    //     to: this.config.contractAddress,
+    //     data: '',
+    //     value: (totalOut - privateBalance).toString(),
+    //   })
+    // }
+
+    // await this.web3.eth.call({
+    //   from: address,
+    //   to: this.config.contractAddress,
+    //   data: '',
+    // })
+    console.log('TODO')
+  }
+
+  public getPrivateBalance(): string {
+    return this.privateAccount.totalBalance();
   }
 
   private async fetchNotes() {
-    const sk = this.getPrivateSecretKey();
+    const sk = this.getPrivateSpendingKey();
     const events = await this.contract.getPastEvents('allEvents', {
       fromBlock: this.config.contractBlock,
       toBlock: 'latest'
@@ -209,13 +275,16 @@ export class EthereumCoin extends Coin {
       const data = bs64.toByteArray(message);
 
       try {
-        // FIXME: Mind offset
         const pair = this.privateAccount.decryptPair(data);
+
         if (pair) {
           // TODO: Update account if needed
-          // Store note
+          // Store account
+
+          // this.privateAccount.addAccount();
         } else {
           const note = this.privateAccount.decryptNotes(data);
+          // this.privateAccount.addReceivedNote();
 
           if (!note) {
             continue;

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { UserAccount, deriveSecretKey, State } from 'libzeropool-wasm';
+import { UserAccount, reduceSpendingKey, UserState, Output } from 'libzeropool-rs-wasm-bundler';
 
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
@@ -23,9 +23,9 @@ export abstract class Coin {
   }
 
   async init(): Promise<void> {
-    const sk = this.getPrivateSecretKey();
+    const sk = this.getPrivateSpendingKey();
     const coinName = this.getCoinType();
-    const state = await State.init(`${coinName}.unique_user_id_here`); // FIXME: Replace with something user-specific (secret key hash?)
+    const state = await UserState.init(`${coinName}.unique_user_id_here`); // FIXME: Replace with something user-specific (secret key hash?)
 
     try {
       const acc = new UserAccount(sk, state);
@@ -39,11 +39,11 @@ export abstract class Coin {
     return this.privateAccount.generateAddress();
   }
 
-  getPrivateSecretKey(): Uint8Array {
+  getPrivateSpendingKey(): Uint8Array {
     const path = CoinType.privateDerivationPath(this.getCoinType());
     const pair = deriveEd25519(path, this.mnemonic); // FIXME: Derive on BabyJubJub
 
-    return deriveSecretKey(pair.secretKey.slice(0, 32));
+    return reduceSpendingKey(pair.secretKey.slice(0, 32));
   }
 
   /**
@@ -80,9 +80,17 @@ export abstract class Coin {
    */
   abstract transfer(account: number, to: string, amount: string): Promise<void>;
 
-  transferPrivate(account: number, to: string, amount: string): Promise<void> {
-    // 1. Deposit
-    // 2. Transfer
+  transferPrivate(account: number, outputs: Output[]): Promise<void> {
+    // 1. Merge unspent notes
+    // 2. Deposit, if needed
+    // 3. Transfer
+    throw new Error('unimplemented');
+  }
+
+  /**
+   * Get current total private balance (account + unspent notes).
+   */
+  getPrivateBalance(): string {
     throw new Error('unimplemented');
   }
 

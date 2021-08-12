@@ -3,6 +3,7 @@ import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee } from '../transaction';
 import { Config } from './config';
+import { Output } from 'libzeropool-rs-wasm-bundler';
 export declare class EthereumCoin extends Coin {
     private web3;
     private web3ws;
@@ -31,7 +32,8 @@ export declare class EthereumCoin extends Coin {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     getCoinType(): CoinType;
-    deposit(): Promise<void>;
+    transferPrivate(account: number, outputs: Output[]): Promise<void>;
+    getPrivateBalance(): string;
     private fetchNotes;
     /**
      * Scans blocks for account transactions (both from and to).

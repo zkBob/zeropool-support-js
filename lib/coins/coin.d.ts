@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { UserAccount } from 'libzeropool-wasm';
+import { UserAccount, Output } from 'libzeropool-rs-wasm-bundler';
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
 export declare class Balance {
@@ -15,7 +15,7 @@ export declare abstract class Coin {
     constructor(mnemonic: string);
     init(): Promise<void>;
     generatePrivateAddress(): string;
-    getPrivateSecretKey(): Uint8Array;
+    getPrivateSpendingKey(): Uint8Array;
     /**
      * Get native coin balance.
      */
@@ -32,7 +32,11 @@ export declare abstract class Coin {
      * @param amount as base unit
      */
     abstract transfer(account: number, to: string, amount: string): Promise<void>;
-    transferPrivate(account: number, to: string, amount: string): Promise<void>;
+    transferPrivate(account: number, outputs: Output[]): Promise<void>;
+    /**
+     * Get current total private balance (account + unspent notes).
+     */
+    getPrivateBalance(): string;
     /**
      * Fetch account transactions.
      */
