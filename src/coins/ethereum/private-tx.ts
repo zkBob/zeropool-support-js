@@ -1,5 +1,10 @@
-import { TransactionData, Proof, Params, SnarkProof, TreePub, TreeSec } from "libzeropool-rs-wasm-bundler";
-import Web3 from "web3";
+import { TransactionData, Proof, Params, SnarkProof, TreePub, TreeSec } from 'libzeropool-rs-wasm-bundler';
+import Web3 from 'web3';
+
+import { base64ToHex } from '../../utils';
+
+// Sizes in bytes
+const BIGNUM_SIZE: number = 32;
 
 export enum TxType {
   Deposit = '00',
@@ -21,15 +26,15 @@ export class EthPrivateTransaction {
   public txType: TxType;
   /** Memo block size */
   public memoSize: number;
-  /** Smart contract level metadata, only fee for 01 type */
-  public memoFee: string;
+  /** Smart contract level metadata */
+  public memoMeta: string;
   /** Encrypted tx metadata, used on client only */
   public memoMessage: string;
 
-  static fromData(txData: TransactionData, params: Params, web3: Web3): EthPrivateTransaction {
+  static fromData(txData: TransactionData, params: Params, web3: Web3, metadata: BigInt): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
-    const proof = Proof.tx(params, txData.public, txData.secret);
+    const txProof = Proof.tx(params, txData.public, txData.secret);
     const treeProof = Proof.tree(params, {
       root_before: '',
       root_after: '',
@@ -40,19 +45,23 @@ export class EthPrivateTransaction {
       prev_leaf: '',
     });
 
-    tx.selector = web3.eth.abi.encodeFunctionSignature("transact()");
-    tx.nullifier = txData.public.nullifier;
-    tx.outCommit = txData.public.out_commit;
-    tx.transferIndex = txData.secret.tx.output.account.i;
-    tx.eneryAmount = txData.secret.tx.output.account.e; // FIXME: ?
-    tx.tokenAmount = "0000000000000000";
-    tx.transactProof = formatProof(proof.proof);
+    tx.selector = web3.eth.abi.encodeFunctionSignature('transact()');
+    tx.nullifier = BigInt(txData.public.nullifier);
+    tx.outCommit = BigInt(txData.public.out_commit);
+    tx.transferIndex = BigInt(txData.secret.tx.output.account.i); // ?
+    tx.eneryAmount = BigInt(txData.secret.tx.output.account.e); // ?
+    tx.tokenAmount = BigInt(txData.secret.tx.output.account.b); // sum of output notes?
+    tx.transactProof = formatSnarkProof(txProof.proof);
     tx.rootAfter = rand_fr_hex();
-    tx.treeProof = rand_fr_hex_list(8);
+    tx.treeProof = formatSnarkProof(treeProof.proof);
+
     tx.txType = TxType.Transfer;
-    tx.memoSize = txData.memo.length.toString(16).slice();
-    tx.memoFee = "0000000000000000";
-    tx.memoMessage = rand_bigint_hex(parseInt(memo_size, 16) - memo_fee.length / 2);
+
+    const encTx = base64ToHex(txData.ciphertext);
+    tx.memoSize = txData.memo.length;
+    tx.memoMeta = metadata.toString(16).slice(-16);
+    tx.memoSize = tx.memoMeta.length / 2;
+    tx.memoMessage = encTx;
 
     return tx;
   }
@@ -74,7 +83,7 @@ export class EthPrivateTransaction {
     writer.writeBigIntArray(this.treeProof, 32);
     writer.writeHex(this.txType.toString());
     writer.writeNumber(this.memoSize, 1);
-    writer.writeHex(this.memoFee);
+    writer.writeHex(this.memoMeta);
     writer.writeHex(this.memoMessage);
 
     return writer.toString();
@@ -95,14 +104,14 @@ export class EthPrivateTransaction {
     tx.treeProof = reader.readBigIntArray(8, 32);
     tx.txType = reader.readHex(1) as TxType;
     tx.memoSize = reader.readNumber(1);
-    tx.memoFee = reader.readHex(8);
+    tx.memoMeta = reader.readHex(8);
     tx.memoMessage = reader.readHex(tx.memoSize - 8);
 
     return tx;
   }
 }
 
-function formatProof(proof: SnarkProof): BigInt[] {
+function formatSnarkProof(proof: SnarkProof): BigInt[] {
   const a = proof.a.map(num => BigInt(num));
   const b = proof.b.flat().map(num => BigInt(num));
   const c = proof.c.map(num => BigInt(num));

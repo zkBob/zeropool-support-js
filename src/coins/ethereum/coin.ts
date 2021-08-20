@@ -12,29 +12,26 @@ import { convertTransaction } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
-import contract from './Pool.json';
-import { Output } from 'libzeropool-rs-wasm-bundler';
+import { Output, Params } from 'libzeropool-rs-wasm-bundler';
 
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 const MAX_SCAN_TASKS = 100;
-const ABI = contract.abi as AbiItem[];
 
 export class EthereumCoin extends Coin {
   private web3: Web3;
   private web3ws: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
-  private contract: Contract;
   private config: Config;
+  private params: Params;
 
-  constructor(mnemonic: string, config: Config) {
+  constructor(mnemonic: string, config: Config, params: Params) {
     super(mnemonic);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
-    this.contract = new this.web3.eth.Contract(ABI, config.contractAddress);
     this.config = config;
   }
 
