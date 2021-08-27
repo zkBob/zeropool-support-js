@@ -1,10 +1,10 @@
-import { TransactionData, Proof, Params, SnarkProof, TreePub, TreeSec } from 'libzeropool-rs-wasm-bundler';
+import { TransactionData, Proof, Params, SnarkProof, TreePub, TreeSec, UserAccount } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
 
 import { base64ToHex } from '../../utils';
 
 // Sizes in bytes
-const BIGNUM_SIZE: number = 32;
+const MEMO_META_SIZE: number = 8;
 
 export enum TxType {
   Deposit = '00',
@@ -15,55 +15,69 @@ export enum TxType {
 export class EthPrivateTransaction {
   /** Hex encoded smart contract method id */
   public selector: string;
-  public nullifier: BigInt;
-  public outCommit: BigInt;
-  public transferIndex: BigInt;
-  public eneryAmount: BigInt;
-  public tokenAmount: BigInt;
-  public transactProof: BigInt[];
-  public rootAfter: BigInt;
-  public treeProof: BigInt[];
+  public nullifier: bigint;
+  public outCommit: bigint;
+  public transferIndex: bigint;
+  public eneryAmount: bigint;
+  public tokenAmount: bigint;
+  public transactProof: bigint[];
+  public rootAfter: bigint;
+  public treeProof: bigint[];
   public txType: TxType;
-  /** Memo block size */
   public memoSize: number;
-  /** Smart contract level metadata */
-  public memoMeta: string;
-  /** Encrypted tx metadata, used on client only */
-  public memoMessage: string;
+  public memo: string;
 
-  static fromData(txData: TransactionData, params: Params, web3: Web3, metadata: BigInt): EthPrivateTransaction {
+  static fromData(acc: UserAccount, txType: TxType, txData: TransactionData, params: Params, web3: Web3): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
+
+    // FIXME: nextTreeIndex == 0
+    const nextIndex = acc.nextTreeIndex() as bigint;
+    const curIndex = acc.nextTreeIndex() as bigint - BigInt(1);
+
+    // FIXME: might not be present, handle undefined
+    const commitmentProofBefore = acc.getCommitmentMerkleProof(curIndex)!;
+    const commitmentProofAfter = acc.getCommitmentMerkleProof(curIndex + BigInt(1))!;
+
+    const prevLeaf = acc.getLastLeaf();
+    const newLeaf = txData.out_hashes[txData.out_hashes.length - 1];
+
+    const proofBefore = acc.getMerkleProof(curIndex);
+    const proofAfter = acc.getMerkleProofAfter(txData.out_hashes)[txData.out_hashes.length - 1];
+
+    const rootBefore = proofBefore?.sibling[proofBefore.sibling.length - 1]!;
+    const rootAfter = proofAfter?.sibling[proofAfter.sibling.length - 1]!;
 
     const txProof = Proof.tx(params, txData.public, txData.secret);
     const treeProof = Proof.tree(params, {
-      root_before: '',
-      root_after: '',
-      leaf: '',
+      root_before: rootBefore,
+      root_after: rootAfter,
+      leaf: newLeaf,
     }, {
-      proof_filled: '',
-      proof_free: '',
-      prev_leaf: '',
+      proof_filled: commitmentProofBefore,
+      proof_free: commitmentProofAfter,
+      prev_leaf: prevLeaf,
     });
 
     tx.selector = web3.eth.abi.encodeFunctionSignature('transact()');
     tx.nullifier = BigInt(txData.public.nullifier);
     tx.outCommit = BigInt(txData.public.out_commit);
-    tx.transferIndex = BigInt(txData.secret.tx.output.account.i); // ?
-    tx.eneryAmount = BigInt(txData.secret.tx.output.account.e); // ?
-    tx.tokenAmount = BigInt(txData.secret.tx.output.account.b); // sum of output notes?
+    tx.transferIndex = BigInt(nextIndex); // ?
+
+    tx.eneryAmount = BigInt(txData.output_energy);
+    tx.tokenAmount = BigInt(txData.output_value);
+
     tx.transactProof = formatSnarkProof(txProof.proof);
-    tx.rootAfter = rand_fr_hex();
+    tx.rootAfter = BigInt(rootAfter);
     tx.treeProof = formatSnarkProof(treeProof.proof);
+    tx.txType = txType;
 
-    tx.txType = TxType.Transfer;
-
-    const encTx = base64ToHex(txData.ciphertext);
-    tx.memoSize = txData.memo.length;
-    tx.memoMeta = metadata.toString(16).slice(-16);
-    tx.memoSize = tx.memoMeta.length / 2;
-    tx.memoMessage = encTx;
+    tx.memo = base64ToHex(txData.memo);
 
     return tx;
+  }
+
+  get ciphertext(): string {
+    return this.memo.slice(MEMO_META_SIZE * 2);
   }
 
   /**
@@ -82,9 +96,8 @@ export class EthPrivateTransaction {
     writer.writeBigInt(this.rootAfter, 32);
     writer.writeBigIntArray(this.treeProof, 32);
     writer.writeHex(this.txType.toString());
-    writer.writeNumber(this.memoSize, 1);
-    writer.writeHex(this.memoMeta);
-    writer.writeHex(this.memoMessage);
+    writer.writeNumber(this.memo.length / 2, 1);
+    writer.writeHex(this.memo);
 
     return writer.toString();
   }
@@ -103,15 +116,14 @@ export class EthPrivateTransaction {
     tx.rootAfter = reader.readBigInt(32);
     tx.treeProof = reader.readBigIntArray(8, 32);
     tx.txType = reader.readHex(1) as TxType;
-    tx.memoSize = reader.readNumber(1);
-    tx.memoMeta = reader.readHex(8);
-    tx.memoMessage = reader.readHex(tx.memoSize - 8);
+    const memoSize = reader.readNumber(1);
+    tx.memo = reader.readHex(memoSize);
 
     return tx;
   }
 }
 
-function formatSnarkProof(proof: SnarkProof): BigInt[] {
+function formatSnarkProof(proof: SnarkProof): bigint[] {
   const a = proof.a.map(num => BigInt(num));
   const b = proof.b.flat().map(num => BigInt(num));
   const c = proof.c.map(num => BigInt(num));
@@ -134,11 +146,11 @@ class HexStringWriter {
     this.buf += hex;
   }
 
-  writeBigInt(num: BigInt, numBytes: number) {
+  writeBigInt(num: bigint, numBytes: number) {
     this.buf += num.toString(16).slice(-numBytes * 2);
   }
 
-  writeBigIntArray(nums: BigInt[], numBytes: number) {
+  writeBigIntArray(nums: bigint[], numBytes: number) {
     for (let num of nums) {
       this.writeBigInt(num, numBytes);
     }
@@ -174,12 +186,12 @@ class HexStringReader {
     return parseInt(hex, 16);
   }
 
-  readBigInt(numBytes: number): BigInt {
+  readBigInt(numBytes: number): bigint {
     const hex = this.readHex(numBytes);
     return BigInt('0x' + hex);
   }
 
-  readBigIntArray(numElements: number, numBytesPerElement: number): BigInt[] {
+  readBigIntArray(numElements: number, numBytesPerElement: number): bigint[] {
     return [...Array(numElements)]
       .map(() => this.readBigInt(numBytesPerElement));
   }

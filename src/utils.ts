@@ -61,3 +61,17 @@ export function base64ToHex(data: string): string {
 
   return octets.join('');
 }
+
+export function hexToBuf(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) {
+    throw new Error('Invalid hex string');
+  }
+
+  const buffer = new Uint8Array(hex.length / 2);
+
+  for (let i = 0; i < hex.length; i = i + 2) {
+    buffer[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  }
+
+  return buffer;
+}

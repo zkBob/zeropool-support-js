@@ -1,9 +1,10 @@
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
+import { AbiItem, hexToBytes, hexToString } from 'web3-utils';
 import { Observable } from 'rxjs';
 import BN from 'bn.js';
 import bs64 from 'base64-js';
+import { Output, Params } from 'libzeropool-rs-wasm-bundler';
 
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
@@ -12,7 +13,8 @@ import { convertTransaction } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
-import { Output, Params } from 'libzeropool-rs-wasm-bundler';
+import { EthPrivateTransaction, TxType } from './private-tx';
+import { hexToBuf } from '../../utils';
 
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
@@ -24,7 +26,6 @@ export class EthereumCoin extends Coin {
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
-  private params: Params;
 
   constructor(mnemonic: string, config: Config, params: Params) {
     super(mnemonic);
@@ -35,7 +36,7 @@ export class EthereumCoin extends Coin {
     this.config = config;
   }
 
-  public async init() {
+  protected async init() {
     await super.init();
     // await this.fetchNotes();
   }
@@ -213,17 +214,16 @@ export class EthereumCoin extends Coin {
 
     // Create a transaction
     const txData = await this.privateAccount.createTx(outputs);
-
-    // TODO: Check 
-    // await this.contract.methods.transact().send({ from: address });
+    const tx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3);
 
     const privateBalance = BigInt(this.getPrivateBalance());
     if (privateBalance < totalOut) {
+      const depositTx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3);
 
       await this.web3.eth.call({
         from: address,
         to: this.config.contractAddress,
-        data: '',
+        data: depositTx,
         value: (totalOut - privateBalance).toString(),
       })
     }
@@ -239,42 +239,47 @@ export class EthereumCoin extends Coin {
     return this.privateAccount.totalBalance();
   }
 
-  private async fetchNotes() {
-    const sk = this.getPrivateSpendingKey();
-    const events = await this.contract.getPastEvents('allEvents', {
-      fromBlock: this.config.contractBlock,
-      toBlock: 'latest'
-    });
+  /**
+   * Attempt to extract and save usable account/notes from transaction data.
+   * @param raw hex-encoded transaction data
+   */
+  private cachePrivateTx(raw: string) {
+    const txData = EthPrivateTransaction.decode(raw);
+    const ciphertext = hexToBuf(txData.ciphertext);
+    const pair = this.privateAccount.decryptPair(ciphertext);
 
-    for (const event of events) {
-      const message = event.raw.data;
-      const data = bs64.toByteArray(message);
+    if (pair) {
+      this.privateAccount.addAccount(txData.transferIndex, pair.account);
+      // TODO: Add notes, if needed
+    } else {
+      const notes = this.privateAccount.decryptNotes(ciphertext);
+
+      if (notes.length > 0) {
+        for (let i = 0; i < notes.length; ++i) {
+          const note = notes[i];
+          this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(i), note);
+        }
+      }
+    }
+  }
+
+  private async fetchNotes(): Promise<void> {
+    const logs = await this.web3.eth.getPastLogs({ fromBlock: this.config.contractBlock, address: this.config.contractAddress });
+
+    for (const log of logs) {
+      const tx = await this.web3.eth.getTransaction(log.transactionHash);
+      const message = tx.input;
 
       try {
-        const pair = this.privateAccount.decryptPair(data);
-
-        if (pair) {
-          // TODO: Update account if needed
-          // Store account
-
-          // this.privateAccount.addAccount();
-        } else {
-          const note = this.privateAccount.decryptNotes(data);
-          // this.privateAccount.addReceivedNote();
-
-          if (!note) {
-            continue;
-          }
-
-          // TODO: Store note
-        }
-
+        this.cachePrivateTx(message);
       } catch (e) {
         continue;
       }
     }
   }
 
+  // TODO: These functions scan all blocks for regular transactions.
+  //       Should probably remove them.
   /**
    * Scans blocks for account transactions (both from and to).
    * @param startBlockNumber
