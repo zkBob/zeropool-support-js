@@ -19,6 +19,7 @@ const config: Config = {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',
     chainId: WavesChainId.Testnet,
   },
+  paramsUrl: 'params.bin',
 }
 
 export default config;

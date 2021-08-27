@@ -6,20 +6,28 @@ import { EthereumCoin } from './coins/ethereum';
 import { WavesCoin } from './coins/waves';
 
 import { Config } from './config';
+import { Params } from 'libzeropool-rs-wasm-bundler';
 
 export class HDWallet {
   public seed: string;
   private coins: { [key in CoinType]?: Coin; } = {};
   private config: Config;
+  private params: Params;
 
-  constructor(seed: string, config: Config) {
-    this.seed = seed;
-    this.config = config;
-  }
+  public static async init(seed: string, config: Config, coinTypes: CoinType[]): Promise<HDWallet> {
+    const wallet = new HDWallet();
 
-  public async init(coinTypes: CoinType[]) {
-    const promises = coinTypes.map(coin => this.enableCoin(coin as CoinType));
+    const paramsData = await (await fetch(config.paramsUrl)).arrayBuffer();
+    const params = Params.fromBinary(new Uint8Array(paramsData));
+
+    wallet.params = params;
+    wallet.seed = seed;
+    wallet.config = config;
+
+    const promises = coinTypes.map(coin => wallet.enableCoin(coin as CoinType));
     await Promise.all(promises);
+
+    return wallet;
   }
 
   public getRegularAddress(coinType: CoinType, account: number): string | undefined {
@@ -52,7 +60,7 @@ export class HDWallet {
         break;
       }
       case CoinType.ethereum: {
-        coin = new EthereumCoin(this.seed, this.config.ethereum);
+        coin = new EthereumCoin(this.seed, this.config.ethereum, this.params);
         break;
       }
       case CoinType.waves: {
@@ -64,7 +72,7 @@ export class HDWallet {
       }
     }
 
-    await coin.init();
+    await coin.ready();
 
     this.coins[coinType] = coin;
   }

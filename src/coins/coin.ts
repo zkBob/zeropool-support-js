@@ -1,9 +1,10 @@
 import { Observable } from 'rxjs';
 import { UserAccount, reduceSpendingKey, UserState, Output } from 'libzeropool-rs-wasm-bundler';
+import { hash } from 'tweetnacl';
 
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
-import { deriveEd25519 } from '../utils';
+import { bufToHex, deriveEd25519 } from '../utils';
 
 export class Balance {
   public address: string;
@@ -17,15 +18,18 @@ export abstract class Coin {
 
   protected mnemonic: string;
   public privateAccount: UserAccount;
+  private initPromise: Promise<void>;
 
   constructor(mnemonic: string) {
     this.mnemonic = mnemonic;
+    this.initPromise = this.init();
   }
 
-  async init(): Promise<void> {
+  protected async init(): Promise<void> {
     const sk = this.getPrivateSpendingKey();
     const coinName = this.getCoinType();
-    const state = await UserState.init(`${coinName}.unique_user_id_here`); // FIXME: Replace with something user-specific (secret key hash?)
+    const userId = bufToHex(hash(sk));
+    const state = await UserState.init(`zp.${coinName}.${userId}`);
 
     try {
       const acc = new UserAccount(sk, state);
@@ -33,6 +37,10 @@ export abstract class Coin {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  async ready(): Promise<void> {
+    await this.initPromise;
   }
 
   generatePrivateAddress(): string {
