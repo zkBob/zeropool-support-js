@@ -5,3 +5,6 @@ export declare function preprocessMnemonic(mnemonic: string): string;
 export declare function generateMnemonic(): string;
 export declare function deriveEd25519(path: string, mnemonic: string): SignKeyPair;
 export declare function validateMnemonic(mnemonic: string): boolean;
+export declare function bufToHex(buffer: Uint8Array): string;
+export declare function base64ToHex(data: string): string;
+export declare function hexToBuf(hex: string): Uint8Array;

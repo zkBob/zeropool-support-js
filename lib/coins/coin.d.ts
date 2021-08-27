@@ -12,8 +12,10 @@ export declare abstract class Coin {
     abstract getAddress(account: number): string;
     protected mnemonic: string;
     privateAccount: UserAccount;
+    private initPromise;
     constructor(mnemonic: string);
-    init(): Promise<void>;
+    protected init(): Promise<void>;
+    ready(): Promise<void>;
     generatePrivateAddress(): string;
     getPrivateSpendingKey(): Uint8Array;
     /**

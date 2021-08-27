@@ -5,8 +5,8 @@ export declare class HDWallet {
     seed: string;
     private coins;
     private config;
-    constructor(seed: string, config: Config);
-    init(coinTypes: CoinType[]): Promise<void>;
+    private params;
+    static init(seed: string, config: Config, coinTypes: CoinType[]): Promise<HDWallet>;
     getRegularAddress(coinType: CoinType, account: number): string | undefined;
     getRegularPrivateKey(coinType: CoinType, account: number): string | undefined;
     getBalances(numAccounts: number, offset?: number): Promise<{
