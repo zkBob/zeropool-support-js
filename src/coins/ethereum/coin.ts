@@ -26,6 +26,7 @@ export class EthereumCoin extends Coin {
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
+  private params: Params;
 
   constructor(mnemonic: string, config: Config, params: Params) {
     super(mnemonic);
@@ -34,6 +35,7 @@ export class EthereumCoin extends Coin {
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.config = config;
+    this.params = params;
   }
 
   protected async init() {
@@ -214,11 +216,11 @@ export class EthereumCoin extends Coin {
 
     // Create a transaction
     const txData = await this.privateAccount.createTx(outputs);
-    const tx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3);
+    const tx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3).encode();
 
     const privateBalance = BigInt(this.getPrivateBalance());
     if (privateBalance < totalOut) {
-      const depositTx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3);
+      const depositTx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3).encode();
 
       await this.web3.eth.call({
         from: address,
