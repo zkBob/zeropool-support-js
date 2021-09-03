@@ -88,10 +88,24 @@ export abstract class Coin {
    */
   abstract transfer(account: number, to: string, amount: string): Promise<void>;
 
+  // TODO: Extract private tx methods into a separate class
   transferPrivate(account: number, outputs: Output[]): Promise<void> {
-    // 1. Merge unspent notes
-    // 2. Deposit, if needed
-    // 3. Transfer
+    throw new Error('unimplemented');
+  }
+
+  transferPrivateSimple(account: number, outputs: Output[]): Promise<void> {
+    throw new Error('unimplemented');
+  }
+
+  depositPrivate(account: number, amount: string): Promise<void> {
+    throw new Error('unimplemented');
+  }
+
+  mergePrivate(): Promise<void> {
+    throw new Error('unimplemented');
+  }
+
+  withdrawPrivate(account: number, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 
@@ -99,6 +113,10 @@ export abstract class Coin {
    * Get current total private balance (account + unspent notes).
    */
   getPrivateBalance(): string {
+    throw new Error('unimplemented');
+  }
+
+  updatePrivateState(): Promise<void> {
     throw new Error('unimplemented');
   }
 

@@ -19,7 +19,7 @@ export declare class EthPrivateTransaction {
     txType: TxType;
     memoSize: number;
     memo: string;
-    static fromData(acc: UserAccount, txType: TxType, txData: TransactionData, params: Params, web3: Web3): EthPrivateTransaction;
+    static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, params: Params, web3: Web3): EthPrivateTransaction;
     get ciphertext(): string;
     /**
      * Returns encoded transaction ready to use as data for the smart contract.

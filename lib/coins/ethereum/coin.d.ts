@@ -11,6 +11,7 @@ export declare class EthereumCoin extends Coin {
     private accounts;
     private config;
     private params;
+    private relayer;
     constructor(mnemonic: string, config: Config, params: Params);
     protected init(): Promise<void>;
     getPrivateKey(account: number): string;
@@ -32,14 +33,18 @@ export declare class EthereumCoin extends Coin {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     getCoinType(): CoinType;
-    transferPrivate(account: number, outputs: Output[]): Promise<void>;
+    trasnferPrivateSimple(account: number, outs: Output[]): Promise<void>;
+    depositPrivate(account: number, amount: string): Promise<void>;
+    mergePrivate(): Promise<void>;
+    withdrawPrivate(account: number, amount: string): Promise<void>;
+    private prepareTranaction;
     getPrivateBalance(): string;
     /**
      * Attempt to extract and save usable account/notes from transaction data.
      * @param raw hex-encoded transaction data
      */
     private cachePrivateTx;
-    private fetchNotes;
+    updatePrivateState(): Promise<void>;
     /**
      * Scans blocks for account transactions (both from and to).
      * @param startBlockNumber

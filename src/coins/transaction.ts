@@ -20,3 +20,7 @@ export interface TxFee {
   gasPrice: string;
   fee: string;
 }
+
+export interface Note {
+  value: string;
+}

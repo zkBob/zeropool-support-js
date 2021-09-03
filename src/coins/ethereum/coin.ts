@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import BN from 'bn.js';
 import bs64 from 'base64-js';
 import { Output, Params } from 'libzeropool-rs-wasm-bundler';
+import { TransactionConfig } from 'web3-core';
 
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
@@ -15,6 +16,7 @@ import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { EthPrivateTransaction, TxType } from './private-tx';
 import { hexToBuf } from '../../utils';
+import { RelayerAPI } from './relayer';
 
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
@@ -27,6 +29,7 @@ export class EthereumCoin extends Coin {
   private accounts: AccountCache;
   private config: Config;
   private params: Params;
+  private relayer: RelayerAPI;
 
   constructor(mnemonic: string, config: Config, params: Params) {
     super(mnemonic);
@@ -36,11 +39,12 @@ export class EthereumCoin extends Coin {
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.config = config;
     this.params = params;
+    this.relayer = new RelayerAPI(new URL('http://localhost')); // TODO: dynamic relayer URL
   }
 
   protected async init() {
     await super.init();
-    // await this.fetchNotes();
+    await this.updatePrivateState();
   }
 
   public getPrivateKey(account: number): string {
@@ -194,47 +198,103 @@ export class EthereumCoin extends Coin {
     return CoinType.ethereum;
   }
 
-  public async transferPrivate(account: number, outputs: Output[]): Promise<void> {
-    await this.fetchNotes();
+  // public async transferPrivate(account: number, outputs: Output[]): Promise<void> {
+  //   await this.fetchNotes();
 
-    const address = this.getAddress(0);
-    const newPrivateAddress = this.privateAccount.generateAddress();
+  //   const address = this.getAddress(0);
+  //   const newPrivateAddress = this.privateAccount.generateAddress();
 
-    // Check balance
-    const totalOut = outputs.reduce((acc, cur) => {
-      const amount = BigInt(cur.amount);
-      return acc + amount;
-    }, BigInt(0));
+  //   // Check balance
+  //   const totalOut = outputs.reduce((acc, cur) => {
+  //     const amount = BigInt(cur.amount);
+  //     return acc + amount;
+  //   }, BigInt(0));
 
-    const curBalance = BigInt(await this.getBalance(account));
+  //   const curBalance = BigInt(await this.getBalance(account));
 
-    if (totalOut > curBalance) {
-      throw new Error('Cannot transfer more than you have');
-    }
+  //   if (totalOut > curBalance) {
+  //     throw new Error('Insufficient balance');
+  //   }
 
-    // TODO: Check if there needs to be a merge
+  //   // TODO: Check if there needs to be a merge
 
-    // Create a transaction
-    const txData = await this.privateAccount.createTx(outputs);
-    const tx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3).encode();
 
-    const privateBalance = BigInt(this.getPrivateBalance());
-    if (privateBalance < totalOut) {
-      const depositTx = EthPrivateTransaction.fromData(this.privateAccount, TxType.Transfer, txData, this.params, this.web3).encode();
+  //   // Create a transaction
+  //   const privateBalance = BigInt(this.getPrivateBalance());
+  //   if (privateBalance < totalOut) {
+  //     await this.depositPrivate(account, totalOut - privateBalance);
+  //   }
+  // }
 
-      await this.web3.eth.call({
-        from: address,
-        to: this.config.contractAddress,
-        data: depositTx,
-        value: (totalOut - privateBalance).toString(),
-      })
-    }
-
-    await this.web3.eth.call({
+  public async trasnferPrivateSimple(account: number, outs: Output[]): Promise<void> {
+    const address = this.getAddress(account);
+    const memo = new Uint8Array(8); // fee
+    const txData = await this.privateAccount.createTx('transfer', outs, memo);
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Transfer, this.privateAccount, this.params, this.web3).encode();
+    const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
-      data: '',
-    });
+      data: tx,
+    };
+
+    const signed = await this.prepareTranaction(txObject, account);
+
+    await this.web3.eth.sendSignedTransaction(signed);
+  }
+
+  public async depositPrivate(account: number, amount: string): Promise<void> {
+    const address = this.getAddress(account);
+    const memo = new Uint8Array(8); // FIXME: fee
+    const txData = await this.privateAccount.createTx('deposit', amount, memo);
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Deposit, this.privateAccount, this.params, this.web3).encode();
+    const txObject: TransactionConfig = {
+      from: address,
+      to: this.config.contractAddress,
+      data: tx,
+      value: amount,
+    };
+
+    const signed = await this.prepareTranaction(txObject, account);
+
+    await this.web3.eth.sendSignedTransaction(signed);
+  }
+
+  public async mergePrivate(): Promise<void> {
+    throw new Error('unimplemented');
+  }
+
+  public async withdrawPrivate(account: number, amount: string): Promise<void> {
+    if (Math.sign(Number(amount)) === 1) {
+      amount = (-BigInt(amount)).toString();
+    }
+
+    const address = this.getAddress(account);
+    const memo = new Uint8Array(8 + 20); // FIXME: fee + address
+    const txData = await this.privateAccount.createTx('withdraw', amount, memo);
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Withdraw, this.privateAccount, this.params, this.web3).encode();
+    const txObject: TransactionConfig = {
+      from: address,
+      to: this.config.contractAddress,
+      data: tx,
+    };
+
+    const signed = await this.prepareTranaction(txObject, account);
+
+    await this.web3.eth.sendSignedTransaction(signed);
+  }
+
+  private async prepareTranaction(txObject: TransactionConfig, account: number): Promise<string> {
+    const address = this.getAddress(account);
+    const gas = await this.web3.eth.estimateGas(txObject);
+    const gasPrice = await this.web3.eth.getGasPrice();
+    const nonce = await this.web3.eth.getTransactionCount(address);
+    txObject.gas = gas;
+    txObject.gasPrice = gasPrice;
+    txObject.nonce = nonce;
+
+    const signed = await this.web3.eth.accounts.signTransaction(txObject, this.getPrivateKey(account));
+
+    return signed.rawTransaction!;
   }
 
   public getPrivateBalance(): string {
@@ -265,7 +325,7 @@ export class EthereumCoin extends Coin {
     }
   }
 
-  private async fetchNotes(): Promise<void> {
+  public async updatePrivateState(): Promise<void> {
     const logs = await this.web3.eth.getPastLogs({ fromBlock: this.config.contractBlock, address: this.config.contractAddress });
 
     for (const log of logs) {

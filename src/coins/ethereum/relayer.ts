@@ -11,13 +11,24 @@ export class RelayerAPI {
         this.url = url;
     }
 
-    async fetchLeaves(offset: BigInt, limit: BigInt = BigInt(100)): Promise<Int8Array[]> {
-        console.warn('Called a mock RelayerAPI method: fetchLeaves');
-        return [];
+    async fetchLeaves(offset: BigInt, limit: number = 100): Promise<string[]> {
+        const url = new URL('/transactions', this.url);
+        url.searchParams.set('offset', offset.toString());
+        url.searchParams.set('limit', limit.toString());
+
+        const res = await (await fetch(url.toString())).json();
+
+        return res;
     }
 
-    async sendTransaction(data: string): Promise<void> {
-        console.warn('Called a mock RelayerAPI method: sendTransaction');
+    async sendTransaction(proof: string, memo: string): Promise<void> {
+        const url = new URL('/transaction', this.url);
+        const res = await fetch(url.toString(), { method: 'POST', body: JSON.stringify({ proof, memo }) });
+
+        if (res.status !== 204) {
+            const body = await res.json();
+            throw new Error(`Error ${res.status}: ${JSON.stringify(body)}`)
+        }
     }
 
     async info(): Promise<RelayerInfo> {

@@ -35,10 +35,15 @@ export declare abstract class Coin {
      */
     abstract transfer(account: number, to: string, amount: string): Promise<void>;
     transferPrivate(account: number, outputs: Output[]): Promise<void>;
+    transferPrivateSimple(account: number, outputs: Output[]): Promise<void>;
+    depositPrivate(account: number, amount: string): Promise<void>;
+    mergePrivate(): Promise<void>;
+    withdrawPrivate(account: number, amount: string): Promise<void>;
     /**
      * Get current total private balance (account + unspent notes).
      */
     getPrivateBalance(): string;
+    updatePrivateState(): Promise<void>;
     /**
      * Fetch account transactions.
      */

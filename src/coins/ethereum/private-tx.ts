@@ -27,7 +27,7 @@ export class EthPrivateTransaction {
   public memoSize: number;
   public memo: string;
 
-  static fromData(acc: UserAccount, txType: TxType, txData: TransactionData, params: Params, web3: Web3): EthPrivateTransaction {
+  static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, params: Params, web3: Web3): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
     // FIXME: nextTreeIndex == 0
