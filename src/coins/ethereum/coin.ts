@@ -199,7 +199,7 @@ export class EthereumCoin extends Coin {
   }
 
   // public async transferPrivate(account: number, outputs: Output[]): Promise<void> {
-  //   await this.fetchNotes();
+  //   await this.updatePrivateState();
 
   //   const address = this.getAddress(0);
   //   const newPrivateAddress = this.privateAccount.generateAddress();
@@ -217,13 +217,16 @@ export class EthereumCoin extends Coin {
   //   }
 
   //   // TODO: Check if there needs to be a merge
+  //   await this.mergePrivate();
 
-
-  //   // Create a transaction
+  //   // Deposit if needed
   //   const privateBalance = BigInt(this.getPrivateBalance());
   //   if (privateBalance < totalOut) {
   //     await this.depositPrivate(account, totalOut - privateBalance);
   //   }
+
+  //   // Transfer
+  //   await this.transferPrivateSimple(account, outputs);
   // }
 
   public async trasnferPrivateSimple(account: number, outs: Output[]): Promise<void> {

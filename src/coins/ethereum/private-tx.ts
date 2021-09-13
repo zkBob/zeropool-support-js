@@ -31,7 +31,7 @@ export class EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
     // FIXME: nextTreeIndex == 0
-    const nextIndex = acc.nextTreeIndex() as bigint;
+    // const nextIndex = acc.nextTreeIndex() as bigint;
     const curIndex = acc.nextTreeIndex() as bigint - BigInt(1);
 
     // FIXME: might not be present, handle undefined
@@ -61,10 +61,10 @@ export class EthPrivateTransaction {
     tx.selector = web3.eth.abi.encodeFunctionSignature('transact()');
     tx.nullifier = BigInt(txData.public.nullifier);
     tx.outCommit = BigInt(txData.public.out_commit);
-    tx.transferIndex = BigInt(nextIndex); // ?
 
-    tx.eneryAmount = BigInt(txData.output_energy);
-    tx.tokenAmount = BigInt(txData.output_value);
+    tx.transferIndex = BigInt(txData.parsed_delta.index);
+    tx.eneryAmount = BigInt(txData.parsed_delta.e);
+    tx.tokenAmount = BigInt(txData.parsed_delta.v);
 
     tx.transactProof = formatSnarkProof(txProof.proof);
     tx.rootAfter = BigInt(rootAfter);
@@ -116,7 +116,7 @@ export class EthPrivateTransaction {
     tx.rootAfter = reader.readBigInt(32);
     tx.treeProof = reader.readBigIntArray(8, 32);
     tx.txType = reader.readHex(1) as TxType;
-    const memoSize = reader.readNumber(1);
+    const memoSize = reader.readNumber(2);
     tx.memo = reader.readHex(memoSize);
 
     return tx;
@@ -131,6 +131,7 @@ function formatSnarkProof(proof: SnarkProof): bigint[] {
   return [...a, ...b, ...c];
 }
 
+// TODO: Use borsh for serialization?
 class HexStringWriter {
   buf: string;
 
