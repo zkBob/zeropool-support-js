@@ -2,7 +2,6 @@ import bip39 from 'bip39-light';
 import * as HDKey from 'hdkey';
 import { derivePath } from 'ed25519-hd-key';
 import { sign, SignKeyPair } from 'tweetnacl';
-import { CoinType } from './coins/coin-type';
 
 export { HDKey as Secp256k1HDKey };
 
