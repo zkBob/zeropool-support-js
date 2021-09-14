@@ -1,9 +1,6 @@
 import Web3 from 'web3';
-import { Contract } from 'web3-eth-contract';
-import { AbiItem, hexToBytes, hexToString } from 'web3-utils';
 import { Observable } from 'rxjs';
 import BN from 'bn.js';
-import bs64 from 'base64-js';
 import { Output, Params } from 'libzeropool-rs-wasm-bundler';
 import { TransactionConfig } from 'web3-core';
 
@@ -18,9 +15,11 @@ import { EthPrivateTransaction, TxType } from './private-tx';
 import { hexToBuf } from '../../utils';
 import { RelayerAPI } from './relayer';
 
+// TODO: Organize presistent state properly
+
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
-const MAX_SCAN_TASKS = 100;
+const STATE_STORAGE_PREFIX = 'zeropool.eth.state';
 
 export class EthereumCoin extends Coin {
   private web3: Web3;
@@ -198,38 +197,42 @@ export class EthereumCoin extends Coin {
     return CoinType.ethereum;
   }
 
-  // public async transferPrivate(account: number, outputs: Output[]): Promise<void> {
-  //   await this.updatePrivateState();
+  // deposit
+  // transfer
+  /**
+   * coin.transferPublicToPrivate(0, [{ to: 'addr', amount: '123' }])
+   * @param account 
+   * @param outputs 
+   */
+  public async transferPublicToPrivate(account: number, outputs: Output[]): Promise<void> {
+    await this.updatePrivateState();
 
-  //   const address = this.getAddress(0);
-  //   const newPrivateAddress = this.privateAccount.generateAddress();
+    // Check balance
+    const totalOut = outputs.reduce((acc, cur) => {
+      const amount = BigInt(cur.amount);
+      return acc + amount;
+    }, BigInt(0));
 
-  //   // Check balance
-  //   const totalOut = outputs.reduce((acc, cur) => {
-  //     const amount = BigInt(cur.amount);
-  //     return acc + amount;
-  //   }, BigInt(0));
+    const curBalance = BigInt(await this.getBalance(account));
 
-  //   const curBalance = BigInt(await this.getBalance(account));
+    if (totalOut > curBalance) {
+      throw new Error('Insufficient balance');
+    }
 
-  //   if (totalOut > curBalance) {
-  //     throw new Error('Insufficient balance');
-  //   }
+    // Merge unspent notes
+    await this.mergePrivate();
 
-  //   // TODO: Check if there needs to be a merge
-  //   await this.mergePrivate();
+    // Deposit if needed
+    const privateBalance = BigInt(this.getPrivateBalance());
+    if (privateBalance < totalOut) {
+      await this.depositPrivate(account, (totalOut - privateBalance).toString());
+    }
 
-  //   // Deposit if needed
-  //   const privateBalance = BigInt(this.getPrivateBalance());
-  //   if (privateBalance < totalOut) {
-  //     await this.depositPrivate(account, totalOut - privateBalance);
-  //   }
+    // Transfer
+    await this.trasnferPrivateToPrivate(account, outputs);
+  }
 
-  //   // Transfer
-  //   await this.transferPrivateSimple(account, outputs);
-  // }
-
-  public async trasnferPrivateSimple(account: number, outs: Output[]): Promise<void> {
+  public async trasnferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8); // fee
     const txData = await this.privateAccount.createTx('transfer', outs, memo);
@@ -313,27 +316,31 @@ export class EthereumCoin extends Coin {
     const ciphertext = hexToBuf(txData.ciphertext);
     const pair = this.privateAccount.decryptPair(ciphertext);
 
+    let notes;
     if (pair) {
       this.privateAccount.addAccount(txData.transferIndex, pair.account);
-      // TODO: Add notes, if needed
+      notes = pair.notes;
     } else {
-      const notes = this.privateAccount.decryptNotes(ciphertext);
+      notes = this.privateAccount.decryptNotes(ciphertext);
+    }
 
-      if (notes.length > 0) {
-        for (let i = 0; i < notes.length; ++i) {
-          const note = notes[i];
-          this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(i), note);
-        }
-      }
+    for (let i = 0; i < notes.length; ++i) {
+      const note = notes[i];
+      this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(i), note);
     }
   }
 
   public async updatePrivateState(): Promise<void> {
-    const logs = await this.web3.eth.getPastLogs({ fromBlock: this.config.contractBlock, address: this.config.contractAddress });
+    const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
 
+    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX));
+    const logs = await this.web3.eth.getPastLogs({ fromBlock: latestCheckedBlock || this.config.contractBlock, address: this.config.contractAddress });
+
+    let newLatestBlock = this.config.contractBlock;
     for (const log of logs) {
       const tx = await this.web3.eth.getTransaction(log.transactionHash);
       const message = tx.input;
+      newLatestBlock = tx.blockNumber!;
 
       try {
         this.cachePrivateTx(message);
@@ -341,58 +348,7 @@ export class EthereumCoin extends Coin {
         continue;
       }
     }
-  }
 
-  // TODO: These functions scan all blocks for regular transactions.
-  //       Should probably remove them.
-  /**
-   * Scans blocks for account transactions (both from and to).
-   * @param startBlockNumber
-   * @param endBlockNumber
-   * @param batchSize maximum number of parallel scans
-   */
-  private async fetchAccountTransactions(account: number, startBlockNumber: number, endBlockNumber: number, batchSize: number = MAX_SCAN_TASKS): Promise<Transaction[]> {
-    if (endBlockNumber > startBlockNumber) {
-      throw new Error('startBlockNumber must be higher than endBlockNumber');
-    }
-
-    const address = this.getAddress(account);
-    let transactions: Transaction[] = [];
-
-    for (let batch = 0; batch < startBlockNumber - endBlockNumber; batch += batchSize) {
-      let promises: Promise<Transaction[]>[] = [];
-      for (let currentBlock = startBlockNumber - batch * batchSize; currentBlock >= endBlockNumber - batch * batchSize; --currentBlock) {
-        promises.push(this.scanBlock(address, currentBlock));
-      }
-
-      const results = await Promise.all(promises);
-      for (let txs of results) {
-        transactions.push(...txs);
-      }
-    }
-
-    return transactions;
-  }
-
-  /**
-   * Scan block for account transactions.
-   * @param address
-   * @param blockNumber
-   */
-  private async scanBlock(address: string, blockNumber: number): Promise<Transaction[]> {
-    let transactions: Transaction[] = [];
-
-    const block = await this.web3.eth.getBlock(blockNumber, true);
-    if (block != null && block.transactions != null) {
-      for (const tx of block.transactions) {
-        if (address == tx.from || address == tx.to) {
-          const timestamp = (typeof block.timestamp == 'string') ? parseInt(block.timestamp) : block.timestamp;
-          const newTx = convertTransaction(tx, timestamp);
-          transactions.push(newTx);
-        }
-      }
-    }
-
-    return transactions;
+    localStorage.setItem(STORAGE_PREFIX, newLatestBlock.toString());
   }
 }

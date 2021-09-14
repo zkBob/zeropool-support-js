@@ -34,8 +34,8 @@ export declare abstract class Coin {
      * @param amount as base unit
      */
     abstract transfer(account: number, to: string, amount: string): Promise<void>;
-    transferPrivate(account: number, outputs: Output[]): Promise<void>;
-    transferPrivateSimple(account: number, outputs: Output[]): Promise<void>;
+    transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
+    transferPrivateToPrivate(account: number, outputs: Output[]): Promise<void>;
     depositPrivate(account: number, amount: string): Promise<void>;
     mergePrivate(): Promise<void>;
     withdrawPrivate(account: number, amount: string): Promise<void>;

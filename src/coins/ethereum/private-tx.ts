@@ -30,9 +30,10 @@ export class EthPrivateTransaction {
   static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, params: Params, web3: Web3): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
-    // FIXME: nextTreeIndex == 0
-    // const nextIndex = acc.nextTreeIndex() as bigint;
-    const curIndex = acc.nextTreeIndex() as bigint - BigInt(1);
+    let curIndex = acc.nextTreeIndex() as bigint - BigInt(1);
+    if (curIndex < BigInt(0)) {
+      curIndex = BigInt(0);
+    }
 
     // FIXME: might not be present, handle undefined
     const commitmentProofBefore = acc.getCommitmentMerkleProof(curIndex)!;

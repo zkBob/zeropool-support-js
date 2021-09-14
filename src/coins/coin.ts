@@ -89,11 +89,11 @@ export abstract class Coin {
   abstract transfer(account: number, to: string, amount: string): Promise<void>;
 
   // TODO: Extract private tx methods into a separate class
-  transferPrivate(account: number, outputs: Output[]): Promise<void> {
+  transferPublicToPrivate(account: number, outputs: Output[]): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  transferPrivateSimple(account: number, outputs: Output[]): Promise<void> {
+  transferPrivateToPrivate(account: number, outputs: Output[]): Promise<void> {
     throw new Error('unimplemented');
   }
 

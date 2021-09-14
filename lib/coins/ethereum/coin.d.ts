@@ -33,7 +33,13 @@ export declare class EthereumCoin extends Coin {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     getCoinType(): CoinType;
-    trasnferPrivateSimple(account: number, outs: Output[]): Promise<void>;
+    /**
+     * coin.transferPublicToPrivate(0, [{ to: 'addr', amount: '123' }])
+     * @param account
+     * @param outputs
+     */
+    transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
+    trasnferPrivateToPrivate(account: number, outs: Output[]): Promise<void>;
     depositPrivate(account: number, amount: string): Promise<void>;
     mergePrivate(): Promise<void>;
     withdrawPrivate(account: number, amount: string): Promise<void>;
@@ -45,17 +51,4 @@ export declare class EthereumCoin extends Coin {
      */
     private cachePrivateTx;
     updatePrivateState(): Promise<void>;
-    /**
-     * Scans blocks for account transactions (both from and to).
-     * @param startBlockNumber
-     * @param endBlockNumber
-     * @param batchSize maximum number of parallel scans
-     */
-    private fetchAccountTransactions;
-    /**
-     * Scan block for account transactions.
-     * @param address
-     * @param blockNumber
-     */
-    private scanBlock;
 }
