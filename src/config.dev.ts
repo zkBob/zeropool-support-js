@@ -19,7 +19,8 @@ const config: Config = {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',
     chainId: WavesChainId.Testnet,
   },
-  paramsUrl: 'params.bin',
-}
+  transferParamsUrl: 'transfer_params.bin',
+  treeParamsUrl: 'tree_update_params.bin',
+};
 
 export default config;

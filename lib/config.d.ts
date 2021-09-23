@@ -5,5 +5,6 @@ export interface Config {
     near: NearConfig;
     ethereum: EthereumConfig;
     waves: WavesConfig;
-    paramsUrl: string;
+    transferParamsUrl: string;
+    treeParamsUrl: string;
 }

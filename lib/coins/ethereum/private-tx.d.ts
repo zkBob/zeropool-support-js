@@ -11,7 +11,7 @@ export declare class EthPrivateTransaction {
     nullifier: bigint;
     outCommit: bigint;
     transferIndex: bigint;
-    eneryAmount: bigint;
+    energyAmount: bigint;
     tokenAmount: bigint;
     transactProof: bigint[];
     rootAfter: bigint;
@@ -19,7 +19,7 @@ export declare class EthPrivateTransaction {
     txType: TxType;
     memoSize: number;
     memo: string;
-    static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, params: Params, web3: Web3): EthPrivateTransaction;
+    static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, transferParams: Params, treeParams: Params, web3: Web3): EthPrivateTransaction;
     get ciphertext(): string;
     /**
      * Returns encoded transaction ready to use as data for the smart contract.

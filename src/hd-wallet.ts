@@ -7,20 +7,26 @@ import { WavesCoin } from './coins/waves';
 
 import { Config } from './config';
 import { Params } from 'libzeropool-rs-wasm-bundler';
+import { transactionById } from '@waves/waves-transactions/dist/nodeInteraction';
 
 export class HDWallet {
   public seed: string;
   private coins: { [key in CoinType]?: Coin; } = {};
   private config: Config;
-  private params: Params;
+  private transferParams: Params;
+  private treeParams: Params;
 
   public static async init(seed: string, config: Config, coinTypes: CoinType[]): Promise<HDWallet> {
     const wallet = new HDWallet();
 
-    const paramsData = await (await fetch(config.paramsUrl)).arrayBuffer();
-    const params = Params.fromBinary(new Uint8Array(paramsData));
+    const txParamsData = await (await fetch(config.transferParamsUrl)).arrayBuffer();
+    const transferParams = Params.fromBinary(new Uint8Array(txParamsData));
 
-    wallet.params = params;
+    const treeParamsData = await (await fetch(config.treeParamsUrl)).arrayBuffer();
+    const treeParams = Params.fromBinary(new Uint8Array(treeParamsData));
+
+    wallet.transferParams = transferParams;
+    wallet.treeParams = treeParams;
     wallet.seed = seed;
     wallet.config = config;
 
@@ -60,7 +66,7 @@ export class HDWallet {
         break;
       }
       case CoinType.ethereum: {
-        coin = new EthereumCoin(this.seed, this.config.ethereum, this.params);
+        coin = new EthereumCoin(this.seed, this.config.ethereum, this.transferParams, this.treeParams);
         break;
       }
       case CoinType.waves: {

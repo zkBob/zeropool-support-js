@@ -27,17 +27,19 @@ export class EthereumCoin extends Coin {
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
-  private params: Params;
+  private transferParams: Params;
+  private treeParams: Params;
   private relayer: RelayerAPI;
 
-  constructor(mnemonic: string, config: Config, params: Params) {
+  constructor(mnemonic: string, config: Config, transferParams: Params, treeParams: Params) {
     super(mnemonic);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.config = config;
-    this.params = params;
+    this.transferParams = transferParams;
+    this.treeParams = treeParams;
     this.relayer = new RelayerAPI(new URL('http://localhost')); // TODO: dynamic relayer URL
   }
 
@@ -236,7 +238,7 @@ export class EthereumCoin extends Coin {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8); // fee
     const txData = await this.privateAccount.createTx('transfer', outs, memo);
-    const tx = EthPrivateTransaction.fromData(txData, TxType.Transfer, this.privateAccount, this.params, this.web3).encode();
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Transfer, this.privateAccount, this.transferParams, this.treeParams, this.web3).encode();
     const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
@@ -252,7 +254,7 @@ export class EthereumCoin extends Coin {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8); // FIXME: fee
     const txData = await this.privateAccount.createTx('deposit', amount, memo);
-    const tx = EthPrivateTransaction.fromData(txData, TxType.Deposit, this.privateAccount, this.params, this.web3).encode();
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Deposit, this.privateAccount, this.transferParams, this.treeParams, this.web3).encode();
     const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
@@ -277,7 +279,7 @@ export class EthereumCoin extends Coin {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8 + 20); // FIXME: fee + address
     const txData = await this.privateAccount.createTx('withdraw', amount, memo);
-    const tx = EthPrivateTransaction.fromData(txData, TxType.Withdraw, this.privateAccount, this.params, this.web3).encode();
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Withdraw, this.privateAccount, this.transferParams, this.treeParams, this.web3).encode();
     const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
@@ -320,7 +322,9 @@ export class EthereumCoin extends Coin {
     if (pair) {
       this.privateAccount.addAccount(txData.transferIndex, pair.account);
       notes = pair.notes;
-    } else {
+    }
+
+    if (!pair) {
       notes = this.privateAccount.decryptNotes(ciphertext);
     }
 

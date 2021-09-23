@@ -10,9 +10,10 @@ export declare class EthereumCoin extends Coin {
     private txStorage;
     private accounts;
     private config;
-    private params;
+    private transferParams;
+    private treeParams;
     private relayer;
-    constructor(mnemonic: string, config: Config, params: Params);
+    constructor(mnemonic: string, config: Config, transferParams: Params, treeParams: Params);
     protected init(): Promise<void>;
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;

@@ -18,7 +18,7 @@ export class EthPrivateTransaction {
   public nullifier: bigint;
   public outCommit: bigint;
   public transferIndex: bigint;
-  public eneryAmount: bigint;
+  public energyAmount: bigint;
   public tokenAmount: bigint;
   public transactProof: bigint[];
   public rootAfter: bigint;
@@ -27,7 +27,7 @@ export class EthPrivateTransaction {
   public memoSize: number;
   public memo: string;
 
-  static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, params: Params, web3: Web3): EthPrivateTransaction {
+  static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, transferParams: Params, treeParams: Params, web3: Web3): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
     let curIndex = acc.nextTreeIndex() as bigint - BigInt(1);
@@ -35,9 +35,8 @@ export class EthPrivateTransaction {
       curIndex = BigInt(0);
     }
 
-    // FIXME: might not be present, handle undefined
-    const commitmentProofBefore = acc.getCommitmentMerkleProof(curIndex)!;
-    const commitmentProofAfter = acc.getCommitmentMerkleProof(curIndex + BigInt(1))!;
+    const commitmentProofBefore = acc.getCommitmentMerkleProof(curIndex);
+    const commitmentProofAfter = acc.getCommitmentMerkleProof(curIndex + BigInt(1));
 
     const prevLeaf = acc.getLastLeaf();
     const newLeaf = txData.out_hashes[txData.out_hashes.length - 1];
@@ -48,8 +47,8 @@ export class EthPrivateTransaction {
     const rootBefore = proofBefore?.sibling[proofBefore.sibling.length - 1]!;
     const rootAfter = proofAfter?.sibling[proofAfter.sibling.length - 1]!;
 
-    const txProof = Proof.tx(params, txData.public, txData.secret);
-    const treeProof = Proof.tree(params, {
+    const txProof = Proof.tx(transferParams, txData.public, txData.secret);
+    const treeProof = Proof.tree(treeParams, {
       root_before: rootBefore,
       root_after: rootAfter,
       leaf: newLeaf,
@@ -64,7 +63,7 @@ export class EthPrivateTransaction {
     tx.outCommit = BigInt(txData.public.out_commit);
 
     tx.transferIndex = BigInt(txData.parsed_delta.index);
-    tx.eneryAmount = BigInt(txData.parsed_delta.e);
+    tx.energyAmount = BigInt(txData.parsed_delta.e);
     tx.tokenAmount = BigInt(txData.parsed_delta.v);
 
     tx.transactProof = formatSnarkProof(txProof.proof);
@@ -91,7 +90,7 @@ export class EthPrivateTransaction {
     writer.writeBigInt(this.nullifier, 32);
     writer.writeBigInt(this.outCommit, 32);
     writer.writeBigInt(this.transferIndex, 6);
-    writer.writeBigInt(this.eneryAmount, 14);
+    writer.writeBigInt(this.energyAmount, 8);
     writer.writeBigInt(this.tokenAmount, 8);
     writer.writeBigIntArray(this.transactProof, 32);
     writer.writeBigInt(this.rootAfter, 32);
@@ -111,7 +110,7 @@ export class EthPrivateTransaction {
     tx.nullifier = reader.readBigInt(32);
     tx.outCommit = reader.readBigInt(32);
     tx.transferIndex = reader.readBigInt(6);
-    tx.eneryAmount = reader.readBigInt(14);
+    tx.energyAmount = reader.readBigInt(8);
     tx.tokenAmount = reader.readBigInt(8);
     tx.transactProof = reader.readBigIntArray(8, 32);
     tx.rootAfter = reader.readBigInt(32);
