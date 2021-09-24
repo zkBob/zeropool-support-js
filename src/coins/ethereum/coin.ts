@@ -231,10 +231,10 @@ export class EthereumCoin extends Coin {
     }
 
     // Transfer
-    await this.trasnferPrivateToPrivate(account, outputs);
+    await this.transferPrivateToPrivate(account, outputs);
   }
 
-  public async trasnferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
+  public async transferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8); // fee
     const txData = await this.privateAccount.createTx('transfer', outs, memo);
@@ -291,7 +291,7 @@ export class EthereumCoin extends Coin {
     await this.web3.eth.sendSignedTransaction(signed);
   }
 
-  private async prepareTranaction(txObject: TransactionConfig, account: number): Promise<string> {
+  private async prepareTranaction(txObject: TransactionConfig, account: number, nullifier?: BigInt): Promise<string> {
     const address = this.getAddress(account);
     const gas = await this.web3.eth.estimateGas(txObject);
     const gasPrice = await this.web3.eth.getGasPrice();

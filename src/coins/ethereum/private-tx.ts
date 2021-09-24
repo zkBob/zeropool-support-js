@@ -39,8 +39,6 @@ export class EthPrivateTransaction {
     const commitmentProofAfter = acc.getCommitmentMerkleProof(curIndex + BigInt(1));
 
     const prevLeaf = acc.getLastLeaf();
-    const newLeaf = txData.out_hashes[txData.out_hashes.length - 1];
-
     const proofBefore = acc.getMerkleProof(curIndex);
     const proofAfter = acc.getMerkleProofAfter(txData.out_hashes)[txData.out_hashes.length - 1];
 
@@ -51,14 +49,14 @@ export class EthPrivateTransaction {
     const treeProof = Proof.tree(treeParams, {
       root_before: rootBefore,
       root_after: rootAfter,
-      leaf: newLeaf,
+      leaf: txData.commitment_root,
     }, {
       proof_filled: commitmentProofBefore,
       proof_free: commitmentProofAfter,
       prev_leaf: prevLeaf,
     });
 
-    tx.selector = web3.eth.abi.encodeFunctionSignature('transact()');
+    tx.selector = web3.eth.abi.encodeFunctionSignature('transact()').slice(2);
     tx.nullifier = BigInt(txData.public.nullifier);
     tx.outCommit = BigInt(txData.public.out_commit);
 
@@ -71,7 +69,7 @@ export class EthPrivateTransaction {
     tx.treeProof = formatSnarkProof(treeProof.proof);
     tx.txType = txType;
 
-    tx.memo = base64ToHex(txData.memo);
+    tx.memo = txData.memo;
 
     return tx;
   }
