@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { Observable } from 'rxjs';
 import BN from 'bn.js';
-import { Output, Params } from 'libzeropool-rs-wasm-bundler';
+import { Note, Output, Params } from 'libzeropool-rs-wasm-bundler';
 import { TransactionConfig } from 'web3-core';
 
 import { Coin } from '../coin';
@@ -318,19 +318,17 @@ export class EthereumCoin extends Coin {
     const ciphertext = hexToBuf(txData.ciphertext);
     const pair = this.privateAccount.decryptPair(ciphertext);
 
-    let notes;
+    let notes: { note: Note, index: number }[];
     if (pair) {
       this.privateAccount.addAccount(txData.transferIndex, pair.account);
-      notes = pair.notes;
-    }
-
-    if (!pair) {
+      notes = pair.notes.map((note, index) => ({ note, index }));
+    } else {
       notes = this.privateAccount.decryptNotes(ciphertext);
     }
 
-    for (let i = 0; i < notes.length; ++i) {
-      const note = notes[i];
-      this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(i), note);
+
+    for (const note of notes) {
+      this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(note.index), note.note);
     }
   }
 
