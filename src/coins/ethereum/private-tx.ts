@@ -1,5 +1,7 @@
 import { TransactionData, Proof, Params, SnarkProof, TreePub, TreeSec, UserAccount } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
+import { Sign } from 'web3-core';
+import { SignatureObject } from 'web3-eth-accounts';
 
 import { base64ToHex } from '../../utils';
 
@@ -146,7 +148,7 @@ class HexStringWriter {
   }
 
   writeBigInt(num: bigint, numBytes: number) {
-    this.buf += num.toString(16).slice(-numBytes * 2);
+    this.buf += num.toString(16).slice(-numBytes * 2).padStart(numBytes * 2, '0');
   }
 
   writeBigIntArray(nums: bigint[], numBytes: number) {
@@ -156,7 +158,7 @@ class HexStringWriter {
   }
 
   writeNumber(num: number, numBytes: number) {
-    this.buf += num.toString(16).slice(-numBytes * 2);
+    this.buf += num.toString(16).slice(-numBytes * 2).padStart(numBytes * 2, '0');
   }
 }
 

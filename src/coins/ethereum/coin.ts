@@ -14,6 +14,7 @@ import { AccountCache } from './account';
 import { EthPrivateTransaction, TxType } from './private-tx';
 import { hexToBuf } from '../../utils';
 import { RelayerAPI } from './relayer';
+import { TransactionFactory, TxData } from '@ethereumjs/tx';
 
 // TODO: Organize presistent state properly
 
@@ -259,10 +260,9 @@ export class EthereumCoin extends Coin {
       from: address,
       to: this.config.contractAddress,
       data: tx,
-      value: amount,
     };
 
-    const signed = await this.prepareTranaction(txObject, account);
+    const signed = await this.prepareTranaction(txObject, account, txData.public.nullifier);
 
     await this.web3.eth.sendSignedTransaction(signed);
   }
@@ -291,7 +291,7 @@ export class EthereumCoin extends Coin {
     await this.web3.eth.sendSignedTransaction(signed);
   }
 
-  private async prepareTranaction(txObject: TransactionConfig, account: number, nullifier?: BigInt): Promise<string> {
+  private async prepareTranaction(txObject: TransactionConfig, account: number, nullifier?: string): Promise<string> {
     const address = this.getAddress(account);
     const gas = await this.web3.eth.estimateGas(txObject);
     const gasPrice = await this.web3.eth.getGasPrice();
@@ -300,9 +300,23 @@ export class EthereumCoin extends Coin {
     txObject.gasPrice = gasPrice;
     txObject.nonce = nonce;
 
-    const signed = await this.web3.eth.accounts.signTransaction(txObject, this.getPrivateKey(account));
+    const privateKey = this.getPrivateKey(account);
 
-    return signed.rawTransaction!;
+    let signed: string;
+    if (nullifier) {
+      const tx = TransactionFactory.fromTxData(txObject as TxData);
+      let serialized = tx.serialize().toString('hex');
+
+      const hash = this.web3.utils.sha3(nullifier.padStart(32, '0'))!;
+      const sign = (await this.web3.eth.sign(address, hash)).slice(2);
+
+      serialized += sign;
+      signed = serialized;
+    } else {
+      signed = await (await this.web3.eth.accounts.signTransaction(txObject, privateKey)).rawTransaction!;
+    }
+
+    return signed;
   }
 
   public getPrivateBalance(): string {

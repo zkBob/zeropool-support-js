@@ -15,6 +15,7 @@
     "prepare": "tsc"
   },
   "dependencies": {
+    "@ethereumjs/tx": "^3.3.2",
     "@types/bn.js": "^5.1.0",
     "@waves/node-api-js": "^1.2.0",
     "@waves/ts-lib-crypto": "^1.4.3",
