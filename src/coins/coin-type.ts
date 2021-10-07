@@ -23,7 +23,7 @@ export namespace CoinType {
   export function accountPath(coin: CoinType, account: number): string {
     switch (coin) {
       case CoinType.ethereum:
-        return `/${account}'/0/0`;
+        return `/0'/0/${account}`;
       case CoinType.near:
         return `/${account}'`;
       case CoinType.waves:

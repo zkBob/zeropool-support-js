@@ -7,14 +7,14 @@ import { TransactionConfig } from 'web3-core';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee, TxStatus } from '../transaction';
-import { convertTransaction } from './utils';
+import { convertTransaction, toCompactSignature } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { EthPrivateTransaction, TxType } from './private-tx';
 import { hexToBuf } from '../../utils';
 import { RelayerAPI } from './relayer';
-import { TransactionFactory, TxData } from '@ethereumjs/tx';
+import { TransactionFactory, TxData, TypedTransaction } from '@ethereumjs/tx';
 
 // TODO: Organize presistent state properly
 
@@ -237,13 +237,14 @@ export class EthereumCoin extends Coin {
 
   public async transferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
     const address = this.getAddress(account);
-    const memo = new Uint8Array(8); // fee
+    const memo = new Uint8Array(8); // FIXME: fee
     const txData = await this.privateAccount.createTx('transfer', outs, memo);
-    const tx = EthPrivateTransaction.fromData(txData, TxType.Transfer, this.privateAccount, this.transferParams, this.treeParams, this.web3).encode();
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Transfer, this.privateAccount, this.transferParams, this.treeParams, this.web3);
+    const data = tx.encode();
     const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
-      data: tx,
+      data,
     };
 
     const signed = await this.prepareTranaction(txObject, account);
@@ -255,21 +256,24 @@ export class EthereumCoin extends Coin {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8); // FIXME: fee
     const txData = await this.privateAccount.createTx('deposit', amount, memo);
-    const tx = EthPrivateTransaction.fromData(txData, TxType.Deposit, this.privateAccount, this.transferParams, this.treeParams, this.web3).encode();
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Deposit, this.privateAccount, this.transferParams, this.treeParams, this.web3);
+    const data = tx.encode();
     const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
-      data: tx,
+      data,
     };
 
-    const signed = await this.prepareTranaction(txObject, account, txData.public.nullifier);
+    const nullifier = BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
+
+    const signed = await this.prepareTranaction(txObject, account, nullifier);
 
     await this.web3.eth.sendSignedTransaction(signed);
   }
 
-  public async mergePrivate(): Promise<void> {
-    throw new Error('unimplemented');
-  }
+  // public async mergePrivate(): Promise<void> {
+  //   throw new Error('unimplemented');
+  // }
 
   public async withdrawPrivate(account: number, amount: string): Promise<void> {
     if (Math.sign(Number(amount)) === 1) {
@@ -279,11 +283,12 @@ export class EthereumCoin extends Coin {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8 + 20); // FIXME: fee + address
     const txData = await this.privateAccount.createTx('withdraw', amount, memo);
-    const tx = EthPrivateTransaction.fromData(txData, TxType.Withdraw, this.privateAccount, this.transferParams, this.treeParams, this.web3).encode();
+    const tx = EthPrivateTransaction.fromData(txData, TxType.Withdraw, this.privateAccount, this.transferParams, this.treeParams, this.web3);
+    const data = tx.encode();
     const txObject: TransactionConfig = {
       from: address,
       to: this.config.contractAddress,
-      data: tx,
+      data,
     };
 
     const signed = await this.prepareTranaction(txObject, account);
@@ -293,6 +298,14 @@ export class EthereumCoin extends Coin {
 
   private async prepareTranaction(txObject: TransactionConfig, account: number, nullifier?: string): Promise<string> {
     const address = this.getAddress(account);
+    const privateKey = this.getPrivateKey(account);
+
+    if (nullifier) {
+      const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
+      const signature = toCompactSignature(sign.signature).slice(2);
+      txObject.data += signature;
+    }
+
     const gas = await this.web3.eth.estimateGas(txObject);
     const gasPrice = await this.web3.eth.getGasPrice();
     const nonce = await this.web3.eth.getTransactionCount(address);
@@ -300,21 +313,9 @@ export class EthereumCoin extends Coin {
     txObject.gasPrice = gasPrice;
     txObject.nonce = nonce;
 
-    const privateKey = this.getPrivateKey(account);
-
-    let signed: string;
-    if (nullifier) {
-      const tx = TransactionFactory.fromTxData(txObject as TxData);
-      let serialized = tx.serialize().toString('hex');
-
-      const hash = this.web3.utils.sha3(nullifier.padStart(32, '0'))!;
-      const sign = (await this.web3.eth.sign(address, hash)).slice(2);
-
-      serialized += sign;
-      signed = serialized;
-    } else {
-      signed = await (await this.web3.eth.accounts.signTransaction(txObject, privateKey)).rawTransaction!;
-    }
+    const tx = TransactionFactory.fromTxData(txObject as TxData);
+    tx.sign(Buffer.from(privateKey, 'hex'));
+    const signed = tx.serialize().toString('hex');
 
     return signed;
   }
@@ -339,7 +340,6 @@ export class EthereumCoin extends Coin {
     } else {
       notes = this.privateAccount.decryptNotes(ciphertext);
     }
-
 
     for (const note of notes) {
       this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(note.index), note.note);

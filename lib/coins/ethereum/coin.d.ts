@@ -42,7 +42,6 @@ export declare class EthereumCoin extends Coin {
     transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
     transferPrivateToPrivate(account: number, outs: Output[]): Promise<void>;
     depositPrivate(account: number, amount: string): Promise<void>;
-    mergePrivate(): Promise<void>;
     withdrawPrivate(account: number, amount: string): Promise<void>;
     private prepareTranaction;
     getPrivateBalance(): string;
