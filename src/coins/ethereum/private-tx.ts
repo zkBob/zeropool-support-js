@@ -6,7 +6,8 @@ import { SignatureObject } from 'web3-eth-accounts';
 import { base64ToHex } from '../../utils';
 
 // Sizes in bytes
-const MEMO_META_SIZE: number = 8;
+const MEMO_META_SIZE: number = 8; // fee (u64)
+const MEMO_META_WITHDRAW_SIZE: number = 28; // fee (u64) + address (u160)
 
 export enum TxType {
   Deposit = '00',
@@ -62,7 +63,7 @@ export class EthPrivateTransaction {
     tx.nullifier = BigInt(txData.public.nullifier);
     tx.outCommit = BigInt(txData.public.out_commit);
 
-    tx.transferIndex = BigInt(txData.parsed_delta.index);
+    tx.transferIndex = BigInt(txData.secret.tx.output[0].i);
     tx.energyAmount = BigInt(txData.parsed_delta.e);
     tx.tokenAmount = BigInt(txData.parsed_delta.v);
 
@@ -77,6 +78,10 @@ export class EthPrivateTransaction {
   }
 
   get ciphertext(): string {
+    if (this.txType === TxType.Withdraw) {
+      return this.memo.slice(MEMO_META_WITHDRAW_SIZE * 2);
+    }
+
     return this.memo.slice(MEMO_META_SIZE * 2);
   }
 
@@ -96,7 +101,7 @@ export class EthPrivateTransaction {
     writer.writeBigInt(this.rootAfter, 32);
     writer.writeBigIntArray(this.treeProof, 32);
     writer.writeHex(this.txType.toString());
-    writer.writeNumber(this.memo.length / 2, 1);
+    writer.writeNumber(this.memo.length / 2, 2);
     writer.writeHex(this.memo);
 
     return writer.toString();

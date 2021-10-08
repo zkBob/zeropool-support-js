@@ -235,6 +235,7 @@ export class EthereumCoin extends Coin {
     await this.transferPrivateToPrivate(account, outputs);
   }
 
+  // TODO: Unify into a single method
   public async transferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
     const address = this.getAddress(account);
     const memo = new Uint8Array(8); // FIXME: fee
@@ -247,7 +248,7 @@ export class EthereumCoin extends Coin {
       data,
     };
 
-    const signed = await this.prepareTranaction(txObject, account);
+    const signed = await this.prepareTransaction(txObject, tx, account);
 
     await this.web3.eth.sendSignedTransaction(signed);
   }
@@ -264,9 +265,9 @@ export class EthereumCoin extends Coin {
       data,
     };
 
-    const nullifier = BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
+    const nullifier = '0x' + BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
 
-    const signed = await this.prepareTranaction(txObject, account, nullifier);
+    const signed = await this.prepareTransaction(txObject, tx, account, nullifier);
 
     await this.web3.eth.sendSignedTransaction(signed);
   }
@@ -291,14 +292,16 @@ export class EthereumCoin extends Coin {
       data,
     };
 
-    const signed = await this.prepareTranaction(txObject, account);
+    const signed = await this.prepareTransaction(txObject, tx, account);
 
     await this.web3.eth.sendSignedTransaction(signed);
   }
 
-  private async prepareTranaction(txObject: TransactionConfig, account: number, nullifier?: string): Promise<string> {
+  private async prepareTransaction(txObject: TransactionConfig, privateTx: EthPrivateTransaction, account: number, nullifier?: string): Promise<string> {
     const address = this.getAddress(account);
     const privateKey = this.getPrivateKey(account);
+
+    console.log(privateTx);
 
     if (nullifier) {
       const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
@@ -307,17 +310,17 @@ export class EthereumCoin extends Coin {
     }
 
     const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = await this.web3.eth.getGasPrice();
+    const gasPrice = BigInt(await this.web3.eth.getGasPrice()) * BigInt(2);
     const nonce = await this.web3.eth.getTransactionCount(address);
     txObject.gas = gas;
-    txObject.gasPrice = gasPrice;
+    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
     txObject.nonce = nonce;
 
     const tx = TransactionFactory.fromTxData(txObject as TxData);
-    tx.sign(Buffer.from(privateKey, 'hex'));
-    const signed = tx.serialize().toString('hex');
+    const signedTx = tx.sign(Buffer.from(privateKey.slice(2), 'hex'));
+    const hex = signedTx.serialize().toString('hex');
 
-    return signed;
+    return hex;
   }
 
   public getPrivateBalance(): string {

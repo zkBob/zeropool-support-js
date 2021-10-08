@@ -43,7 +43,7 @@ export declare class EthereumCoin extends Coin {
     transferPrivateToPrivate(account: number, outs: Output[]): Promise<void>;
     depositPrivate(account: number, amount: string): Promise<void>;
     withdrawPrivate(account: number, amount: string): Promise<void>;
-    private prepareTranaction;
+    private prepareTransaction;
     getPrivateBalance(): string;
     /**
      * Attempt to extract and save usable account/notes from transaction data.

@@ -21,10 +21,10 @@ export function toCompactSignature(signature: string) {
     throw ("invalid signature: v should be 27 or 28");
   }
 
-  return signature.slice(0, 130);
+  return signature;
 }
 
-export function toCanonicalSignature(signature) {
+export function toCanonicalSignature(signature: string) {
   let v = "1c";
   if (parseInt(signature[66], 16) > 7) {
     v = "1e";
