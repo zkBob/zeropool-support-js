@@ -3,4 +3,5 @@ export interface Config {
   wsProviderUrl: string;
   contractAddress: string;
   contractBlock: number;
+  tokenContractAddress: string;
 }

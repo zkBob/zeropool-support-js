@@ -1,10 +1,11 @@
-import { TransactionData, Params, UserAccount } from 'libzeropool-rs-wasm-bundler';
+import { TransactionData, Params, SnarkProof, UserAccount } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
 export declare enum TxType {
     Deposit = "00",
     Transfer = "01",
     Withdraw = "02"
 }
+export declare function txTypeToString(txType: TxType): string;
 export declare class EthPrivateTransaction {
     /** Hex encoded smart contract method id */
     selector: string;
@@ -17,7 +18,6 @@ export declare class EthPrivateTransaction {
     rootAfter: bigint;
     treeProof: bigint[];
     txType: TxType;
-    memoSize: number;
     memo: string;
     static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, transferParams: Params, treeParams: Params, web3: Web3): EthPrivateTransaction;
     get ciphertext(): string;
@@ -27,3 +27,4 @@ export declare class EthPrivateTransaction {
     encode(): string;
     static decode(data: string): EthPrivateTransaction;
 }
+export declare function flattenSnarkProof(p: SnarkProof): bigint[];

@@ -14,6 +14,7 @@ const config: Config = {
     wsProviderUrl: 'wss://main.eth.linkpool.io/ws',
     contractAddress: '',
     contractBlock: 0,
+    tokenContractAddress: '',
   },
   waves: {
     nodeUrl: 'https://nodes.wavesplatform.com',

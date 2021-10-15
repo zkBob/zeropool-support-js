@@ -15,23 +15,23 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@ethereumjs/tx": "^3.3.2",
+    "@ethereumjs/tx": "^3.2.1",
     "@types/bn.js": "^5.1.0",
     "@waves/node-api-js": "^1.2.0",
     "@waves/ts-lib-crypto": "^1.4.3",
     "@waves/waves-transactions": "^4.1.8",
     "bip39-light": "^1.0.7",
-    "bn.js": "^5.1.3",
+    "bn.js": "^4.11.6",
     "bs58": "^4.0.1",
     "ed25519-hd-key": "^1.2.0",
     "hdkey": "^2.0.1",
-    "libzeropool-rs-wasm-bundler": "0.3.0-alpha.20",
+    "libzeropool-rs-wasm-bundler": "0.3.0-alpha.22",
     "near-api-js": "https://github.com/near/near-api-js",
     "rxjs": "^6.6.3",
     "tweetnacl": "^1.0.3",
     "web3": "^1.3.1",
     "web3-core": "^1.3.1",
-    "web3-eth-contract": "^1.3.6",
+    "web3-eth-contract": "^1.3.1",
     "web3-utils": "^1.3.6"
   },
   "devDependencies": {

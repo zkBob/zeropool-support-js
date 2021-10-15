@@ -1,9 +1,5 @@
-import { TransactionData, Proof, Params, SnarkProof, TreePub, TreeSec, UserAccount } from 'libzeropool-rs-wasm-bundler';
+import { TransactionData, Proof, Params, SnarkProof, UserAccount } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
-import { Sign } from 'web3-core';
-import { SignatureObject } from 'web3-eth-accounts';
-
-import { base64ToHex } from '../../utils';
 
 // Sizes in bytes
 const MEMO_META_SIZE: number = 8; // fee (u64)
@@ -13,6 +9,14 @@ export enum TxType {
   Deposit = '00',
   Transfer = '01',
   Withdraw = '02',
+}
+
+export function txTypeToString(txType: TxType): string {
+  switch (txType) {
+    case TxType.Deposit: return 'deposit';
+    case TxType.Transfer: return 'transfer';
+    case TxType.Withdraw: return 'withdraw';
+  }
 }
 
 export class EthPrivateTransaction {
@@ -27,7 +31,6 @@ export class EthPrivateTransaction {
   public rootAfter: bigint;
   public treeProof: bigint[];
   public txType: TxType;
-  public memoSize: number;
   public memo: string;
 
   static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, transferParams: Params, treeParams: Params, web3: Web3): EthPrivateTransaction {
@@ -38,14 +41,15 @@ export class EthPrivateTransaction {
       curIndex = BigInt(0);
     }
 
-    const commitmentProofBefore = acc.getCommitmentMerkleProof(curIndex);
-    const commitmentProofAfter = acc.getCommitmentMerkleProof(curIndex + BigInt(1));
+    const prevCommitmentIndex = curIndex / BigInt(128);
+    const nextCommitmentIndex = acc.nextTreeIndex() as bigint / BigInt(128);
+
+    const commitmentProofBefore = acc.getCommitmentMerkleProof(prevCommitmentIndex);
+    const commitmentProofAfter = acc.getCommitmentMerkleProof(nextCommitmentIndex);
 
     const prevLeaf = acc.getLastLeaf();
-    const proofBefore = acc.getMerkleProof(curIndex);
+    const rootBefore = acc.getRoot();
     const proofAfter = acc.getMerkleProofAfter(txData.out_hashes)[txData.out_hashes.length - 1];
-
-    const rootBefore = proofBefore?.sibling[proofBefore.sibling.length - 1]!;
     const rootAfter = proofAfter?.sibling[proofAfter.sibling.length - 1]!;
 
     const txProof = Proof.tx(transferParams, txData.public, txData.secret);
@@ -67,9 +71,9 @@ export class EthPrivateTransaction {
     tx.energyAmount = BigInt(txData.parsed_delta.e);
     tx.tokenAmount = BigInt(txData.parsed_delta.v);
 
-    tx.transactProof = formatSnarkProof(txProof.proof);
+    tx.transactProof = flattenSnarkProof(txProof.proof);
     tx.rootAfter = BigInt(rootAfter);
-    tx.treeProof = formatSnarkProof(treeProof.proof);
+    tx.treeProof = flattenSnarkProof(treeProof.proof);
     tx.txType = txType;
 
     tx.memo = txData.memo;
@@ -128,15 +132,13 @@ export class EthPrivateTransaction {
   }
 }
 
-function formatSnarkProof(proof: SnarkProof): bigint[] {
-  const a = proof.a.map(num => BigInt(num));
-  const b = proof.b.flat().map(num => BigInt(num));
-  const c = proof.c.map(num => BigInt(num));
-
-  return [...a, ...b, ...c];
+export function flattenSnarkProof(p: SnarkProof): bigint[] {
+  return [p.a, p.b.flat(), p.c].flat().map(n => {
+    const hex = BigInt(n);
+    return hex;
+  });
 }
 
-// TODO: Use borsh for serialization?
 class HexStringWriter {
   buf: string;
 
