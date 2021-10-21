@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "strictNullChecks": true,
-    "target": "es5",
+    "target": "es2016",
     "outDir": "lib",
     "module": "ES2020",
     "moduleResolution": "node",
