@@ -20,6 +20,7 @@ import { AbiItem, hexToBytes } from 'web3-utils';
 
 // TODO: Organize presistent state properly
 
+const DENOMINATOR = BigInt(1000000000);
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 const STATE_STORAGE_PREFIX = 'zeropool.eth.state';
@@ -281,7 +282,7 @@ export class EthereumCoin extends Coin {
     const address = this.getAddress(account);
 
     const memo = new Uint8Array(8 + 8 + 20); // fee + amount + address
-    const amountBn = hexToBuf(toTwosComplementHex(BigInt(amount), 8));
+    const amountBn = hexToBuf(toTwosComplementHex(BigInt(amount) / DENOMINATOR, 8));
     memo.set(amountBn, 8);
     const addressBin = hexToBuf(address);
     memo.set(addressBin, 16);
@@ -290,8 +291,6 @@ export class EthereumCoin extends Coin {
   }
 
   private async signAndSendPrivateTx(account: number, txType: TxType, outWei: string | Output[], memo: Uint8Array): Promise<void> {
-    const DENOMINATOR = BigInt(1000000000);
-
     const address = this.getAddress(account);
     const privateKey = this.getPrivateKey(account);
 
