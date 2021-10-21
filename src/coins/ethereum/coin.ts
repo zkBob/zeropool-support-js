@@ -9,7 +9,7 @@ import tokenAbi from './token-abi.json';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee, TxStatus } from '../transaction';
-import { convertTransaction, toCompactSignature } from './utils';
+import { convertTransaction, toCompactSignature, toTwosComplementHex } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
@@ -256,6 +256,7 @@ export class EthereumCoin extends Coin {
 
     // await this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).send({ from: address })
 
+    await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
     const encodedTx = this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
@@ -278,34 +279,33 @@ export class EthereumCoin extends Coin {
 
   public async withdrawPrivate(account: number, amount: string): Promise<void> {
     const address = this.getAddress(account);
-    if (Math.sign(Number(amount)) === 1) {
-      amount = (-BigInt(amount)).toString();
-    }
 
-    const memo = new Uint8Array(8 + 20); // fee + address
+    const memo = new Uint8Array(8 + 8 + 20); // fee + amount + address
+    const amountBn = hexToBuf(toTwosComplementHex(BigInt(amount), 8));
+    memo.set(amountBn, 8);
     const addressBin = hexToBuf(address);
-    memo.set(addressBin, 8);
+    memo.set(addressBin, 16);
 
     await this.signAndSendPrivateTx(account, TxType.Withdraw, amount, memo);
   }
 
-  private async signAndSendPrivateTx(account: number, txType: TxType, out: string | Output[], memo: Uint8Array): Promise<void> {
+  private async signAndSendPrivateTx(account: number, txType: TxType, outWei: string | Output[], memo: Uint8Array): Promise<void> {
     const DENOMINATOR = BigInt(1000000000);
 
     const address = this.getAddress(account);
     const privateKey = this.getPrivateKey(account);
 
-    // Convert wei to gwei
-    if (typeof out === 'string') {
-      out = (BigInt(out) / DENOMINATOR).toString();
+    let outGwei;
+    if (typeof outWei === 'string') {
+      outGwei = (BigInt(outWei) / DENOMINATOR).toString();
     } else {
-      out = out.map(({ to, amount }) => ({
+      outGwei = outWei.map(({ to, amount }) => ({
         to,
         amount: (BigInt(amount) / DENOMINATOR).toString(),
       }));
     }
 
-    const txData = await this.privateAccount.createTx(txTypeToString(txType), out, memo);
+    const txData = await this.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
     const tx = EthPrivateTransaction.fromData(txData, txType, this.privateAccount, this.transferParams, this.treeParams, this.web3);
     const data = tx.encode();
     const txObject: TransactionConfig = {
@@ -319,6 +319,8 @@ export class EthereumCoin extends Coin {
       const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
       const signature = toCompactSignature(sign.signature).slice(2);
       txObject.data += signature;
+    } else if (txType === TxType.Withdraw && typeof outWei === 'string') {
+      txObject.value = outWei;
     }
 
     const gas = await this.web3.eth.estimateGas(txObject);

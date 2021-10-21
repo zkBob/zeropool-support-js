@@ -1,5 +1,7 @@
 import { TransactionData, Proof, Params, SnarkProof, UserAccount } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
+import { numberToHex, padLeft } from 'web3-utils';
+import { toTwosComplementHex } from './utils';
 
 // Sizes in bytes
 const MEMO_META_SIZE: number = 8; // fee (u64)
@@ -155,7 +157,7 @@ class HexStringWriter {
   }
 
   writeBigInt(num: bigint, numBytes: number) {
-    this.buf += num.toString(16).slice(-numBytes * 2).padStart(numBytes * 2, '0');
+    this.buf += toTwosComplementHex(num, numBytes);
   }
 
   writeBigIntArray(nums: bigint[], numBytes: number) {
@@ -165,7 +167,7 @@ class HexStringWriter {
   }
 
   writeNumber(num: number, numBytes: number) {
-    this.buf += num.toString(16).slice(-numBytes * 2).padStart(numBytes * 2, '0');
+    this.buf += padLeft(numberToHex(num).slice(2), numBytes * 2);
   }
 }
 
@@ -204,3 +206,9 @@ class HexStringReader {
       .map(() => this.readBigInt(numBytesPerElement));
   }
 }
+
+// export function bigIntToHex(num: bigint, numBytes: number): string {
+//   const hex = toTwosComplement(num.toString());
+//   return hex.slice(hex.length - numBytes * 2);
+// }
+

@@ -66,6 +66,10 @@ export function hexToBuf(hex: string): Uint8Array {
     throw new Error('Invalid hex string');
   }
 
+  if (hex.startsWith('0x')) {
+    hex = hex.slice(2);
+  }
+
   const buffer = new Uint8Array(hex.length / 2);
 
   for (let i = 0; i < hex.length; i = i + 2) {

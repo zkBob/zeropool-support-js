@@ -1,5 +1,6 @@
 import { Transaction, TxStatus } from '../transaction';
 import { Transaction as NativeTx } from 'web3-core';
+import { padLeft } from 'web3-utils';
 
 export function convertTransaction(tx: NativeTx, timestamp: number, customStatus?: TxStatus): Transaction {
   return {
@@ -30,4 +31,16 @@ export function toCanonicalSignature(signature: string) {
     v = "1e";
   }
   return signature + v;
+}
+
+export function toTwosComplementHex(num: bigint, numBytes: number): string {
+  let hex;
+  if (num < 0) {
+    let val = BigInt(2) ** BigInt(numBytes * 8) + num;
+    hex = val.toString(16);
+  } else {
+    hex = num.toString(16);
+  }
+
+  return padLeft(hex, numBytes * 2);
 }
