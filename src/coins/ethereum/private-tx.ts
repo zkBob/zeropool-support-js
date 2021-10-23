@@ -1,4 +1,4 @@
-import { TransactionData, Proof, Params, SnarkProof, UserAccount } from 'libzeropool-rs-wasm-bundler';
+import { TransactionData, Proof, Params, SnarkProof, UserAccount, VK } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
 import { numberToHex, padLeft } from 'web3-utils';
 import { toTwosComplementHex } from './utils';
@@ -35,7 +35,12 @@ export class EthPrivateTransaction {
   public txType: TxType;
   public memo: string;
 
-  static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, transferParams: Params, treeParams: Params, web3: Web3): EthPrivateTransaction {
+  static fromData(
+    txData: TransactionData,
+    txType: TxType,
+    acc: UserAccount,
+    snarkParams: { transferParams: Params; treeParams: Params; transferVk?: VK; treeVk?: VK; },
+    web3: Web3): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
     let curIndex = acc.nextTreeIndex() as bigint - BigInt(1);
@@ -54,8 +59,8 @@ export class EthPrivateTransaction {
     const proofAfter = acc.getMerkleProofAfter(txData.out_hashes)[txData.out_hashes.length - 1];
     const rootAfter = proofAfter?.sibling[proofAfter.sibling.length - 1]!;
 
-    const txProof = Proof.tx(transferParams, txData.public, txData.secret);
-    const treeProof = Proof.tree(treeParams, {
+    const txProof = Proof.tx(snarkParams.transferParams, txData.public, txData.secret);
+    const treeProof = Proof.tree(snarkParams.treeParams, {
       root_before: rootBefore,
       root_after: rootAfter,
       leaf: txData.commitment_root,
@@ -64,6 +69,16 @@ export class EthPrivateTransaction {
       proof_free: commitmentProofAfter,
       prev_leaf: prevLeaf,
     });
+
+    const txValid = Proof.verify(snarkParams.transferVk!, txProof.inputs, txProof.proof);
+    if (!txValid) {
+      throw new Error('invalid tx proof');
+    }
+
+    const treeValid = Proof.verify(snarkParams.treeVk!, treeProof.inputs, treeProof.proof);
+    if (!treeValid) {
+      throw new Error('invalid tree proof');
+    }
 
     tx.selector = web3.eth.abi.encodeFunctionSignature('transact()').slice(2);
     tx.nullifier = BigInt(txData.public.nullifier);
@@ -136,8 +151,7 @@ export class EthPrivateTransaction {
 
 export function flattenSnarkProof(p: SnarkProof): bigint[] {
   return [p.a, p.b.flat(), p.c].flat().map(n => {
-    const hex = BigInt(n);
-    return hex;
+    return BigInt(n);
   });
 }
 

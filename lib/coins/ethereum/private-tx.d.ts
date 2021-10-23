@@ -1,4 +1,4 @@
-import { TransactionData, Params, SnarkProof, UserAccount } from 'libzeropool-rs-wasm-bundler';
+import { TransactionData, Params, SnarkProof, UserAccount, VK } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
 export declare enum TxType {
     Deposit = "00",
@@ -19,7 +19,12 @@ export declare class EthPrivateTransaction {
     treeProof: bigint[];
     txType: TxType;
     memo: string;
-    static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, transferParams: Params, treeParams: Params, web3: Web3): EthPrivateTransaction;
+    static fromData(txData: TransactionData, txType: TxType, acc: UserAccount, snarkParams: {
+        transferParams: Params;
+        treeParams: Params;
+        transferVk?: VK;
+        treeVk?: VK;
+    }, web3: Web3): EthPrivateTransaction;
     get ciphertext(): string;
     /**
      * Returns encoded transaction ready to use as data for the smart contract.

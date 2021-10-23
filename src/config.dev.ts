@@ -20,8 +20,10 @@ const config: Config = {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',
     chainId: WavesChainId.Testnet,
   },
-  transferParamsUrl: 'transfer_params.bin',
-  treeParamsUrl: 'tree_update_params.bin',
+  snarkParams: {
+    transferParamsUrl: 'transfer_params.bin',
+    treeParamsUrl: 'tree_update_params.bin',
+  }
 };
 
 export default config;

@@ -1,20 +1,20 @@
 import { Observable } from 'rxjs';
-import { Output, Params } from 'libzeropool-rs-wasm-bundler';
+import { Output } from 'libzeropool-rs-wasm-bundler';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee } from '../transaction';
 import { Config } from './config';
+import { SnarkParams } from '../../config';
 export declare class EthereumCoin extends Coin {
     private web3;
     private web3ws;
     private txStorage;
     private accounts;
     private config;
-    private transferParams;
-    private treeParams;
+    private snarkParams;
     private relayer;
     private tokenContract;
-    constructor(mnemonic: string, config: Config, transferParams: Params, treeParams: Params);
+    constructor(mnemonic: string, config: Config, snarkParams: SnarkParams);
     protected init(): Promise<void>;
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;

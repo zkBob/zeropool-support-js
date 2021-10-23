@@ -5,7 +5,7 @@ import { NearCoin } from './coins/near';
 import { EthereumCoin } from './coins/ethereum';
 import { WavesCoin } from './coins/waves';
 
-import { Config } from './config';
+import { Config, SnarkParams } from './config';
 import { Params } from 'libzeropool-rs-wasm-bundler';
 import { transactionById } from '@waves/waves-transactions/dist/nodeInteraction';
 
@@ -13,20 +13,23 @@ export class HDWallet {
   public seed: string;
   private coins: { [key in CoinType]?: Coin; } = {};
   private config: Config;
-  private transferParams: Params;
-  private treeParams: Params;
+  private snarkParams: SnarkParams;
 
   public static async init(seed: string, config: Config, coinTypes: CoinType[]): Promise<HDWallet> {
     const wallet = new HDWallet();
 
-    const txParamsData = await (await fetch(config.transferParamsUrl)).arrayBuffer();
+    const txParamsData = await (await fetch(config.snarkParams.transferParamsUrl)).arrayBuffer();
     const transferParams = Params.fromBinary(new Uint8Array(txParamsData));
 
-    const treeParamsData = await (await fetch(config.treeParamsUrl)).arrayBuffer();
+    const treeParamsData = await (await fetch(config.snarkParams.treeParamsUrl)).arrayBuffer();
     const treeParams = Params.fromBinary(new Uint8Array(treeParamsData));
 
-    wallet.transferParams = transferParams;
-    wallet.treeParams = treeParams;
+    wallet.snarkParams = {
+      transferParams,
+      treeParams,
+      transferVk: config.snarkParams.transferVk,
+      treeVk: config.snarkParams.treeVk,
+    };
     wallet.seed = seed;
     wallet.config = config;
 
@@ -66,7 +69,7 @@ export class HDWallet {
         break;
       }
       case CoinType.ethereum: {
-        coin = new EthereumCoin(this.seed, this.config.ethereum, this.transferParams, this.treeParams);
+        coin = new EthereumCoin(this.seed, this.config.ethereum, this.snarkParams);
         break;
       }
       case CoinType.waves: {

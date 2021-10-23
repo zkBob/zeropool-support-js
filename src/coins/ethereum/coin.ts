@@ -17,6 +17,7 @@ import { EthPrivateTransaction, TxType, txTypeToString } from './private-tx';
 import { hexToBuf } from '../../utils';
 import { RelayerAPI } from './relayer';
 import { AbiItem, hexToBytes } from 'web3-utils';
+import { SnarkParams } from '../../config';
 
 // TODO: Organize presistent state properly
 
@@ -31,20 +32,18 @@ export class EthereumCoin extends Coin {
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
-  private transferParams: Params;
-  private treeParams: Params;
+  private snarkParams: SnarkParams;
   private relayer: RelayerAPI;
   private tokenContract: Contract;
 
-  constructor(mnemonic: string, config: Config, transferParams: Params, treeParams: Params) {
+  constructor(mnemonic: string, config: Config, snarkParams: SnarkParams) {
     super(mnemonic);
     this.web3 = new Web3(config.httpProviderUrl);
     this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.config = config;
-    this.transferParams = transferParams;
-    this.treeParams = treeParams;
+    this.snarkParams = snarkParams;
     this.relayer = new RelayerAPI(new URL('http://localhost')); // TODO: dynamic relayer URL
     this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;
   }
@@ -305,7 +304,7 @@ export class EthereumCoin extends Coin {
     }
 
     const txData = await this.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
-    const tx = EthPrivateTransaction.fromData(txData, txType, this.privateAccount, this.transferParams, this.treeParams, this.web3);
+    const tx = EthPrivateTransaction.fromData(txData, txType, this.privateAccount, this.snarkParams, this.web3);
     const data = tx.encode();
     const txObject: TransactionConfig = {
       from: address,
