@@ -1,6 +1,10 @@
-import { Transaction, TxStatus } from '../transaction';
 import { Transaction as NativeTx } from 'web3-core';
 import { padLeft } from 'web3-utils';
+import { Constants, getConstants } from 'libzeropool-rs-wasm-bundler';
+
+import { Transaction, TxStatus } from '../transaction';
+
+export const CONSTANTS: Constants = getConstants();
 
 export function convertTransaction(tx: NativeTx, timestamp: number, customStatus?: TxStatus): Transaction {
   return {
