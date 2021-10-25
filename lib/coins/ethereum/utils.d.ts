@@ -5,4 +5,3 @@ export declare const CONSTANTS: Constants;
 export declare function convertTransaction(tx: NativeTx, timestamp: number, customStatus?: TxStatus): Transaction;
 export declare function toCompactSignature(signature: string): string;
 export declare function toCanonicalSignature(signature: string): string;
-export declare function toTwosComplementHex(num: bigint, numBytes: number): string;

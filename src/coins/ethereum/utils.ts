@@ -36,15 +36,3 @@ export function toCanonicalSignature(signature: string) {
   }
   return signature + v;
 }
-
-export function toTwosComplementHex(num: bigint, numBytes: number): string {
-  let hex;
-  if (num < 0) {
-    let val = BigInt(2) ** BigInt(numBytes * 8) + num;
-    hex = val.toString(16);
-  } else {
-    hex = num.toString(16);
-  }
-
-  return padLeft(hex, numBytes * 2);
-}

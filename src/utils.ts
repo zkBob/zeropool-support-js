@@ -2,6 +2,7 @@ import bip39 from 'bip39-light';
 import * as HDKey from 'hdkey';
 import { derivePath } from 'ed25519-hd-key';
 import { sign, SignKeyPair } from 'tweetnacl';
+import { numberToHex, padLeft } from 'web3-utils';
 
 export { HDKey as Secp256k1HDKey };
 
@@ -77,4 +78,83 @@ export function hexToBuf(hex: string): Uint8Array {
   }
 
   return buffer;
+}
+
+
+export class HexStringWriter {
+  buf: string;
+
+  constructor() {
+    this.buf = '0x';
+  }
+
+  toString() {
+    return this.buf;
+  }
+
+  writeHex(hex: string) {
+    this.buf += hex;
+  }
+
+  writeBigInt(num: bigint, numBytes: number) {
+    this.buf += toTwosComplementHex(num, numBytes);
+  }
+
+  writeBigIntArray(nums: bigint[], numBytes: number) {
+    for (let num of nums) {
+      this.writeBigInt(num, numBytes);
+    }
+  }
+
+  writeNumber(num: number, numBytes: number) {
+    this.buf += padLeft(numberToHex(num).slice(2), numBytes * 2);
+  }
+}
+
+export class HexStringReader {
+  data: string;
+  curIndex: number;
+
+  constructor(data: string) {
+    if (data.slice(0, 2) == '0x') {
+      data = data.slice(2);
+    }
+
+    this.data = data;
+    this.curIndex = 0;
+  }
+
+  readHex(numBytes: number): string {
+    const sliceEnd = this.curIndex + numBytes * 2;
+    const res = this.data.slice(this.curIndex, sliceEnd);
+    this.curIndex = sliceEnd;
+    return res;
+  }
+
+  readNumber(numBytes: number): number {
+    const hex = this.readHex(numBytes);
+    return parseInt(hex, 16);
+  }
+
+  readBigInt(numBytes: number): bigint {
+    const hex = this.readHex(numBytes);
+    return BigInt('0x' + hex);
+  }
+
+  readBigIntArray(numElements: number, numBytesPerElement: number): bigint[] {
+    return [...Array(numElements)]
+      .map(() => this.readBigInt(numBytesPerElement));
+  }
+}
+
+export function toTwosComplementHex(num: bigint, numBytes: number): string {
+  let hex;
+  if (num < 0) {
+    let val = BigInt(2) ** BigInt(numBytes * 8) + num;
+    hex = val.toString(16);
+  } else {
+    hex = num.toString(16);
+  }
+
+  return padLeft(hex, numBytes * 2);
 }

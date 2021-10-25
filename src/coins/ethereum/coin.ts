@@ -9,12 +9,12 @@ import tokenAbi from './token-abi.json';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee, TxStatus } from '../transaction';
-import { convertTransaction, toCompactSignature, toTwosComplementHex } from './utils';
+import { convertTransaction, toCompactSignature } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { EthPrivateTransaction, TxType, txTypeToString } from './private-tx';
-import { hexToBuf } from '../../utils';
+import { hexToBuf, toTwosComplementHex, HexStringReader } from '../../utils';
 import { RelayerAPI } from './relayer';
 import { AbiItem, hexToBytes } from 'web3-utils';
 import { SnarkParams } from '../../config';
@@ -346,17 +346,20 @@ export class EthereumCoin extends Coin {
     const txData = EthPrivateTransaction.decode(raw);
     const ciphertext = hexToBuf(txData.ciphertext);
     const pair = this.privateAccount.decryptPair(ciphertext);
+    const onlyNotes = this.privateAccount.decryptNotes(ciphertext);
 
-    let notes: { note: Note, index: number }[];
+    const reader = new HexStringReader(txData.memo);
+    const numItems = reader.readNumber(4);
+    const hashes = reader.readBigIntArray(numItems, 32).map(num => num.toString());
+
     if (pair) {
-      this.privateAccount.addAccount(txData.transferIndex, pair.account);
-      notes = pair.notes.map((note, index) => ({ note, index }));
+      const notes = pair.notes.map((note, index) => ({ note, index: txData.transferIndex + BigInt(1) + BigInt(index) }));
+      this.privateAccount.addAccount(txData.transferIndex, hashes, pair.account, notes);
+    } else if (onlyNotes.length > 0) {
+      this.privateAccount.addNotes(txData.transferIndex, hashes, onlyNotes);
     } else {
-      notes = this.privateAccount.decryptNotes(ciphertext);
-    }
-
-    for (const note of notes) {
-      this.privateAccount.addReceivedNote(txData.transferIndex + BigInt(1) + BigInt(note.index), note.note);
+      // TODO: Remove when transitioning to relayer-only
+      this.privateAccount.addHashes(txData.transferIndex, hashes);
     }
   }
 

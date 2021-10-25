@@ -8,3 +8,22 @@ export declare function validateMnemonic(mnemonic: string): boolean;
 export declare function bufToHex(buffer: Uint8Array): string;
 export declare function base64ToHex(data: string): string;
 export declare function hexToBuf(hex: string): Uint8Array;
+export declare class HexStringWriter {
+    buf: string;
+    constructor();
+    toString(): string;
+    writeHex(hex: string): void;
+    writeBigInt(num: bigint, numBytes: number): void;
+    writeBigIntArray(nums: bigint[], numBytes: number): void;
+    writeNumber(num: number, numBytes: number): void;
+}
+export declare class HexStringReader {
+    data: string;
+    curIndex: number;
+    constructor(data: string);
+    readHex(numBytes: number): string;
+    readNumber(numBytes: number): number;
+    readBigInt(numBytes: number): bigint;
+    readBigIntArray(numElements: number, numBytesPerElement: number): bigint[];
+}
+export declare function toTwosComplementHex(num: bigint, numBytes: number): string;
