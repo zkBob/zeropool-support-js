@@ -40,7 +40,8 @@ export class EthPrivateTransaction {
     txType: TxType,
     acc: UserAccount,
     snarkParams: { transferParams: Params; treeParams: Params; transferVk?: VK; treeVk?: VK; },
-    web3: Web3): EthPrivateTransaction {
+    web3: Web3
+  ): EthPrivateTransaction {
     const tx = new EthPrivateTransaction();
 
     const nextIndex = acc.nextTreeIndex() as bigint;
@@ -49,13 +50,13 @@ export class EthPrivateTransaction {
       curIndex = BigInt(0);
     }
 
-    const prevCommitmentIndex = curIndex / BigInt(128);
-    const nextCommitmentIndex = acc.nextTreeIndex() as bigint / BigInt(128);
+    const prevCommitmentIndex = curIndex / BigInt(2 ** CONSTANTS.OUTLOG);
+    const nextCommitmentIndex = acc.nextTreeIndex() as bigint / BigInt(2 ** CONSTANTS.OUTLOG);
 
     const proofFilled = acc.getCommitmentMerkleProof(prevCommitmentIndex);
     const proofFree = acc.getCommitmentMerkleProof(nextCommitmentIndex);
 
-    const prevLeaf = acc.getLastLeaf();
+    const prevLeaf = acc.getMerkleNode(CONSTANTS.OUTLOG, prevCommitmentIndex);
     const rootBefore = acc.getRoot();
     const rootAfter = acc.getMerkleRootAfter(nextIndex, txData.out_hashes);
 
