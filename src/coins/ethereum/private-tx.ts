@@ -58,7 +58,7 @@ export class EthPrivateTransaction {
 
     const prevLeaf = acc.getMerkleNode(CONSTANTS.OUTLOG, prevCommitmentIndex);
     const rootBefore = acc.getRoot();
-    const rootAfter = acc.getMerkleRootAfter(nextIndex, txData.out_hashes);
+    const rootAfter = acc.getMerkleRootAfterCommitment(nextCommitmentIndex, txData.commitment_root);
 
     const txProof = Proof.tx(snarkParams.transferParams, txData.public, txData.secret);
     const treeProof = Proof.tree(snarkParams.treeParams, {
