@@ -339,11 +339,11 @@ export class EthereumCoin extends Coin {
   }
 
   getPrivateBalances(): [string, string, string] {
-    const total = this.privateAccount.totalBalance();
-    const acc = this.privateAccount.accountBalance();
-    const note = this.privateAccount.noteBalance();
+    const total = BigInt(this.privateAccount.totalBalance()) * DENOMINATOR;
+    const acc = BigInt(this.privateAccount.accountBalance()) * DENOMINATOR;
+    const note = BigInt(this.privateAccount.noteBalance()) * DENOMINATOR;
 
-    return [total, acc, note];
+    return [total.toString(), acc.toString(), note.toString()];
   }
 
   /**
