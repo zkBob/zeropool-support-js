@@ -43,6 +43,10 @@ export declare abstract class Coin {
      * Get current total private balance (account + unspent notes).
      */
     getPrivateBalance(): string;
+    /**
+   * Get total, account, and note balances.
+   */
+    getPrivateBalances(): [string, string, string];
     updatePrivateState(): Promise<void>;
     /**
      * Fetch account transactions.

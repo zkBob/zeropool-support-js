@@ -47,6 +47,7 @@ export declare class EthereumCoin extends Coin {
     withdrawPrivate(account: number, amount: string): Promise<void>;
     private signAndSendPrivateTx;
     getPrivateBalance(): string;
+    getPrivateBalances(): [string, string, string];
     /**
      * Attempt to extract and save usable account/notes from transaction data.
      * @param raw hex-encoded transaction data

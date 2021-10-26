@@ -5,7 +5,7 @@ import { CONSTANTS } from './utils';
 
 // Sizes in bytes
 const MEMO_META_SIZE: number = 8; // fee (u64)
-const MEMO_META_WITHDRAW_SIZE: number = 28; // fee (u64) + address (u160)
+const MEMO_META_WITHDRAW_SIZE: number = 8 + 8 + 20; // fee (u64) + amount + address (u160)
 
 export enum TxType {
   Deposit = '00',

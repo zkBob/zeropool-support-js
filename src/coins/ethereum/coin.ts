@@ -9,7 +9,7 @@ import tokenAbi from './token-abi.json';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee, TxStatus } from '../transaction';
-import { convertTransaction, toCompactSignature } from './utils';
+import { CONSTANTS, convertTransaction, toCompactSignature } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
@@ -324,7 +324,7 @@ export class EthereumCoin extends Coin {
     const gas = await this.web3.eth.estimateGas(txObject);
     const gasPrice = BigInt(await this.web3.eth.getGasPrice());
     const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
+    txObject.gas = gas * 2;
     txObject.gasPrice = `0x${gasPrice.toString(16)}`;
     txObject.nonce = nonce;
 
@@ -338,6 +338,14 @@ export class EthereumCoin extends Coin {
     return this.privateAccount.totalBalance();
   }
 
+  getPrivateBalances(): [string, string, string] {
+    const total = this.privateAccount.totalBalance();
+    const acc = this.privateAccount.accountBalance();
+    const note = this.privateAccount.noteBalance();
+
+    return [total, acc, note];
+  }
+
   /**
    * Attempt to extract and save usable account/notes from transaction data.
    * @param raw hex-encoded transaction data
@@ -348,38 +356,70 @@ export class EthereumCoin extends Coin {
     const pair = this.privateAccount.decryptPair(ciphertext);
     const onlyNotes = this.privateAccount.decryptNotes(ciphertext);
 
-    const reader = new HexStringReader(txData.memo);
-    const numItems = reader.readNumber(4);
-    const hashes = reader.readBigIntArray(numItems, 32).map(num => num.toString());
+    const reader = new HexStringReader(txData.ciphertext);
+    const numItems = reader.readNumber(4, true);
+    const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
+    if (hashes.length < CONSTANTS.OUT + 1) {
+      const zeroes = Array(CONSTANTS.OUT + 1 - hashes.length).fill('0');
+      hashes.push(...zeroes);
+    }
+
+    console.log('Updating state', this.privateAccount.getWholeState());
+
+    // FIXME: addAccount fails when there's too many notes
+    function isZeroNote({ p_d }: {
+      d: string,
+      p_d: string,
+      b: string,
+      t: string
+    }) {
+      return p_d == '0';
+    }
 
     if (pair) {
-      const notes = pair.notes.map((note, index) => ({ note, index: txData.transferIndex + BigInt(1) + BigInt(index) }));
+      const notes = pair.notes.reduce<{ note: Note, index: number }[]>((acc, note, index) => {
+        if (!isZeroNote(note)) {
+          acc.push({ note, index: Number(txData.transferIndex) + 1 + index });
+        }
+
+        return acc;
+      }, []);
+
       this.privateAccount.addAccount(txData.transferIndex, hashes, pair.account, notes);
     } else if (onlyNotes.length > 0) {
       this.privateAccount.addNotes(txData.transferIndex, hashes, onlyNotes);
     } else {
+      // Temporarily cache everything
       // TODO: Remove when transitioning to relayer-only
       this.privateAccount.addHashes(txData.transferIndex, hashes);
     }
+
+    console.log('New balance:', this.privateAccount.totalBalance());
+    console.log('New state:', this.privateAccount.getWholeState());
   }
 
   public async updatePrivateState(): Promise<void> {
     const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
 
-    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX));
-    const logs = await this.web3.eth.getPastLogs({ fromBlock: latestCheckedBlock || this.config.contractBlock, address: this.config.contractAddress });
+    const curBlockNumber = await this.web3.eth.getBlockNumber();
+    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX)) || this.config.contractBlock;
 
-    let newLatestBlock = this.config.contractBlock;
+    // moslty useful for local testing, since getPastLogs always returns at least one latest event
+    if (curBlockNumber === latestCheckedBlock) {
+      return;
+    }
+
+    const logs = await this.web3.eth.getPastLogs({ fromBlock: latestCheckedBlock + 1, address: this.config.contractAddress });
+
+    console.log('Contract logs', logs);
+
+    let newLatestBlock = latestCheckedBlock;
     for (const log of logs) {
       const tx = await this.web3.eth.getTransaction(log.transactionHash);
       const message = tx.input;
       newLatestBlock = tx.blockNumber!;
 
-      try {
-        this.cachePrivateTx(message);
-      } catch (e) {
-        continue;
-      }
+      this.cachePrivateTx(message);
     }
 
     localStorage.setItem(STORAGE_PREFIX, newLatestBlock.toString());

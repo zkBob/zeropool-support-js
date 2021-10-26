@@ -131,19 +131,25 @@ export class HexStringReader {
     return res;
   }
 
-  readNumber(numBytes: number): number {
-    const hex = this.readHex(numBytes);
+  readNumber(numBytes: number, le: boolean = false): number {
+    let hex = this.readHex(numBytes);
+    if (le) {
+      hex = hex.match(/../g)!.reverse().join('')
+    }
     return parseInt(hex, 16);
   }
 
-  readBigInt(numBytes: number): bigint {
-    const hex = this.readHex(numBytes);
+  readBigInt(numBytes: number, le: boolean = false): bigint {
+    let hex = this.readHex(numBytes);
+    if (le) {
+      hex = hex.match(/../g)!.reverse().join('')
+    }
     return BigInt('0x' + hex);
   }
 
-  readBigIntArray(numElements: number, numBytesPerElement: number): bigint[] {
+  readBigIntArray(numElements: number, numBytesPerElement: number, le: boolean = false): bigint[] {
     return [...Array(numElements)]
-      .map(() => this.readBigInt(numBytesPerElement));
+      .map(() => this.readBigInt(numBytesPerElement, le));
   }
 }
 

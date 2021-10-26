@@ -116,6 +116,13 @@ export abstract class Coin {
     throw new Error('unimplemented');
   }
 
+  /**
+ * Get total, account, and note balances.
+ */
+  getPrivateBalances(): [string, string, string] {
+    throw new Error('unimplemented');
+  }
+
   updatePrivateState(): Promise<void> {
     throw new Error('unimplemented');
   }
