@@ -8,6 +8,10 @@ import { WavesCoin } from './coins/waves';
 import { Config, SnarkParams } from './config';
 import { Params } from 'libzeropool-rs-wasm-bundler';
 import { transactionById } from '@waves/waves-transactions/dist/nodeInteraction';
+import { ZeroPoolState } from './zp/state';
+import { DirectBackend } from './coins/ethereum/backends/direct';
+import Web3 from 'web3';
+import { deriveSpendingKey } from './utils';
 
 export class HDWallet {
   public seed: string;
@@ -69,7 +73,12 @@ export class HDWallet {
         break;
       }
       case CoinType.ethereum: {
-        coin = new EthereumCoin(this.seed, this.config.ethereum, this.snarkParams);
+        // TODO: Encapsulate backend selection and key derivation?
+        const sk = deriveSpendingKey(this.seed)
+        const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000)); // FIXME: Replace with a constant
+        const web3 = new Web3(this.config.ethereum.httpProviderUrl);
+        const backend = new DirectBackend(web3, this.snarkParams, this.config.ethereum, state);
+        coin = new EthereumCoin(this.seed, web3, this.config.ethereum, backend);
         break;
       }
       case CoinType.waves: {

@@ -5,7 +5,7 @@ import { Note, Output, Params } from 'libzeropool-rs-wasm-bundler';
 import { TransactionConfig } from 'web3-core';
 import { Contract } from 'web3-eth-contract';
 
-import tokenAbi from './token-abi.json';
+
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee, TxStatus } from '../transaction';
@@ -15,37 +15,33 @@ import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { EthPrivateTransaction, TxType, txTypeToString } from './private-tx';
 import { hexToBuf, toTwosComplementHex, HexStringReader } from '../../utils';
-import { RelayerAPI } from './relayer';
 import { AbiItem, hexToBytes } from 'web3-utils';
 import { SnarkParams } from '../../config';
+import { ZeroPoolBackend } from '../../zp/backend';
+import { DirectBackend } from './backends/direct';
 
 // TODO: Organize presistent state properly
 
-const DENOMINATOR = BigInt(1000000000);
 const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 const STATE_STORAGE_PREFIX = 'zeropool.eth.state';
 
 export class EthereumCoin extends Coin {
   private web3: Web3;
-  private web3ws: Web3;
+  // private web3ws: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
-  private snarkParams: SnarkParams;
-  private relayer: RelayerAPI;
-  private tokenContract: Contract;
+  private backend: DirectBackend;
 
-  constructor(mnemonic: string, config: Config, snarkParams: SnarkParams) {
+  constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend) {
     super(mnemonic);
-    this.web3 = new Web3(config.httpProviderUrl);
-    this.web3ws = new Web3(config.wsProviderUrl);
+    this.web3 = web3;
+    // this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.config = config;
-    this.snarkParams = snarkParams;
-    this.relayer = new RelayerAPI(new URL('http://localhost')); // TODO: dynamic relayer URL
-    this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;
+    this.backend = backend;
   }
 
   protected async init() {
@@ -116,53 +112,53 @@ export class EthereumCoin extends Coin {
   }
 
   public async subscribe(account: number): Promise<Observable<Transaction>> {
-    const web3 = this.web3;
-    const sub = this.web3ws.eth.subscribe('pendingTransactions');
-    const address = this.getAddress(account);
+    // const web3 = this.web3;
+    // const sub = this.web3ws.eth.subscribe('pendingTransactions');
+    // const address = this.getAddress(account);
 
     const obs: Observable<Transaction> = new Observable(subscriber => {
-      sub.on('data', async txHash => {
-        let nativeTx = await web3.eth.getTransaction(txHash);
+      // sub.on('data', async txHash => {
+      //   let nativeTx = await web3.eth.getTransaction(txHash);
 
-        if ((nativeTx.to && nativeTx.to.toLowerCase() != address) && nativeTx.from.toLowerCase() != address) {
-          return;
-        }
+      //   if ((nativeTx.to && nativeTx.to.toLowerCase() != address) && nativeTx.from.toLowerCase() != address) {
+      //     return;
+      //   }
 
-        // Periodically check status of the transaction
-        const interval = setInterval(async () => {
-          try {
-            nativeTx = await web3.eth.getTransaction(txHash);
-          } catch (e) {
-            clearInterval(interval);
-          }
+      //   // Periodically check status of the transaction
+      //   const interval = setInterval(async () => {
+      //     try {
+      //       nativeTx = await web3.eth.getTransaction(txHash);
+      //     } catch (e) {
+      //       clearInterval(interval);
+      //     }
 
-          if (nativeTx.transactionIndex !== null) {
-            const block = await web3.eth.getBlock(nativeTx.blockNumber!);
+      //     if (nativeTx.transactionIndex !== null) {
+      //       const block = await web3.eth.getBlock(nativeTx.blockNumber!);
 
-            let timestamp;
-            if (typeof block.timestamp == 'string') {
-              timestamp = parseInt(block.timestamp);
-            } else {
-              timestamp = block.timestamp;
-            }
+      //       let timestamp;
+      //       if (typeof block.timestamp == 'string') {
+      //         timestamp = parseInt(block.timestamp);
+      //       } else {
+      //         timestamp = block.timestamp;
+      //       }
 
-            const tx = convertTransaction(nativeTx, timestamp);
+      //       const tx = convertTransaction(nativeTx, timestamp);
 
-            // Relevant transaction found, update tx cache and notify listeners
-            this.txStorage.add(this.getAddress(account), tx);
-            subscriber.next(tx);
+      //       // Relevant transaction found, update tx cache and notify listeners
+      //       this.txStorage.add(this.getAddress(account), tx);
+      //       subscriber.next(tx);
 
-            clearInterval(interval);
-          }
-        }, TX_CHECK_INTERVAL); // TODO: What's the optimal interval for this?
-      })
-        .on('error', error => {
-          subscriber.error(error);
-        });
+      //       clearInterval(interval);
+      //     }
+      //   }, TX_CHECK_INTERVAL); // TODO: What's the optimal interval for this?
+      // })
+      //   .on('error', error => {
+      //     subscriber.error(error);
+      //   });
 
-      return function unsubscribe() {
-        sub.unsubscribe();
-      }
+      // return function unsubscribe() {
+      //   sub.unsubscribe();
+      // }
     });
 
     return obs;
@@ -240,111 +236,57 @@ export class EthereumCoin extends Coin {
   }
 
   public async transferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
-    const memo = new Uint8Array(8); // FIXME: fee
-    await this.signAndSendPrivateTx(account, TxType.Transfer, outs, memo);
+    const privateKey = this.getPrivateKey(account);
+    return this.backend.transfer(privateKey, outs);
   }
 
   public async depositPrivate(account: number, amount: string): Promise<void> {
-    const memo = new Uint8Array(8); // FIXME: fee
-
-    await this.approveAllowance(account, amount);
-    await this.signAndSendPrivateTx(account, TxType.Deposit, amount, memo);
-  }
-
-  private async approveAllowance(account: number, amount: string): Promise<void> {
-    const address = this.getAddress(account);
-
-    // await this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).send({ from: address })
-
-    await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
-    const encodedTx = this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).encodeABI();
-    var txObject: TransactionConfig = {
-      from: address,
-      to: this.config.tokenContractAddress,
-      data: encodedTx,
-    };
-
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.accounts.signTransaction(txObject, this.getPrivateKey(account));
-    const result = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction!);
-
-    console.log('approve', result);
+    const privateKey = this.getPrivateKey(account);
+    return this.backend.deposit(privateKey, amount);
   }
 
   public async withdrawPrivate(account: number, amount: string): Promise<void> {
-    const address = this.getAddress(account);
-
-    const memo = new Uint8Array(8 + 8 + 20); // fee + amount + address
-    const amountBn = hexToBuf(toTwosComplementHex(BigInt(amount) / DENOMINATOR, 8));
-    memo.set(amountBn, 8);
-    const addressBin = hexToBuf(address);
-    memo.set(addressBin, 16);
-
-    await this.signAndSendPrivateTx(account, TxType.Withdraw, amount, memo);
-  }
-
-  private async signAndSendPrivateTx(account: number, txType: TxType, outWei: string | Output[], memo: Uint8Array): Promise<void> {
-    const address = this.getAddress(account);
     const privateKey = this.getPrivateKey(account);
-
-    let outGwei;
-    if (typeof outWei === 'string') {
-      outGwei = (BigInt(outWei) / DENOMINATOR).toString();
-    } else {
-      outGwei = outWei.map(({ to, amount }) => ({
-        to,
-        amount: (BigInt(amount) / DENOMINATOR).toString(),
-      }));
-    }
-
-    const txData = await this.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
-    const tx = EthPrivateTransaction.fromData(txData, txType, this.privateAccount, this.snarkParams, this.web3);
-    const data = tx.encode();
-    const txObject: TransactionConfig = {
-      from: address,
-      to: this.config.contractAddress,
-      data,
-    };
-
-    if (txType === TxType.Deposit) {
-      const nullifier = '0x' + BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
-      const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
-      const signature = toCompactSignature(sign.signature).slice(2);
-      txObject.data += signature;
-    } else if (txType === TxType.Withdraw && typeof outWei === 'string') {
-      txObject.value = outWei;
-    }
-
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas * 2;
-    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signed = await this.web3.eth.accounts.signTransaction(txObject, privateKey);
-    const result = await this.web3.eth.sendSignedTransaction(signed.rawTransaction!);
-
-    console.log(txTypeToString(txType), result);
+    return this.backend.withdraw(privateKey, amount);
   }
 
   public getPrivateBalance(): string {
-    return this.privateAccount.totalBalance();
+    return this.backend.getTotalBalance();
   }
 
-  getPrivateBalances(): [string, string, string] {
-    const total = BigInt(this.privateAccount.totalBalance()) * DENOMINATOR;
-    const acc = BigInt(this.privateAccount.accountBalance()) * DENOMINATOR;
-    const note = BigInt(this.privateAccount.noteBalance()) * DENOMINATOR;
-
-    return [total.toString(), acc.toString(), note.toString()];
+  public getPrivateBalances(): [string, string, string] {
+    return this.backend.getBalances();
   }
+
+  public async updatePrivateState(): Promise<void> {
+    const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
+
+    const curBlockNumber = await this.web3.eth.getBlockNumber();
+    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX)) || this.config.contractBlock;
+
+    // moslty useful for local testing, since getPastLogs always returns at least one latest event
+    if (curBlockNumber === latestCheckedBlock) {
+      return;
+    }
+
+    // TODO: How to paginate?
+    const logs = await this.web3.eth.getPastLogs({ fromBlock: latestCheckedBlock + 1, address: this.config.contractAddress });
+
+    console.log('Contract logs', logs);
+
+    // TODO: Batch getTransaction
+    let newLatestBlock = latestCheckedBlock;
+    for (const log of logs) {
+      const tx = await this.web3.eth.getTransaction(log.transactionHash);
+      const message = tx.input;
+      newLatestBlock = tx.blockNumber!;
+
+      this.cachePrivateTx(message);
+    }
+
+    localStorage.setItem(STORAGE_PREFIX, newLatestBlock.toString());
+  }
+
 
   /**
    * Attempt to extract and save usable account/notes from transaction data.
@@ -366,7 +308,6 @@ export class EthereumCoin extends Coin {
 
     console.log('Updating state', this.privateAccount.getWholeState());
 
-    // FIXME: addAccount fails when there's too many notes
     function isZeroNote({ p_d }: {
       d: string,
       p_d: string,
@@ -396,32 +337,5 @@ export class EthereumCoin extends Coin {
 
     console.log('New balance:', this.privateAccount.totalBalance());
     console.log('New state:', this.privateAccount.getWholeState());
-  }
-
-  public async updatePrivateState(): Promise<void> {
-    const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
-
-    const curBlockNumber = await this.web3.eth.getBlockNumber();
-    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX)) || this.config.contractBlock;
-
-    // moslty useful for local testing, since getPastLogs always returns at least one latest event
-    if (curBlockNumber === latestCheckedBlock) {
-      return;
-    }
-
-    const logs = await this.web3.eth.getPastLogs({ fromBlock: latestCheckedBlock + 1, address: this.config.contractAddress });
-
-    console.log('Contract logs', logs);
-
-    let newLatestBlock = latestCheckedBlock;
-    for (const log of logs) {
-      const tx = await this.web3.eth.getTransaction(log.transactionHash);
-      const message = tx.input;
-      newLatestBlock = tx.blockNumber!;
-
-      this.cachePrivateTx(message);
-    }
-
-    localStorage.setItem(STORAGE_PREFIX, newLatestBlock.toString());
   }
 }
