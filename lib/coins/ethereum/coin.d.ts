@@ -1,20 +1,18 @@
+import Web3 from 'web3';
 import { Observable } from 'rxjs';
 import { Output } from 'libzeropool-rs-wasm-bundler';
 import { Coin } from '../coin';
 import { CoinType } from '../coin-type';
 import { Transaction, TxFee } from '../transaction';
 import { Config } from './config';
-import { SnarkParams } from '../../config';
+import { DirectBackend } from './backends/direct';
 export declare class EthereumCoin extends Coin {
     private web3;
-    private web3ws;
     private txStorage;
     private accounts;
     private config;
-    private snarkParams;
-    private relayer;
-    private tokenContract;
-    constructor(mnemonic: string, config: Config, snarkParams: SnarkParams);
+    private backend;
+    constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend);
     protected init(): Promise<void>;
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
@@ -43,15 +41,13 @@ export declare class EthereumCoin extends Coin {
     transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
     transferPrivateToPrivate(account: number, outs: Output[]): Promise<void>;
     depositPrivate(account: number, amount: string): Promise<void>;
-    private approveAllowance;
     withdrawPrivate(account: number, amount: string): Promise<void>;
-    private signAndSendPrivateTx;
     getPrivateBalance(): string;
     getPrivateBalances(): [string, string, string];
+    updatePrivateState(): Promise<void>;
     /**
      * Attempt to extract and save usable account/notes from transaction data.
      * @param raw hex-encoded transaction data
      */
     private cachePrivateTx;
-    updatePrivateState(): Promise<void>;
 }
