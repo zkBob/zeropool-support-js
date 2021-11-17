@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 import { UserAccount, reduceSpendingKey, UserState, Output } from 'libzeropool-rs-wasm-bundler';
 import { hash } from 'tweetnacl';
 
@@ -131,11 +130,6 @@ export abstract class Coin {
    * Fetch account transactions.
    */
   abstract getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
-
-  /**
-   * Subscribe to account events.
-   */
-  abstract subscribe(account: number): Promise<Observable<Transaction>>;
 
   /**
    * Convert human-readable representation of coin to smallest non-divisible (base) representation.

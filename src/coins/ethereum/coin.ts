@@ -1,5 +1,4 @@
 import Web3 from 'web3';
-import { Observable } from 'rxjs';
 import BN from 'bn.js';
 import { Note, Output, Params } from 'libzeropool-rs-wasm-bundler';
 import { TransactionConfig } from 'web3-core';
@@ -21,14 +20,11 @@ import { ZeroPoolBackend } from '../../zp/backend';
 import { DirectBackend } from './backends/direct';
 
 // TODO: Organize presistent state properly
-
-const TX_CHECK_INTERVAL = 10 * 1000;
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
 const STATE_STORAGE_PREFIX = 'zeropool.eth.state';
 
 export class EthereumCoin extends Coin {
   private web3: Web3;
-  // private web3ws: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
@@ -37,7 +33,6 @@ export class EthereumCoin extends Coin {
   constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend) {
     super(mnemonic);
     this.web3 = web3;
-    // this.web3ws = new Web3(config.wsProviderUrl);
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.config = config;
@@ -109,59 +104,6 @@ export class EthereumCoin extends Coin {
 
     const txs = this.txStorage.list(this.getAddress(account));
     return txs.slice(offset, offset + limit);
-  }
-
-  public async subscribe(account: number): Promise<Observable<Transaction>> {
-    // const web3 = this.web3;
-    // const sub = this.web3ws.eth.subscribe('pendingTransactions');
-    // const address = this.getAddress(account);
-
-    const obs: Observable<Transaction> = new Observable(subscriber => {
-      // sub.on('data', async txHash => {
-      //   let nativeTx = await web3.eth.getTransaction(txHash);
-
-      //   if ((nativeTx.to && nativeTx.to.toLowerCase() != address) && nativeTx.from.toLowerCase() != address) {
-      //     return;
-      //   }
-
-      //   // Periodically check status of the transaction
-      //   const interval = setInterval(async () => {
-      //     try {
-      //       nativeTx = await web3.eth.getTransaction(txHash);
-      //     } catch (e) {
-      //       clearInterval(interval);
-      //     }
-
-      //     if (nativeTx.transactionIndex !== null) {
-      //       const block = await web3.eth.getBlock(nativeTx.blockNumber!);
-
-      //       let timestamp;
-      //       if (typeof block.timestamp == 'string') {
-      //         timestamp = parseInt(block.timestamp);
-      //       } else {
-      //         timestamp = block.timestamp;
-      //       }
-
-      //       const tx = convertTransaction(nativeTx, timestamp);
-
-      //       // Relevant transaction found, update tx cache and notify listeners
-      //       this.txStorage.add(this.getAddress(account), tx);
-      //       subscriber.next(tx);
-
-      //       clearInterval(interval);
-      //     }
-      //   }, TX_CHECK_INTERVAL); // TODO: What's the optimal interval for this?
-      // })
-      //   .on('error', error => {
-      //     subscriber.error(error);
-      //   });
-
-      // return function unsubscribe() {
-      //   sub.unsubscribe();
-      // }
-    });
-
-    return obs;
   }
 
   /**

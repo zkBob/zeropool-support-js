@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 import { nodeInteraction, broadcast, transfer } from "@waves/waves-transactions";
 import { create } from '@waves/node-api-js';
 
@@ -82,47 +81,6 @@ export class WavesCoin extends Coin {
         timestamp: tx.timestamp,
       };
     });
-  }
-
-  public async subscribe(account: number): Promise<Observable<Transaction>> {
-    const latestTxs = await this.getTransactions(1);
-
-    if (latestTxs.length == 1) {
-      this.lastTxTimestamps[account] = latestTxs[0].timestamp;
-    }
-
-    return new Observable(subscriber => {
-      const interval = setInterval(async () => {
-        try {
-          const txs = await this.fetchNewTransactions(account, TX_LIMIT, 0);
-
-          for (const tx of txs) {
-            subscriber.next(tx);
-          }
-        } catch (e) {
-          subscriber.error(e);
-        }
-      }, POLL_INTERVAL);
-
-      return function unsubscribe() {
-        clearInterval(interval);
-      }
-    });
-  }
-
-  private async fetchNewTransactions(account: number, limit: number, offset: number): Promise<Transaction[]> {
-    const txs = await this.getTransactions(account, limit, offset);
-    const txIdx = txs.findIndex(tx => tx.timestamp === this.lastTxTimestamps[account]);
-
-    if (txIdx == -1) {
-      const otherTxs = await this.fetchNewTransactions(account, limit, offset + limit);
-      txs.concat(otherTxs);
-      return txs;
-    } else if (txIdx > 0) {
-      return txs.slice(0, txIdx);
-    }
-
-    return [];
   }
 
   toBaseUnit(amount: string): string {

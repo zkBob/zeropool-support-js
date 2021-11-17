@@ -1,8 +1,6 @@
 import bs58 from 'bs58';
 import BN from 'bn.js';
 
-
-import { Observable } from 'rxjs';
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
 
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
@@ -13,10 +11,6 @@ import { Config } from './config';
 import { Transaction, TxFee, TxStatus } from '../transaction';
 import { AccountCache } from './account';
 import { CoinType } from '../coin-type';
-
-const POLL_INTERVAL = 10 * 60 * 1000;
-const TX_LIMIT = 10;
-
 
 export class NearCoin extends Coin {
   private keyStore: KeyStore;
@@ -98,32 +92,6 @@ export class NearCoin extends Coin {
     }
 
     return txs;
-  }
-
-  public async subscribe(account: number): Promise<Observable<Transaction>> { // FIXME: Use account index
-    const latestTxs = await this.getTransactions(1);
-
-    if (latestTxs.length == 1) {
-      this.lastTxTimestamps[account] = latestTxs[0].timestamp;
-    }
-
-    return new Observable(subscriber => {
-      const interval = setInterval(async () => {
-        try {
-          const txs = await this.fetchNewTransactions(account, TX_LIMIT, 0);
-
-          for (const tx of txs) {
-            subscriber.next(tx);
-          }
-        } catch (e) {
-          subscriber.error(e);
-        }
-      }, POLL_INTERVAL);
-
-      return function unsubscribe() {
-        clearInterval(interval);
-      }
-    });
   }
 
   private async fetchNewTransactions(account: number, limit: number, offset: number): Promise<Transaction[]> {
