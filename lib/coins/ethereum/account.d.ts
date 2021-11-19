@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import { Account } from 'web3-core';
-import { Secp256k1HDKey } from '../../utils';
+import { Secp256k1HDKey } from '@/utils';
 export declare class CachedAccount {
     account: Account;
     keypair: Secp256k1HDKey;

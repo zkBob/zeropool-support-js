@@ -1,13 +1,12 @@
-import { TransactionData, Params, SnarkProof, UserAccount, VK } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
+import { TransactionData, Params, SnarkProof, UserAccount, VK } from '@/libzeropool-rs';
 export declare enum TxType {
-    Deposit = "00",
-    Transfer = "01",
-    Withdraw = "02"
+    Deposit = "0000",
+    Transfer = "0100",
+    Withdraw = "0200"
 }
 export declare function txTypeToString(txType: TxType): string;
 export declare class EthPrivateTransaction {
-    /** Hex encoded smart contract method id */
     selector: string;
     nullifier: bigint;
     outCommit: bigint;

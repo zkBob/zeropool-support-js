@@ -1,5 +1,4 @@
-import { Observable } from 'rxjs';
-import { UserAccount, Output } from 'libzeropool-rs-wasm-bundler';
+import { UserAccount, Output } from '../libzeropool-rs';
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
 export declare class Balance {
@@ -17,6 +16,7 @@ export declare abstract class Coin {
     protected init(): Promise<void>;
     ready(): Promise<void>;
     generatePrivateAddress(): string;
+    isOwnPrivateAddress(address: string): boolean;
     getPrivateSpendingKey(): Uint8Array;
     /**
      * Get native coin balance.
@@ -52,10 +52,6 @@ export declare abstract class Coin {
      * Fetch account transactions.
      */
     abstract getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
-    /**
-     * Subscribe to account events.
-     */
-    abstract subscribe(account: number): Promise<Observable<Transaction>>;
     /**
      * Convert human-readable representation of coin to smallest non-divisible (base) representation.
      * @param amount

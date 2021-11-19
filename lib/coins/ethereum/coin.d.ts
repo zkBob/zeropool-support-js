@@ -1,9 +1,8 @@
 import Web3 from 'web3';
-import { Observable } from 'rxjs';
-import { Output } from 'libzeropool-rs-wasm-bundler';
-import { Coin } from '../coin';
-import { CoinType } from '../coin-type';
-import { Transaction, TxFee } from '../transaction';
+import { Output } from '@/libzeropool-rs';
+import { Coin } from '@/coins/coin';
+import { CoinType } from '@/coins/coin-type';
+import { Transaction, TxFee } from '@/coins/transaction';
 import { Config } from './config';
 import { DirectBackend } from './backends/direct';
 export declare class EthereumCoin extends Coin {
@@ -20,7 +19,6 @@ export declare class EthereumCoin extends Coin {
     getBalance(account: number): Promise<string>;
     transfer(account: number, to: string, amount: string): Promise<void>;
     getTransactions(account: number, limit: number, offset: number): Promise<Transaction[]>;
-    subscribe(account: number): Promise<Observable<Transaction>>;
     /**
      * Converts ether to Wei.
      * @param amount in Ether

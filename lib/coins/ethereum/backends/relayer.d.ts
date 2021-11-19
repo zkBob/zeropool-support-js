@@ -1,10 +1,10 @@
-import { Output, Proof } from "libzeropool-rs-wasm-bundler";
-import Web3 from "web3";
-import { Config } from "..";
-import { SnarkParams } from "../../../config";
-import { ZeroPoolBackend } from "../../../zp/backend";
-import { ZeroPoolState } from "../../../zp/state";
-import { TxType } from "../private-tx";
+import Web3 from 'web3';
+import { Output, Proof } from '@/libzeropool-rs';
+import { SnarkParams } from '@/config';
+import { ZeroPoolBackend } from '@/zp/backend';
+import { ZeroPoolState } from '@/zp/state';
+import { Config } from '../config';
+import { TxType } from '../private-tx';
 export interface RelayerInfo {
     root: string;
     deltaIndex: string;
@@ -23,8 +23,8 @@ export declare class RelayerBackend extends ZeroPoolBackend {
     private web3;
     private snarkParams;
     constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config);
-    transfer(_privateKey: string, outsWei: Output[]): Promise<void>;
-    deposit(privateKey: string, amountWei: string): Promise<void>;
-    withdraw(privateKey: string, amountWei: string): Promise<void>;
+    deposit(privateKey: string, amountWei: string, fee?: string): Promise<void>;
+    transfer(_privateKey: string, outsWei: Output[], fee?: string): Promise<void>;
+    withdraw(privateKey: string, amountWei: string, fee?: string): Promise<void>;
     private approveAllowance;
 }

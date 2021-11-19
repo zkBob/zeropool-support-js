@@ -1,4 +1,4 @@
-import { UserAccount } from "libzeropool-rs-wasm-bundler";
+import { UserAccount } from '@/libzeropool-rs';
 export declare class ZeroPoolState {
     denominator: bigint;
     privateAccount: UserAccount;

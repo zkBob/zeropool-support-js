@@ -1,8 +1,7 @@
-import { Observable } from 'rxjs';
-import { Coin } from '../coin';
+import { Coin } from '@/coins/coin';
+import { CoinType } from '@/coins/coin-type';
+import { Transaction, TxFee } from '@/coins/transaction';
 import { Config } from './config';
-import { Transaction, TxFee } from '../transaction';
-import { CoinType } from '../coin-type';
 export declare class NearCoin extends Coin {
     private keyStore;
     private config;
@@ -20,7 +19,6 @@ export declare class NearCoin extends Coin {
      */
     transfer(accountIndex: number, to: string, amount: string): Promise<void>;
     getTransactions(accountIndex: number, limit?: number, offset?: number): Promise<Transaction[]>;
-    subscribe(account: number): Promise<Observable<Transaction>>;
     private fetchNewTransactions;
     /**
      * Convert human-readable NEAR to yoctoNEAR
