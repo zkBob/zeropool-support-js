@@ -1,7 +1,6 @@
 import { Transaction as NativeTx } from 'web3-core';
-import { padLeft } from 'web3-utils';
-import { Constants, getConstants } from 'libzeropool-rs-wasm-bundler';
 
+import { Constants, getConstants } from '@/libzeropool-rs';
 import { Transaction, TxStatus } from '../transaction';
 
 export const CONSTANTS: Constants = getConstants();

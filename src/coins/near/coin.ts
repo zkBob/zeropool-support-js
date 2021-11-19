@@ -2,15 +2,14 @@ import bs58 from 'bs58';
 import BN from 'bn.js';
 
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format';
-
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
-import { Coin } from '../coin';
+import { Coin } from '@/coins/coin';
+import { CoinType } from '@/coins/coin-type';
+import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
 import { Config } from './config';
-import { Transaction, TxFee, TxStatus } from '../transaction';
 import { AccountCache } from './account';
-import { CoinType } from '../coin-type';
 
 export class NearCoin extends Coin {
   private keyStore: KeyStore;

@@ -5,9 +5,9 @@ import { Account, connect } from 'near-api-js';
 import { KeyPairEd25519 } from 'near-api-js/lib/utils/key_pair';
 import { KeyStore } from 'near-api-js/lib/key_stores';
 
+import { preprocessMnemonic } from '@/utils';
+import { CoinType } from '@/coins/coin-type';
 import { Config } from './config';
-import { CoinType } from '../coin-type';
-import { preprocessMnemonic } from '../../utils';
 
 import bip39 from 'bip39-light';
 export class CachedAccount {

@@ -1,14 +1,11 @@
 import { nodeInteraction, broadcast, transfer } from "@waves/waves-transactions";
 import { create } from '@waves/node-api-js';
 
-import { Coin } from '../coin';
-import { CoinType } from '../coin-type';
+import { Coin } from '@/coins/coin';
+import { CoinType } from '@/coins/coin-type';
+import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
 import { Config } from './config';
-import { Transaction, TxFee, TxStatus } from '../transaction';
 import { AccountCache } from './account';
-
-const POLL_INTERVAL = 10 * 60 * 1000;
-const TX_LIMIT = 10;
 
 export class WavesCoin extends Coin {
   private config: Config;

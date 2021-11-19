@@ -2,7 +2,7 @@ import bip39 from 'bip39-light';
 import Web3 from 'web3';
 import { Account } from 'web3-core';
 
-import { preprocessMnemonic, Secp256k1HDKey } from '../../utils';
+import { preprocessMnemonic, Secp256k1HDKey } from '@/utils';
 import { CoinType } from '../coin-type';
 
 export class CachedAccount {

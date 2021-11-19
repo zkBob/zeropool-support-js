@@ -1,7 +1,12 @@
+if (typeof localStorage === 'undefined' || localStorage === null) {
+  const LocalStorage = require('node-localstorage').LocalStorage;
+  global.localStorage = new LocalStorage('./tmp');
+}
+
 export { CoinType } from './coins/coin-type';
 export { Coin, Balance } from './coins/coin';
 export { HDWallet } from './hd-wallet';
-export { validateAddress } from 'libzeropool-rs-wasm-bundler';
+export { validateAddress } from './libzeropool-rs';
 
 // For convenience
 export { default as devConfig } from './config.dev';

@@ -1,22 +1,16 @@
 import Web3 from 'web3';
 import BN from 'bn.js';
-import { Note, Output, Params } from 'libzeropool-rs-wasm-bundler';
-import { TransactionConfig } from 'web3-core';
-import { Contract } from 'web3-eth-contract';
 
-
-import { Coin } from '../coin';
-import { CoinType } from '../coin-type';
-import { Transaction, TxFee, TxStatus } from '../transaction';
-import { CONSTANTS, convertTransaction, toCompactSignature } from './utils';
+import { Note, Output } from '@/libzeropool-rs';
+import { hexToBuf, HexStringReader } from '@/utils';
+import { Coin } from '@/coins/coin';
+import { CoinType } from '@/coins/coin-type';
+import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
+import { CONSTANTS, convertTransaction } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
-import { EthPrivateTransaction, TxType, txTypeToString } from './private-tx';
-import { hexToBuf, toTwosComplementHex, HexStringReader } from '../../utils';
-import { AbiItem, hexToBytes } from 'web3-utils';
-import { SnarkParams } from '../../config';
-import { ZeroPoolBackend } from '../../zp/backend';
+import { EthPrivateTransaction } from './private-tx';
 import { DirectBackend } from './backends/direct';
 
 // TODO: Organize presistent state properly

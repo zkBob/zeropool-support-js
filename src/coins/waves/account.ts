@@ -2,12 +2,12 @@ import bs58 from 'bs58';
 import { derivePath } from 'ed25519-hd-key';
 import { sign, SignKeyPair } from 'tweetnacl';
 import { blake2b, keccak } from '@waves/ts-lib-crypto'
+import bip39 from 'bip39-light';
 
 import { ChainId } from './config';
-import { CoinType } from '../coin-type';
-import { preprocessMnemonic } from '../../utils';
+import { CoinType } from '@/coins/coin-type';
+import { preprocessMnemonic } from '@/utils';
 
-import bip39 from 'bip39-light';
 
 export class CachedAccount {
   public keypair: SignKeyPair;

@@ -1,5 +1,5 @@
-import { Output } from "libzeropool-rs-wasm-bundler";
-import { ZeroPoolState } from "./state";
+import { Output } from '@/libzeropool-rs';
+import { ZeroPoolState } from './state';
 
 // TODO: Don't use private keys directly
 
@@ -10,7 +10,7 @@ export abstract class ZeroPoolBackend {
         this.zpState = state;
     }
 
-    abstract transfer(privateKey: string, outs: Output[]): Promise<void>;
-    abstract deposit(privateKey: string, amount: string): Promise<void>;
-    abstract withdraw(privateKey: string, amount: string): Promise<void>;
+    abstract transfer(privateKey: string, outs: Output[], fee?: string): Promise<void>;
+    abstract deposit(privateKey: string, amount: string, fee?: string): Promise<void>;
+    abstract withdraw(privateKey: string, amount: string, fee?: string): Promise<void>;
 }

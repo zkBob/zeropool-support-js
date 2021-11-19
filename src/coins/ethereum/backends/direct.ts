@@ -1,19 +1,42 @@
-import { Note, Output } from "libzeropool-rs-wasm-bundler";
-import Web3 from "web3";
-import { TransactionConfig } from "web3-core";
-import { Contract } from "web3-eth-contract";
-import { Config } from "../config";
-import { ZeroPoolBackend } from "../../../zp/backend";
-import { ZeroPoolState } from "../../../zp/state";
-import { EthPrivateTransaction, TxType, txTypeToString } from "../private-tx";
-import { SnarkParams } from "../../../config";
-import { hexToBuf, toTwosComplementHex } from "../../../utils";
-import { toCompactSignature } from "../utils";
-import tokenAbi from '../token-abi.json';
-import { AbiItem } from "web3-utils";
+import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+import { Contract } from 'web3-eth-contract';
+import { TransactionConfig } from 'web3-core';
 
-const STATE_STORAGE_PREFIX = 'zeropool.eth.state';
+import { Output, TransactionData } from '@/libzeropool-rs';
+import { ZeroPoolBackend } from '@/zp/backend';
+import { ZeroPoolState } from '@/zp/state';
+import { SnarkParams } from '@/config';
+import { hexToBuf } from '@/utils';
+import { Config } from '../config';
+import { EthPrivateTransaction, TxType, txTypeToString } from '../private-tx';
+import { toCompactSignature } from '../utils';
+import tokenAbi from '../token-abi.json';
+
 const DENOMINATOR = BigInt(1000000000);
+
+export type TxDeposit = {
+    txType: TxType.Deposit;
+    signature: string;
+    data: TransactionData;
+};
+
+export type TxTransfer = {
+    txType: TxType.Transfer;
+    data: TransactionData;
+};
+
+export type TxWithdraw = {
+    txType: TxType.Withdraw;
+    amount: string;
+    data: TransactionData;
+};
+
+export type PrivateTx =
+    TxDeposit |
+    TxTransfer |
+    TxWithdraw;
+
 
 export class DirectBackend extends ZeroPoolBackend {
     private web3: Web3;
@@ -30,16 +53,30 @@ export class DirectBackend extends ZeroPoolBackend {
         this.zpState = state;
     }
 
-    public async transfer(privateKey: string, outs: Output[]): Promise<void> {
-        const memo = new Uint8Array(8); // FIXME: fee
-        await this.signAndSendPrivateTx(privateKey, TxType.Transfer, outs, memo);
+    public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
+        const amountGwei = (BigInt(amountWei) / DENOMINATOR).toString();
+        const txData = await this.zpState.privateAccount.createDeposit({ amount: amountGwei, fee });
+        const nullifier = '0x' + BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
+        const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
+        const signature = toCompactSignature(sign.signature).slice(2);
+
+        await this.approveAllowance(privateKey, amountWei);
+        await this.signAndSendPrivateTx(privateKey, { txType: TxType.Deposit, data: txData, signature });
     }
 
-    public async deposit(privateKey: string, amount: string): Promise<void> {
-        const memo = new Uint8Array(8); // FIXME: fee
+    public async transfer(privateKey: string, outputs: Output[], fee: string = '0'): Promise<void> {
+        const txData = await this.zpState.privateAccount.createTransfer({ outputs, fee });
+        await this.signAndSendPrivateTx(privateKey, { txType: TxType.Transfer, data: txData });
+    }
 
-        await this.approveAllowance(privateKey, amount);
-        await this.signAndSendPrivateTx(privateKey, TxType.Deposit, amount, memo);
+    public async withdraw(privateKey: string, amount: string, fee: string = '0'): Promise<void> {
+        const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
+        const amountGwei = (BigInt(amount) / DENOMINATOR).toString();
+        const addressBin = hexToBuf(address);
+
+        const txData = await this.zpState.privateAccount.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: amount, energy_amount: '0' }); // FIXME: energy
+
+        await this.signAndSendPrivateTx(privateKey, { txType: TxType.Withdraw, amount, data: txData });
     }
 
     private async approveAllowance(privateKey: string, amount: string): Promise<void> {
@@ -67,33 +104,10 @@ export class DirectBackend extends ZeroPoolBackend {
         console.log('approve', result);
     }
 
-    public async withdraw(privateKey: string, amount: string): Promise<void> {
+    private async signAndSendPrivateTx(privateKey: string, privateTx: PrivateTx): Promise<void> {
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
 
-        const memo = new Uint8Array(8 + 8 + 20); // fee + amount + address
-        const amountBn = hexToBuf(toTwosComplementHex(BigInt(amount) / this.zpState.denominator, 8));
-        memo.set(amountBn, 8);
-        const addressBin = hexToBuf(address);
-        memo.set(addressBin, 16);
-
-        await this.signAndSendPrivateTx(privateKey, TxType.Withdraw, amount, memo);
-    }
-
-    private async signAndSendPrivateTx(privateKey: string, txType: TxType, outWei: string | Output[], memo: Uint8Array): Promise<void> {
-        const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
-
-        let outGwei;
-        if (typeof outWei === 'string') {
-            outGwei = (BigInt(outWei) / this.zpState.denominator).toString();
-        } else {
-            outGwei = outWei.map(({ to, amount }) => ({
-                to,
-                amount: (BigInt(amount) / this.zpState.denominator).toString(),
-            }));
-        }
-
-        const txData = await this.zpState.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
-        const tx = EthPrivateTransaction.fromData(txData, txType, this.zpState.privateAccount, this.snarkParams, this.web3);
+        const tx = EthPrivateTransaction.fromData(privateTx.data, privateTx.txType, this.zpState.privateAccount, this.snarkParams, this.web3);
         const data = tx.encode();
         const txObject: TransactionConfig = {
             from: address,
@@ -101,13 +115,13 @@ export class DirectBackend extends ZeroPoolBackend {
             data,
         };
 
-        if (txType === TxType.Deposit) {
-            const nullifier = '0x' + BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
-            const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
-            const signature = toCompactSignature(sign.signature).slice(2);
-            txObject.data += signature;
-        } else if (txType === TxType.Withdraw && typeof outWei === 'string') {
-            txObject.value = outWei;
+        switch (privateTx.txType) {
+            case TxType.Deposit:
+                txObject.data += privateTx.signature;
+                break;
+            case TxType.Withdraw:
+                txObject.value = privateTx.amount;
+                break;
         }
 
         const gas = await this.web3.eth.estimateGas(txObject);
@@ -120,7 +134,7 @@ export class DirectBackend extends ZeroPoolBackend {
         const signed = await this.web3.eth.accounts.signTransaction(txObject, privateKey);
         const result = await this.web3.eth.sendSignedTransaction(signed.rawTransaction!);
 
-        console.log(txTypeToString(txType), result);
+        console.log(txTypeToString(privateTx.txType), result);
     }
 
     public getTotalBalance(): string {

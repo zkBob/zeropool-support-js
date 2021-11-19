@@ -1,16 +1,14 @@
+import Web3 from 'web3';
+
 import { Coin, Balance } from './coins/coin';
 import { CoinType } from './coins/coin-type';
-
 import { NearCoin } from './coins/near';
 import { EthereumCoin } from './coins/ethereum';
 import { WavesCoin } from './coins/waves';
-
 import { Config, SnarkParams } from './config';
-import { Params } from 'libzeropool-rs-wasm-bundler';
-import { transactionById } from '@waves/waves-transactions/dist/nodeInteraction';
+import { Params } from './libzeropool-rs';
 import { ZeroPoolState } from './zp/state';
 import { DirectBackend } from './coins/ethereum/backends/direct';
-import Web3 from 'web3';
 import { deriveSpendingKey } from './utils';
 
 export class HDWallet {

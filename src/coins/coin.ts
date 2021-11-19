@@ -1,9 +1,9 @@
-import { UserAccount, reduceSpendingKey, UserState, Output } from 'libzeropool-rs-wasm-bundler';
+import { UserAccount, reduceSpendingKey, UserState, Output } from '../libzeropool-rs';;
 import { hash } from 'tweetnacl';
 
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
-import { bufToHex, deriveEd25519 } from '../utils';
+import { bufToHex, deriveEd25519 } from '@/utils';
 
 export class Balance {
   public address: string;
@@ -44,6 +44,10 @@ export abstract class Coin {
 
   generatePrivateAddress(): string {
     return this.privateAccount.generateAddress();
+  }
+
+  isOwnPrivateAddress(address: string): boolean {
+    return this.privateAccount.isOwnAddress(address);
   }
 
   getPrivateSpendingKey(): Uint8Array {

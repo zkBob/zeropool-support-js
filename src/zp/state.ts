@@ -1,7 +1,7 @@
-import { UserAccount, UserState } from "libzeropool-rs-wasm-bundler";
-import { SnarkParams } from "../config";
 import { hash } from 'tweetnacl';
-import { bufToHex } from "../utils";
+
+import { UserAccount, UserState } from '@/libzeropool-rs';
+import { bufToHex } from '@/utils';
 
 export class ZeroPoolState {
     public denominator: bigint;

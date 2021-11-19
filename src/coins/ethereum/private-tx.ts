@@ -1,6 +1,7 @@
-import { TransactionData, Proof, Params, SnarkProof, UserAccount, VK } from 'libzeropool-rs-wasm-bundler';
 import Web3 from 'web3';
-import { HexStringReader, HexStringWriter } from '../../utils';
+
+import { TransactionData, Proof, Params, SnarkProof, UserAccount, VK } from '@/libzeropool-rs';
+import { HexStringReader, HexStringWriter } from '@/utils';
 import { CONSTANTS } from './utils';
 
 // Sizes in bytes
@@ -8,9 +9,9 @@ const MEMO_META_SIZE: number = 8; // fee (u64)
 const MEMO_META_WITHDRAW_SIZE: number = 8 + 8 + 20; // fee (u64) + amount + address (u160)
 
 export enum TxType {
-  Deposit = '00',
-  Transfer = '01',
-  Withdraw = '02',
+  Deposit = '0000',
+  Transfer = '0100',
+  Withdraw = '0200',
 }
 
 export function txTypeToString(txType: TxType): string {
@@ -22,7 +23,6 @@ export function txTypeToString(txType: TxType): string {
 }
 
 export class EthPrivateTransaction {
-  /** Hex encoded smart contract method id */
   public selector: string;
   public nullifier: bigint;
   public outCommit: bigint;
@@ -72,16 +72,14 @@ export class EthPrivateTransaction {
     });
 
     const txValid = Proof.verify(snarkParams.transferVk!, txProof.inputs, txProof.proof);
-    // if (!txValid) {
-    //   throw new Error('invalid tx proof');
-    // }
+    if (!txValid) {
+      throw new Error('invalid tx proof');
+    }
 
     const treeValid = Proof.verify(snarkParams.treeVk!, treeProof.inputs, treeProof.proof);
-    // if (!treeValid) {
-    //   throw new Error('invalid tree proof');
-    // }
-
-    console.log('Validation:', txValid, treeValid);
+    if (!treeValid) {
+      throw new Error('invalid tree proof');
+    }
 
     tx.selector = web3.eth.abi.encodeFunctionSignature('transact()').slice(2);
     tx.nullifier = BigInt(txData.public.nullifier);
@@ -119,7 +117,7 @@ export class EthPrivateTransaction {
     writer.writeBigInt(this.nullifier, 32);
     writer.writeBigInt(this.outCommit, 32);
     writer.writeBigInt(this.transferIndex, 6);
-    writer.writeBigInt(this.energyAmount, 8);
+    writer.writeBigInt(this.energyAmount, 14);
     writer.writeBigInt(this.tokenAmount, 8);
     writer.writeBigIntArray(this.transactProof, 32);
     writer.writeBigInt(this.rootAfter, 32);
@@ -139,12 +137,12 @@ export class EthPrivateTransaction {
     tx.nullifier = reader.readBigInt(32);
     tx.outCommit = reader.readBigInt(32);
     tx.transferIndex = reader.readBigInt(6);
-    tx.energyAmount = reader.readBigInt(8);
+    tx.energyAmount = reader.readBigInt(14);
     tx.tokenAmount = reader.readBigInt(8);
     tx.transactProof = reader.readBigIntArray(8, 32);
     tx.rootAfter = reader.readBigInt(32);
     tx.treeProof = reader.readBigIntArray(8, 32);
-    tx.txType = reader.readHex(1) as TxType;
+    tx.txType = reader.readHex(2) as TxType;
     const memoSize = reader.readNumber(2);
     tx.memo = reader.readHex(memoSize);
 

@@ -1,16 +1,17 @@
-import { Output, Proof } from "libzeropool-rs-wasm-bundler";
-import Web3 from "web3";
-import { TransactionConfig } from "web3-eth";
-import { Contract } from "web3-eth-contract";
-import { AbiItem } from "web3-utils";
-import { Config } from "..";
-import { SnarkParams } from "../../../config";
-import { hexToBuf, toTwosComplementHex } from "../../../utils";
-import { ZeroPoolBackend } from "../../../zp/backend";
-import { ZeroPoolState } from "../../../zp/state";
-import { EthPrivateTransaction, TxType, txTypeToString } from "../private-tx";
+import Web3 from 'web3';
+import { TransactionConfig } from 'web3-eth';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
+
+import { Output, Proof } from '@/libzeropool-rs';
+import { SnarkParams } from '@/config';
+import { hexToBuf } from '@/utils';
+import { ZeroPoolBackend } from '@/zp/backend';
+import { ZeroPoolState } from '@/zp/state';
+import { Config } from '../config';
+import { TxType } from '../private-tx';
 import tokenAbi from '../token-abi.json';
-import { toCompactSignature } from "../utils";
+import { toCompactSignature } from '../utils';
 
 export interface RelayerInfo {
     root: string;
@@ -69,27 +70,10 @@ export class RelayerBackend extends ZeroPoolBackend {
         this.snarkParams = snarkParams;
     }
 
-    async transfer(_privateKey: string, outsWei: Output[]): Promise<void> {
-        const txType = TxType.Transfer;
-
-        const memo = new Uint8Array(8); // FIXME: fee
-        const outGwei = outsWei.map(({ to, amount }) => ({
-            to,
-            amount: (BigInt(amount) / this.zpState.denominator).toString(),
-        }));
-
-        const txData = await this.zpState.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
-        const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
-
-        this.relayer.sendTransaction(txProof, txData.memo, txType);
-    }
-
-    async deposit(privateKey: string, amountWei: string): Promise<void> {
+    async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Deposit;
-        const memo = new Uint8Array(8); // FIXME: fee
-
-        const outGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
-        const txData = await this.zpState.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
+        const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
+        const txData = await this.zpState.privateAccount.createDeposit({ amount: amountGwei, fee });
         const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
 
         const nullifier = '0x' + BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
@@ -100,19 +84,26 @@ export class RelayerBackend extends ZeroPoolBackend {
         this.relayer.sendTransaction(txProof, txData.memo, txType, signature);
     }
 
-    async withdraw(privateKey: string, amountWei: string): Promise<void> {
+    async transfer(_privateKey: string, outsWei: Output[], fee: string = '0'): Promise<void> {
+        const txType = TxType.Transfer;
+        const outGwei = outsWei.map(({ to, amount }) => ({
+            to,
+            amount: (BigInt(amount) / this.zpState.denominator).toString(),
+        }));
+
+        const txData = await this.zpState.privateAccount.createTransfer({ outputs: outGwei, fee });
+        const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
+
+        this.relayer.sendTransaction(txProof, txData.memo, txType);
+    }
+
+    async withdraw(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Withdraw;
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
-
-        // FIXME: fee
-        const memo = new Uint8Array(8 + 8 + 20); // fee + amount + address
-        const amountBn = hexToBuf(toTwosComplementHex(BigInt(amountWei) / this.zpState.denominator, 8));
-        memo.set(amountBn, 8);
         const addressBin = hexToBuf(address);
-        memo.set(addressBin, 16);
 
-        const outGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
-        const txData = await this.zpState.privateAccount.createTx(txTypeToString(txType), outGwei, memo);
+        const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
+        const txData = await this.zpState.privateAccount.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: amountWei, energy_amount: '0' });
         const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
 
         this.relayer.sendTransaction(txProof, txData.memo, txType);
