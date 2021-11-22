@@ -72,7 +72,7 @@ export class HDWallet {
       }
       case CoinType.ethereum: {
         // TODO: Encapsulate backend selection and key derivation?
-        const sk = deriveSpendingKey(this.seed)
+        const sk = deriveSpendingKey(this.seed, CoinType.ethereum);
         const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000)); // FIXME: Replace with a constant
         const web3 = new Web3(this.config.ethereum.httpProviderUrl);
         const backend = new DirectBackend(web3, this.snarkParams, this.config.ethereum, state);

@@ -47,10 +47,11 @@ export class DirectBackend extends ZeroPoolBackend {
     constructor(web3: Web3, snarkParams: SnarkParams, config: Config, state: ZeroPoolState) {
         super(state);
 
+        this.web3 = web3;
         this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;
         this.snarkParams = snarkParams;
-        this.web3 = web3;
         this.zpState = state;
+        this.config = config;
     }
 
     public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
@@ -65,7 +66,11 @@ export class DirectBackend extends ZeroPoolBackend {
     }
 
     public async transfer(privateKey: string, outputs: Output[], fee: string = '0'): Promise<void> {
-        const txData = await this.zpState.privateAccount.createTransfer({ outputs, fee });
+        const outputsGwei = outputs.map(out => ({
+            to: out.to,
+            amount: (BigInt(out.amount) / DENOMINATOR).toString(),
+        }));
+        const txData = await this.zpState.privateAccount.createTransfer({ outputs: outputsGwei, fee });
         await this.signAndSendPrivateTx(privateKey, { txType: TxType.Transfer, data: txData });
     }
 

@@ -3,7 +3,13 @@ import { Transaction as NativeTx } from 'web3-core';
 import { Constants, getConstants } from '@/libzeropool-rs';
 import { Transaction, TxStatus } from '../transaction';
 
-export const CONSTANTS: Constants = getConstants();
+// TODO: getConstants is unusable if the wasm module is not loaded yet.
+export const CONSTANTS: Constants = {
+  HEIGHT: 48,
+  IN: 3,
+  OUT: (1 << 7) - 1,
+  OUTLOG: 7
+};
 
 export function convertTransaction(tx: NativeTx, timestamp: number, customStatus?: TxStatus): Transaction {
   return {

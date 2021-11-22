@@ -6,5 +6,6 @@
 //   module.exports = require('libzeropool-rs-wasm-nodejs');
 // }
 
-export * from 'libzeropool-rs-wasm-bundler';
+export * from 'libzeropool-rs-wasm-web';
+export { default as init } from 'libzeropool-rs-wasm-web';
 

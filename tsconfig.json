@@ -4,7 +4,7 @@
     "strictNullChecks": true,
     "target": "es2017",
     "outDir": "lib",
-    "module": "esnext",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "sourceMap": true,
     "esModuleInterop": true,
@@ -22,8 +22,12 @@
     },
     "plugins": [
       {
-        "transform": "typescript-transform-paths"
+        "transform": "typescript-transform-paths",
       },
+      {
+        "transform": "typescript-transform-paths",
+        "afterDeclarations": true
+      }
     ]
   },
   "include": [

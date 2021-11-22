@@ -31,8 +31,8 @@ export function deriveEd25519(path: string, mnemonic: string): SignKeyPair {
 }
 
 
-export function deriveSpendingKey(mnemonic: string): Uint8Array {
-  const path = CoinType.privateDerivationPath(this.getCoinType());
+export function deriveSpendingKey(mnemonic: string, coinType: CoinType): Uint8Array {
+  const path = CoinType.privateDerivationPath(coinType);
   const pair = deriveEd25519(path, mnemonic); // FIXME: Derive on BabyJubJub
 
   return reduceSpendingKey(pair.secretKey.slice(0, 32));
