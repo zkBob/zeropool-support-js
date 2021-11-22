@@ -1,8 +1,8 @@
 import Web3 from 'web3';
-import { Output } from '@/libzeropool-rs';
-import { Coin } from '@/coins/coin';
-import { CoinType } from '@/coins/coin-type';
-import { Transaction, TxFee } from '@/coins/transaction';
+import { Output } from "../../libzeropool-rs";
+import { Coin } from "../coin";
+import { CoinType } from "../coin-type";
+import { Transaction, TxFee } from "../transaction";
 import { Config } from './config';
 import { DirectBackend } from './backends/direct';
 export declare class EthereumCoin extends Coin {

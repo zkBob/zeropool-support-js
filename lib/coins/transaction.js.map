@@ -1,1 +1,1 @@
-{"version":3,"file":"transaction.js","sourceRoot":"","sources":["../../src/coins/transaction.ts"],"names":[],"mappings":"AAAA,MAAM,CAAN,IAAY,QAIX;AAJD,WAAY,QAAQ;IAClB,iDAAS,CAAA;IACT,6CAAO,CAAA;IACP,yCAAK,CAAA;AACP,CAAC,EAJW,QAAQ,KAAR,QAAQ,QAInB"}
+{"version":3,"file":"transaction.js","sourceRoot":"","sources":["../../src/coins/transaction.ts"],"names":[],"mappings":";;;AAAA,IAAY,QAIX;AAJD,WAAY,QAAQ;IAClB,iDAAS,CAAA;IACT,6CAAO,CAAA;IACP,yCAAK,CAAA;AACP,CAAC,EAJW,QAAQ,GAAR,gBAAQ,KAAR,gBAAQ,QAInB"}

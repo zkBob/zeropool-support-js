@@ -1,6 +1,6 @@
-import { Coin } from '@/coins/coin';
-import { CoinType } from '@/coins/coin-type';
-import { Transaction, TxFee } from '@/coins/transaction';
+import { Coin } from "../coin";
+import { CoinType } from "../coin-type";
+import { Transaction, TxFee } from "../transaction";
 import { Config } from './config';
 export declare class NearCoin extends Coin {
     private keyStore;

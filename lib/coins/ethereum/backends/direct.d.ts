@@ -1,8 +1,8 @@
 import Web3 from 'web3';
-import { Output, TransactionData } from '@/libzeropool-rs';
-import { ZeroPoolBackend } from '@/zp/backend';
-import { ZeroPoolState } from '@/zp/state';
-import { SnarkParams } from '@/config';
+import { Output, TransactionData } from "../../../libzeropool-rs";
+import { ZeroPoolBackend } from "../../../zp/backend";
+import { ZeroPoolState } from "../../../zp/state";
+import { SnarkParams } from "../../../config";
 import { Config } from '../config';
 import { TxType } from '../private-tx';
 export declare type TxDeposit = {

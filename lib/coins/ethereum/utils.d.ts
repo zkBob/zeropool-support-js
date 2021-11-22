@@ -1,5 +1,5 @@
 import { Transaction as NativeTx } from 'web3-core';
-import { Constants } from '@/libzeropool-rs';
+import { Constants } from "../../libzeropool-rs";
 import { Transaction, TxStatus } from '../transaction';
 export declare const CONSTANTS: Constants;
 export declare function convertTransaction(tx: NativeTx, timestamp: number, customStatus?: TxStatus): Transaction;

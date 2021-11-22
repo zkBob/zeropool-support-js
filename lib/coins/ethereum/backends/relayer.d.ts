@@ -1,8 +1,8 @@
 import Web3 from 'web3';
-import { Output, Proof } from '@/libzeropool-rs';
-import { SnarkParams } from '@/config';
-import { ZeroPoolBackend } from '@/zp/backend';
-import { ZeroPoolState } from '@/zp/state';
+import { Output, Proof } from "../../../libzeropool-rs";
+import { SnarkParams } from "../../../config";
+import { ZeroPoolBackend } from "../../../zp/backend";
+import { ZeroPoolState } from "../../../zp/state";
 import { Config } from '../config';
 import { TxType } from '../private-tx';
 export interface RelayerInfo {

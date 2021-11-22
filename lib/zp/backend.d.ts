@@ -1,4 +1,4 @@
-import { Output } from '@/libzeropool-rs';
+import { Output } from "../libzeropool-rs";
 import { ZeroPoolState } from './state';
 export declare abstract class ZeroPoolBackend {
     protected zpState: ZeroPoolState;
