@@ -23,7 +23,7 @@ export declare class EthPrivateTransaction {
         treeParams: Params;
         transferVk?: VK;
         treeVk?: VK;
-    }, web3: Web3): EthPrivateTransaction;
+    }, web3: Web3, worker: any): Promise<EthPrivateTransaction>;
     get ciphertext(): string;
     /**
      * Returns encoded transaction ready to use as data for the smart contract.

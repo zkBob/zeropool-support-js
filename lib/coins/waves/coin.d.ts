@@ -7,7 +7,7 @@ export declare class WavesCoin extends Coin {
     private accounts;
     private api;
     private lastTxTimestamps;
-    constructor(mnemonic: string, config: Config);
+    constructor(mnemonic: string, config: Config, worker: any);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
     getAddress(account: number): string;

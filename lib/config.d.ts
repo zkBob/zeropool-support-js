@@ -7,6 +7,8 @@ export interface Config {
     ethereum: EthereumConfig;
     waves: WavesConfig;
     snarkParams: SnarkConfigParams;
+    wasmPath: string;
+    workerPath: string;
 }
 export interface SnarkConfigParams {
     transferParamsUrl: string;

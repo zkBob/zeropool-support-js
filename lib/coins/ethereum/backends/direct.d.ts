@@ -25,7 +25,7 @@ export declare class DirectBackend extends ZeroPoolBackend {
     private config;
     private snarkParams;
     private tokenContract;
-    constructor(web3: Web3, snarkParams: SnarkParams, config: Config, state: ZeroPoolState);
+    constructor(web3: Web3, snarkParams: SnarkParams, config: Config, state: ZeroPoolState, worker: any);
     deposit(privateKey: string, amountWei: string, fee?: string): Promise<void>;
     transfer(privateKey: string, outputs: Output[], fee?: string): Promise<void>;
     withdraw(privateKey: string, amount: string, fee?: string): Promise<void>;

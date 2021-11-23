@@ -8,7 +8,7 @@ export declare class NearCoin extends Coin {
     private lastTxTimestamps;
     private rpc;
     private accounts;
-    constructor(mnemonic: string, config: Config);
+    constructor(mnemonic: string, config: Config, worker: any);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
     getAddress(account: number): string;

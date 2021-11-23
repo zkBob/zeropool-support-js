@@ -6,6 +6,7 @@ export declare class HDWallet {
     private coins;
     private config;
     private snarkParams;
+    private worker;
     static init(seed: string, config: Config, coinTypes: CoinType[]): Promise<HDWallet>;
     getRegularAddress(coinType: CoinType, account: number): string | undefined;
     getRegularPrivateKey(coinType: CoinType, account: number): string | undefined;

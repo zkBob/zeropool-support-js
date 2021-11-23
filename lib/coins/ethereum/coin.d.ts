@@ -11,7 +11,7 @@ export declare class EthereumCoin extends Coin {
     private accounts;
     private config;
     private backend;
-    constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend);
+    constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend, worker: any);
     protected init(): Promise<void>;
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;

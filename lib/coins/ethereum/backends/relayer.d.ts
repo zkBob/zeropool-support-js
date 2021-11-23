@@ -22,7 +22,7 @@ export declare class RelayerBackend extends ZeroPoolBackend {
     private config;
     private web3;
     private snarkParams;
-    constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config);
+    constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config, worker: any);
     deposit(privateKey: string, amountWei: string, fee?: string): Promise<void>;
     transfer(_privateKey: string, outsWei: Output[], fee?: string): Promise<void>;
     withdraw(privateKey: string, amountWei: string, fee?: string): Promise<void>;

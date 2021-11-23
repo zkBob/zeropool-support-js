@@ -9,10 +9,11 @@ export declare abstract class Coin {
     abstract getPrivateKey(account: number): string;
     abstract getPublicKey(account: number): string;
     abstract getAddress(account: number): string;
-    protected mnemonic: string;
     privateAccount: UserAccount;
+    protected mnemonic: string;
+    protected worker: any;
     private initPromise;
-    constructor(mnemonic: string);
+    constructor(mnemonic: string, worker: any);
     protected init(): Promise<void>;
     ready(): Promise<void>;
     generatePrivateAddress(): string;
