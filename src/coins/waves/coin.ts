@@ -13,8 +13,8 @@ export class WavesCoin extends Coin {
   private api: ReturnType<typeof create>;
   private lastTxTimestamps: number[] = [];
 
-  constructor(mnemonic: string, config: Config) {
-    super(mnemonic);
+  constructor(mnemonic: string, config: Config, worker: any) {
+    super(mnemonic, worker);
     this.mnemonic = mnemonic;
     this.config = config;
     this.api = create(config.nodeUrl);

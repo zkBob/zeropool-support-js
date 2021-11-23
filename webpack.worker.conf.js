@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   entry: './src/worker.ts',
   mode: 'production',
@@ -18,6 +20,7 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: "worker",
+    path: path.join(process.cwd(), 'lib'),
+    filename: 'worker.js',
   },
 };

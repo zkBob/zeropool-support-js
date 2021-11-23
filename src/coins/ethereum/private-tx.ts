@@ -35,13 +35,14 @@ export class EthPrivateTransaction {
   public txType: TxType;
   public memo: string;
 
-  static fromData(
+  static async fromData(
     txData: TransactionData,
     txType: TxType,
     acc: UserAccount,
     snarkParams: { transferParams: Params; treeParams: Params; transferVk?: VK; treeVk?: VK; },
-    web3: Web3
-  ): EthPrivateTransaction {
+    web3: Web3,
+    worker: any,
+  ): Promise<EthPrivateTransaction> {
     const tx = new EthPrivateTransaction();
 
     const nextIndex = acc.nextTreeIndex() as bigint;
@@ -60,8 +61,19 @@ export class EthPrivateTransaction {
     const rootBefore = acc.getRoot();
     const rootAfter = acc.getMerkleRootAfterCommitment(nextCommitmentIndex, txData.commitment_root);
 
-    const txProof = Proof.tx(snarkParams.transferParams, txData.public, txData.secret);
-    const treeProof = Proof.tree(snarkParams.treeParams, {
+    // const txProof = Proof.tx(snarkParams.transferParams, txData.public, txData.secret);
+    // const treeProof = Proof.tree(snarkParams.treeParams, {
+    //   root_before: rootBefore,
+    //   root_after: rootAfter,
+    //   leaf: txData.commitment_root,
+    // }, {
+    //   proof_filled: proofFilled,
+    //   proof_free: proofFree,
+    //   prev_leaf: prevLeaf,
+    // });
+
+    const txProof = await worker.proveTx(txData.public, txData.secret);
+    const treeProof = await worker.proveTree({
       root_before: rootBefore,
       root_after: rootAfter,
       leaf: txData.commitment_root,

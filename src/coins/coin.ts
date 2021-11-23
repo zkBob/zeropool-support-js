@@ -15,13 +15,15 @@ export abstract class Coin {
   abstract getPublicKey(account: number): string;
   abstract getAddress(account: number): string;
 
-  protected mnemonic: string;
   public privateAccount: UserAccount;
+  protected mnemonic: string;
+  protected worker: any;
   private initPromise: Promise<void>;
 
-  constructor(mnemonic: string) {
+  constructor(mnemonic: string, worker: any) {
     this.mnemonic = mnemonic;
     this.initPromise = this.init();
+    this.worker = worker;
   }
 
   protected async init(): Promise<void> {

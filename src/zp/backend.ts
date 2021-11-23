@@ -5,9 +5,11 @@ import { ZeroPoolState } from './state';
 
 export abstract class ZeroPoolBackend {
     protected zpState: ZeroPoolState;
+    protected worker: any;
 
-    constructor(state: ZeroPoolState) {
+    constructor(state: ZeroPoolState, worker: any) {
         this.zpState = state;
+        this.worker = worker;
     }
 
     abstract transfer(privateKey: string, outs: Output[], fee?: string): Promise<void>;

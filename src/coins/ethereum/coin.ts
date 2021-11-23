@@ -24,8 +24,8 @@ export class EthereumCoin extends Coin {
   private config: Config;
   private backend: DirectBackend;
 
-  constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend) {
-    super(mnemonic);
+  constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend, worker: any) {
+    super(mnemonic, worker);
     this.web3 = web3;
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);

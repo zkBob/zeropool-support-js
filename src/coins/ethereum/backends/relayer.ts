@@ -60,8 +60,8 @@ export class RelayerBackend extends ZeroPoolBackend {
     private web3: Web3;
     private snarkParams: SnarkParams;
 
-    constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config) {
-        super(state);
+    constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config, worker: any) {
+        super(state, worker);
 
         this.web3 = web3;
         this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;

@@ -44,8 +44,8 @@ export class DirectBackend extends ZeroPoolBackend {
     private snarkParams: SnarkParams;
     private tokenContract: Contract;
 
-    constructor(web3: Web3, snarkParams: SnarkParams, config: Config, state: ZeroPoolState) {
-        super(state);
+    constructor(web3: Web3, snarkParams: SnarkParams, config: Config, state: ZeroPoolState, worker: any) {
+        super(state, worker);
 
         this.web3 = web3;
         this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;
@@ -112,7 +112,7 @@ export class DirectBackend extends ZeroPoolBackend {
     private async signAndSendPrivateTx(privateKey: string, privateTx: PrivateTx): Promise<void> {
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
 
-        const tx = EthPrivateTransaction.fromData(privateTx.data, privateTx.txType, this.zpState.privateAccount, this.snarkParams, this.web3);
+        const tx = await EthPrivateTransaction.fromData(privateTx.data, privateTx.txType, this.zpState.privateAccount, this.snarkParams, this.web3, this.worker);
         const data = tx.encode();
         const txObject: TransactionConfig = {
             from: address,

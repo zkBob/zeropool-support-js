@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib/ && npx tsc",
+    "build": "rm -rf lib/ && npx tsc && webpack --config webpack.worker.conf.js && sed -i.old '1s;^;document = {}\\;Window = function () {}\\;;' lib/worker.js",
     "build:node": "rm -rf node && npx tsc --p tsconfig.node.json",
     "prepare": "ts-patch install -s"
   },

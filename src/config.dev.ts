@@ -23,7 +23,9 @@ const config: Config = {
   snarkParams: {
     transferParamsUrl: 'transfer_params.bin',
     treeParamsUrl: 'tree_update_params.bin',
-  }
+  },
+  wasmPath: '',
+  workerPath: ''
 };
 
 export default config;

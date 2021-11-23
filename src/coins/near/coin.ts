@@ -18,8 +18,8 @@ export class NearCoin extends Coin {
   private rpc: JsonRpcProvider;
   private accounts: AccountCache;
 
-  constructor(mnemonic: string, config: Config) {
-    super(mnemonic);
+  constructor(mnemonic: string, config: Config, worker: any) {
+    super(mnemonic, worker);
     this.mnemonic = mnemonic;
     this.keyStore = new InMemoryKeyStore();
     this.config = config;

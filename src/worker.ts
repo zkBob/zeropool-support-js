@@ -1,25 +1,30 @@
 import { expose } from 'comlink';
-import { Proof, default as init } from 'libzeropool-rs-wasm-web';
-import wasm from 'libzeropool-rs-wasm-web/libzeropool_rs_wasm_bg.wasm'; // FIXME: dynamic init
+import { Proof, Params, default as init } from 'libzeropool-rs-wasm-web';
+
+let txParams: Params;
+let treeParams: Params;
 
 (async () => {
-  await init(wasm);
-
   const obj = {
-    async initWasm(path) {
-      await init(path);
+    async initWasm(url: string, paramUrls: { txParams: string; treeParams: string }) {
+      await init(url);
+
+      const txParamsData = await (await fetch(paramUrls.txParams)).arrayBuffer();
+      txParams = Params.fromBinary(new Uint8Array(txParamsData));
+      const treeParamsData = await (await fetch(paramUrls.treeParams)).arrayBuffer();
+      treeParams = Params.fromBinary(new Uint8Array(treeParamsData));
     },
 
-    async prooveTx(params, pub, sec) {
-      new Promise(async resolve => {
-        const result = Proof.tx(params, pub, sec);
+    async proveTx(pub, sec) {
+      return new Promise(async resolve => {
+        const result = Proof.tx(txParams, pub, sec);
         resolve(result);
       });
     },
 
-    async prooveTree(params, pub, sec) {
-      new Promise(async resolve => {
-        const result = Proof.tree(params, pub, sec);
+    async proveTree(pub, sec) {
+      return new Promise(async resolve => {
+        const result = Proof.tree(treeParams, pub, sec);
         resolve(result);
       });
     },
