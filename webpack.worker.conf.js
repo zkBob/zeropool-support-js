@@ -2,6 +2,7 @@ const path = require('path');
 
 module.exports = {
   entry: './src/worker.ts',
+  target: 'webworker',
   mode: 'production',
   module: {
     rules: [
@@ -10,10 +11,10 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
-      {
-        test: /\.wasm?$/,
-        type: 'asset/resource',
-      }
+      // {
+      //   test: /\.wasm?$/,
+      //   type: 'asset/resource',
+      // }
     ],
   },
   resolve: {
