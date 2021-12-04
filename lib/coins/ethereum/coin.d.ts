@@ -4,14 +4,15 @@ import { Coin } from "../coin";
 import { CoinType } from "../coin-type";
 import { Transaction, TxFee } from "../transaction";
 import { Config } from './config';
-import { DirectBackend } from './backends/direct';
+import { RelayerBackend } from './relayer';
 export declare class EthereumCoin extends Coin {
     private web3;
     private txStorage;
     private accounts;
     private config;
-    private backend;
-    constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend, worker: any);
+    private relayer;
+    private erc20;
+    constructor(mnemonic: string, web3: Web3, config: Config, relayer: RelayerBackend, worker: any);
     protected init(): Promise<void>;
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;

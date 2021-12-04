@@ -1,4 +1,4 @@
-import { UserAccount } from "../libzeropool-rs";
+import { UserAccount } from "./libzeropool-rs";
 export declare class ZeroPoolState {
     denominator: bigint;
     privateAccount: UserAccount;

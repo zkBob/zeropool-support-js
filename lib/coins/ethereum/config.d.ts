@@ -1,6 +1,6 @@
 export interface Config {
     httpProviderUrl: string;
-    wsProviderUrl: string;
+    relayerUrl: string;
     contractAddress: string;
     contractBlock: number;
     tokenContractAddress: string;
