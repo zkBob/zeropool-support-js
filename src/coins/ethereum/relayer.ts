@@ -6,12 +6,11 @@ import { AbiItem } from 'web3-utils';
 import { Output, Proof } from '@/libzeropool-rs';
 import { SnarkParams } from '@/config';
 import { hexToBuf } from '@/utils';
-import { ZeroPoolBackend } from '@/zp/backend';
-import { ZeroPoolState } from '@/zp/state';
-import { Config } from '../config';
-import { TxType } from '../private-tx';
-import tokenAbi from '../token-abi.json';
-import { toCompactSignature } from '../utils';
+import { ZeroPoolState } from '@/state';
+import { Config } from './config';
+import { TxType } from './private-tx';
+import tokenAbi from './token-abi.json';
+import { toCompactSignature } from './utils';
 
 export interface RelayerInfo {
     root: string;
@@ -19,10 +18,14 @@ export interface RelayerInfo {
 }
 
 export class RelayerAPI {
-    url: URL;
+    private url: URL;
 
     constructor(url: URL) {
         this.url = url;
+    }
+
+    updateUrl(newUrl: URL) {
+        this.url = newUrl;
     }
 
     async fetchTransactions(offset: BigInt, limit: number = 100): Promise<string[]> {
@@ -53,7 +56,9 @@ export class RelayerAPI {
     }
 }
 
-export class RelayerBackend extends ZeroPoolBackend {
+export class RelayerBackend {
+    private zpState: ZeroPoolState;
+    private worker: any;
     private relayer: RelayerAPI;
     private tokenContract: Contract;
     private config: Config;
@@ -61,8 +66,8 @@ export class RelayerBackend extends ZeroPoolBackend {
     private snarkParams: SnarkParams;
 
     constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config, worker: any) {
-        super(state, worker);
-
+        this.zpState = state;
+        this.worker = worker;
         this.web3 = web3;
         this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;
         this.relayer = new RelayerAPI(url);
@@ -70,11 +75,15 @@ export class RelayerBackend extends ZeroPoolBackend {
         this.snarkParams = snarkParams;
     }
 
-    async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
+    public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Deposit;
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
         const txData = await this.zpState.privateAccount.createDeposit({ amount: amountGwei, fee });
-        const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
+        const txProof = await this.worker.proveTx(txData.public, txData.secret);
+        const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
+        if (!txValid) {
+            throw new Error('invalid tx proof');
+        }
 
         const nullifier = '0x' + BigInt(txData.public.nullifier).toString(16).padStart(64, '0');
         const sign = await this.web3.eth.accounts.sign(nullifier, privateKey);
@@ -84,7 +93,7 @@ export class RelayerBackend extends ZeroPoolBackend {
         this.relayer.sendTransaction(txProof, txData.memo, txType, signature);
     }
 
-    async transfer(_privateKey: string, outsWei: Output[], fee: string = '0'): Promise<void> {
+    public async transfer(_privateKey: string, outsWei: Output[], fee: string = '0'): Promise<void> {
         const txType = TxType.Transfer;
         const outGwei = outsWei.map(({ to, amount }) => ({
             to,
@@ -92,19 +101,27 @@ export class RelayerBackend extends ZeroPoolBackend {
         }));
 
         const txData = await this.zpState.privateAccount.createTransfer({ outputs: outGwei, fee });
-        const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
+        const txProof = await this.worker.proveTx(txData.public, txData.secret);
+        const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
+        if (!txValid) {
+            throw new Error('invalid tx proof');
+        }
 
         this.relayer.sendTransaction(txProof, txData.memo, txType);
     }
 
-    async withdraw(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
+    public async withdraw(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Withdraw;
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
         const addressBin = hexToBuf(address);
 
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
         const txData = await this.zpState.privateAccount.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: amountWei, energy_amount: '0' });
-        const txProof = Proof.tx(this.snarkParams.transferParams, txData.public, txData.secret);
+        const txProof = await this.worker.proveTx(txData.public, txData.secret);
+        const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
+        if (!txValid) {
+            throw new Error('invalid tx proof');
+        }
 
         this.relayer.sendTransaction(txProof, txData.memo, txType);
     }
@@ -132,5 +149,16 @@ export class RelayerBackend extends ZeroPoolBackend {
         const result = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction!);
 
         console.log('approve', result);
+    }
+
+    public getTotalBalance(): string {
+        return this.zpState.getTotalBalance();
+    }
+
+    /**
+     * @returns [total, account, note]
+     */
+    public getBalances(): [string, string, string] {
+        return this.zpState.getBalances();
     }
 }

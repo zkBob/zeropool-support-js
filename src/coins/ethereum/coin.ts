@@ -1,5 +1,7 @@
 import Web3 from 'web3';
 import BN from 'bn.js';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
 
 import { Note, Output } from '@/libzeropool-rs';
 import { hexToBuf, HexStringReader } from '@/utils';
@@ -11,7 +13,8 @@ import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { EthPrivateTransaction } from './private-tx';
-import { DirectBackend } from './backends/direct';
+import { RelayerBackend } from './relayer';
+import tokenAbi from './token-abi.json';
 
 // TODO: Organize presistent state properly
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
@@ -22,15 +25,17 @@ export class EthereumCoin extends Coin {
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
   private config: Config;
-  private backend: DirectBackend;
+  private relayer: RelayerBackend;
+  private erc20: Contract;
 
-  constructor(mnemonic: string, web3: Web3, config: Config, backend: DirectBackend, worker: any) {
+  constructor(mnemonic: string, web3: Web3, config: Config, relayer: RelayerBackend, worker: any) {
     super(mnemonic, worker);
     this.web3 = web3;
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
+    this.erc20 = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
     this.config = config;
-    this.backend = backend;
+    this.relayer = relayer;
   }
 
   protected async init() {
@@ -173,25 +178,25 @@ export class EthereumCoin extends Coin {
 
   public async transferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
     const privateKey = this.getPrivateKey(account);
-    return this.backend.transfer(privateKey, outs);
+    return this.relayer.transfer(privateKey, outs);
   }
 
   public async depositPrivate(account: number, amount: string): Promise<void> {
     const privateKey = this.getPrivateKey(account);
-    return this.backend.deposit(privateKey, amount);
+    return this.relayer.deposit(privateKey, amount);
   }
 
   public async withdrawPrivate(account: number, amount: string): Promise<void> {
     const privateKey = this.getPrivateKey(account);
-    return this.backend.withdraw(privateKey, amount);
+    return this.relayer.withdraw(privateKey, amount);
   }
 
   public getPrivateBalance(): string {
-    return this.backend.getTotalBalance();
+    return this.relayer.getTotalBalance();
   }
 
   public getPrivateBalances(): [string, string, string] {
-    return this.backend.getBalances();
+    return this.relayer.getBalances();
   }
 
   public async updatePrivateState(): Promise<void> {

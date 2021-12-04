@@ -8,8 +8,8 @@ import { EthereumCoin } from './coins/ethereum';
 import { WavesCoin } from './coins/waves';
 import { Config, SnarkParams } from './config';
 import { Params } from './libzeropool-rs';
-import { ZeroPoolState } from './zp/state';
-import { DirectBackend } from './coins/ethereum/backends/direct';
+import { ZeroPoolState } from './state';
+import { RelayerBackend } from './coins/ethereum/relayer';
 import { deriveSpendingKey } from './utils';
 
 export class HDWallet {
@@ -84,7 +84,7 @@ export class HDWallet {
         const sk = deriveSpendingKey(this.seed, CoinType.ethereum);
         const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000)); // FIXME: Replace with a constant
         const web3 = new Web3(this.config.ethereum.httpProviderUrl);
-        const backend = new DirectBackend(web3, this.snarkParams, this.config.ethereum, state, this.worker);
+        const backend = new RelayerBackend(new URL(this.config.ethereum.relayerUrl), web3, state, this.snarkParams, this.config.ethereum, this.worker);
         coin = new EthereumCoin(this.seed, web3, this.config.ethereum, backend, this.worker);
         break;
       }
