@@ -61,6 +61,7 @@ export class EthPrivateTransaction {
     const rootBefore = acc.getRoot();
     const rootAfter = acc.getMerkleRootAfterCommitment(nextCommitmentIndex, txData.commitment_root);
 
+    // TODO: If not using worker
     // const txProof = Proof.tx(snarkParams.transferParams, txData.public, txData.secret);
     // const treeProof = Proof.tree(snarkParams.treeParams, {
     //   root_before: rootBefore,

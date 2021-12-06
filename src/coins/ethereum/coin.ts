@@ -225,6 +225,8 @@ export class EthereumCoin extends Coin {
       this.cachePrivateTx(message);
     }
 
+    // TODO: Clean up the tree
+
     localStorage.setItem(STORAGE_PREFIX, newLatestBlock.toString());
   }
 
@@ -242,28 +244,12 @@ export class EthereumCoin extends Coin {
     const reader = new HexStringReader(txData.ciphertext);
     const numItems = reader.readNumber(4, true);
     const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
-    if (hashes.length < CONSTANTS.OUT + 1) {
-      const zeroes = Array(CONSTANTS.OUT + 1 - hashes.length).fill('0');
-      hashes.push(...zeroes);
-    }
 
     console.log('Updating state', this.privateAccount.getWholeState());
 
-    function isZeroNote({ p_d }: {
-      d: string,
-      p_d: string,
-      b: string,
-      t: string
-    }) {
-      return p_d == '0';
-    }
-
     if (pair) {
       const notes = pair.notes.reduce<{ note: Note, index: number }[]>((acc, note, index) => {
-        if (!isZeroNote(note)) {
-          acc.push({ note, index: Number(txData.transferIndex) + 1 + index });
-        }
-
+        acc.push({ note, index: Number(txData.transferIndex) + 1 + index });
         return acc;
       }, []);
 
