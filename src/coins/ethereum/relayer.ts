@@ -73,6 +73,7 @@ export class RelayerBackend {
         this.relayer = new RelayerAPI(url);
         this.zpState = state;
         this.snarkParams = snarkParams;
+        this.config = config;
     }
 
     public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
