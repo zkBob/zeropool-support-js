@@ -19,7 +19,7 @@ export class HDWallet {
   private snarkParams: SnarkParams;
   private worker: any;
 
-  public static async init(seed: string, config: Config, coinTypes: CoinType[]): Promise<HDWallet> {
+  public static async init(seed: string, config: Config): Promise<HDWallet> {
     const wallet = new HDWallet();
 
     const txParamsData = await (await fetch(config.snarkParams.transferParamsUrl)).arrayBuffer();
@@ -27,6 +27,9 @@ export class HDWallet {
 
     const treeParamsData = await (await fetch(config.snarkParams.treeParamsUrl)).arrayBuffer();
     const treeParams = Params.fromBinary(new Uint8Array(treeParamsData));
+
+    const transferVk = await (await fetch(config.snarkParams.transferVkUrl)).json();
+    const treeVk = await (await fetch(config.snarkParams.treeVkUrl)).json();
 
     const worker: any = wrap(new Worker(config.workerPath));
     await worker.initWasm(config.wasmPath, {
@@ -37,14 +40,20 @@ export class HDWallet {
     wallet.snarkParams = {
       transferParams,
       treeParams,
-      transferVk: config.snarkParams.transferVk,
-      treeVk: config.snarkParams.treeVk,
+      transferVk,
+      treeVk,
     };
     wallet.seed = seed;
     wallet.config = config;
     wallet.worker = worker;
 
-    const promises = coinTypes.map(coin => wallet.enableCoin(coin as CoinType));
+    const promises: Promise<void>[] = [];
+    for (let coinType in CoinType) {
+      if (config[coinType]) {
+        promises.push(wallet.enableCoin(coinType as CoinType, config[coinType]));
+      }
+    }
+
     await Promise.all(promises);
 
     return wallet;
@@ -72,24 +81,24 @@ export class HDWallet {
     }, {});
   }
 
-  public async enableCoin(coinType: CoinType) {
+  public async enableCoin(coinType: CoinType, config: any) {
     let coin: Coin;
     switch (coinType) {
       case CoinType.near: {
-        coin = new NearCoin(this.seed, this.config.near, this.worker);
+        coin = new NearCoin(this.seed, config, this.worker);
         break;
       }
       case CoinType.ethereum: {
         // TODO: Encapsulate backend selection and key derivation?
         const sk = deriveSpendingKey(this.seed, CoinType.ethereum);
         const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000)); // FIXME: Replace with a constant
-        const web3 = new Web3(this.config.ethereum.httpProviderUrl);
-        const backend = new RelayerBackend(new URL(this.config.ethereum.relayerUrl), web3, state, this.snarkParams, this.config.ethereum, this.worker);
-        coin = new EthereumCoin(this.seed, web3, this.config.ethereum, backend, this.worker);
+        const web3 = new Web3(config.httpProviderUrl);
+        const backend = new RelayerBackend(new URL(config.relayerUrl), web3, state, this.snarkParams, config, this.worker);
+        coin = new EthereumCoin(this.seed, web3, config, backend, this.worker);
         break;
       }
       case CoinType.waves: {
-        coin = new WavesCoin(this.seed, this.config.waves, this.worker);
+        coin = new WavesCoin(this.seed, config, this.worker);
         break;
       }
       default: {
