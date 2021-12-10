@@ -42,7 +42,7 @@ export class RelayerAPI {
         const url = new URL('/transaction', this.url);
         const res = await fetch(url.toString(), { method: 'POST', body: JSON.stringify({ proof, memo, txType, withdrawSignature }) });
 
-        if (res.status !== 204) {
+        if (!res.ok) {
             const body = await res.json();
             throw new Error(`Error ${res.status}: ${JSON.stringify(body)}`)
         }
