@@ -59,6 +59,13 @@ export class EthereumCoin extends Coin {
     return await this.web3.eth.getBalance(this.getAddress(account));
   }
 
+  public async getTokenBalance(account: number, tokenAddress: string): Promise<string> {
+    const address = this.getAddress(account);
+    const balance = await this.erc20.methods.balanceOf(address).call({ from: address, to: tokenAddress });
+
+    return balance;
+  }
+
   public async transfer(account: number, to: string, amount: string) {
     const from = this.getAddress(account);
     const nonce = await this.web3.eth.getTransactionCount(this.getAddress(account));

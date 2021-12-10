@@ -40,19 +40,19 @@ export abstract class Coin {
     }
   }
 
-  async ready(): Promise<void> {
+  public async ready(): Promise<void> {
     await this.initPromise;
   }
 
-  generatePrivateAddress(): string {
+  public generatePrivateAddress(): string {
     return this.privateAccount.generateAddress();
   }
 
-  isOwnPrivateAddress(address: string): boolean {
+  public isOwnPrivateAddress(address: string): boolean {
     return this.privateAccount.isOwnAddress(address);
   }
 
-  getPrivateSpendingKey(): Uint8Array {
+  public getPrivateSpendingKey(): Uint8Array {
     const path = CoinType.privateDerivationPath(this.getCoinType());
     const pair = deriveEd25519(path, this.mnemonic); // FIXME: Derive on BabyJubJub
 
@@ -62,7 +62,11 @@ export abstract class Coin {
   /**
    * Get native coin balance.
    */
-  abstract getBalance(account: number): Promise<string>;
+  public abstract getBalance(account: number): Promise<string>;
+
+  public getTokenBalance(account: number, tokenAddress: string): Promise<string> {
+    throw new Error('unimplemented');
+  }
 
   /**
    * Get balances for specified number of accounts with offset.
@@ -94,69 +98,69 @@ export abstract class Coin {
   abstract transfer(account: number, to: string, amount: string): Promise<void>;
 
   // TODO: Extract private tx methods into a separate class
-  transferPublicToPrivate(account: number, outputs: Output[]): Promise<void> {
+  public transferPublicToPrivate(account: number, outputs: Output[]): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  transferPrivateToPrivate(account: number, outputs: Output[]): Promise<void> {
+  public transferPrivateToPrivate(account: number, outputs: Output[]): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  depositPrivate(account: number, amount: string): Promise<void> {
+  public depositPrivate(account: number, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  mergePrivate(): Promise<void> {
+  public mergePrivate(): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  withdrawPrivate(account: number, amount: string): Promise<void> {
+  public withdrawPrivate(account: number, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 
   /**
    * Get current total private balance (account + unspent notes).
    */
-  getPrivateBalance(): string {
+  public getPrivateBalance(): string {
     throw new Error('unimplemented');
   }
 
   /**
  * Get total, account, and note balances.
  */
-  getPrivateBalances(): [string, string, string] {
+  public getPrivateBalances(): [string, string, string] {
     throw new Error('unimplemented');
   }
 
-  updatePrivateState(): Promise<void> {
+  public updatePrivateState(): Promise<void> {
     throw new Error('unimplemented');
   }
 
   /**
    * Fetch account transactions.
    */
-  abstract getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
+  public abstract getTransactions(account: number, limit?: number, offset?: number): Promise<Transaction[]>;
 
   /**
    * Convert human-readable representation of coin to smallest non-divisible (base) representation.
    * @param amount
    */
-  abstract toBaseUnit(amount: string): string;
+  public abstract toBaseUnit(amount: string): string;
 
   /**
   * Convert coin represented with smallest non-divisible units to a human-readable representation.
   * @param amount
   */
-  abstract fromBaseUnit(amount: string): string;
+  public abstract fromBaseUnit(amount: string): string;
 
   /**
    * Get estimated transaction fee.
    */
-  abstract estimateTxFee(): Promise<TxFee>;
+  public abstract estimateTxFee(): Promise<TxFee>;
 
-  abstract getCoinType(): CoinType;
+  public abstract getCoinType(): CoinType;
 
-  async getNotes(): Promise<[string]> {
+  public async getNotes(): Promise<[string]> {
     throw new Error('unimplemented');
   }
 }
