@@ -131,7 +131,7 @@ export class RelayerBackend {
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
         // await this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).send({ from: address })
 
-        // await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
+        await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
         const encodedTx = this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).encodeABI();
         var txObject: TransactionConfig = {
             from: address,
