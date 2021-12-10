@@ -13,7 +13,6 @@ const config: Config = {
     httpProviderUrl: 'https://main-rpc.linkpool.io',
     relayerUrl: 'http://localhost:3000',
     contractAddress: '',
-    contractBlock: 0,
     tokenContractAddress: '',
   },
   waves: {

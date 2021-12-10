@@ -13,7 +13,6 @@ const config: Config = {
     httpProviderUrl: 'https://localhost:8535',
     relayerUrl: 'http://localhost:3000',
     contractAddress: '',
-    contractBlock: 0,
     tokenContractAddress: '',
   },
   waves: {

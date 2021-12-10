@@ -203,31 +203,29 @@ export class EthereumCoin extends Coin {
     const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
 
     const curBlockNumber = await this.web3.eth.getBlockNumber();
-    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX)) || this.config.contractBlock;
+    const latestCheckedBlock = Number(localStorage.getItem(STORAGE_PREFIX)) || 0;
 
     // moslty useful for local testing, since getPastLogs always returns at least one latest event
     if (curBlockNumber === latestCheckedBlock) {
       return;
     }
 
-    // TODO: How to paginate?
-    const logs = await this.web3.eth.getPastLogs({ fromBlock: latestCheckedBlock + 1, address: this.config.contractAddress });
+    const logs = await this.web3.eth.getPastLogs({
+      fromBlock: latestCheckedBlock,
+      toBlock: curBlockNumber,
+      address: this.config.contractAddress,
+    });
 
-    console.log('Contract logs', logs);
-
-    // TODO: Batch getTransaction
-    let newLatestBlock = latestCheckedBlock;
     for (const log of logs) {
+      // TODO: Batch getTransaction
       const tx = await this.web3.eth.getTransaction(log.transactionHash);
       const message = tx.input;
-      newLatestBlock = tx.blockNumber!;
 
       this.cachePrivateTx(message);
+      console.log('Contract logs', logs);
     }
 
-    // TODO: Clean up the tree
-
-    localStorage.setItem(STORAGE_PREFIX, newLatestBlock.toString());
+    localStorage.setItem(STORAGE_PREFIX, curBlockNumber.toString());
   }
 
 
