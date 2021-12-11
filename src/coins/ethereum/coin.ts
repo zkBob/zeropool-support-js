@@ -247,7 +247,12 @@ export class EthereumCoin extends Coin {
     const onlyNotes = this.privateAccount.decryptNotes(ciphertext);
 
     const reader = new HexStringReader(txData.ciphertext);
-    const numItems = reader.readNumber(4, true);
+    let numItems = reader.readNumber(4, true);
+    if (numItems > CONSTANTS.OUT + 1) {
+      console.warn(`Invalid transaction: number of outs is greater than ${CONSTANTS.OUT + 1} (${numItems})`);
+      numItems = CONSTANTS.OUT + 1;
+    }
+
     const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
 
     console.log('Updating state', this.privateAccount.getWholeState());

@@ -27,7 +27,7 @@
     "comlink": "^4.3.1",
     "ed25519-hd-key": "^1.2.0",
     "hdkey": "^2.0.1",
-    "libzeropool-rs-wasm-web": "0.3.2",
+    "libzeropool-rs-wasm-web": "0.3.3",
     "near-api-js": "https://github.com/near/near-api-js",
     "node-localstorage": "^2.2.1",
     "tweetnacl": "^1.0.3",
