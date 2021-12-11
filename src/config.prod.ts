@@ -23,7 +23,7 @@ const config: Config = {
     transferParamsUrl: 'transfer_params.bin',
     treeParamsUrl: 'tree_update_params.bin',
     transferVkUrl: 'transfer_verification_key.json',
-    treeVkUrl: 'tree_verification_key.json'
+    treeVkUrl: 'tree_update_verification_key.json'
   },
   wasmPath: '',
   workerPath: ''

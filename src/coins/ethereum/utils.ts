@@ -1,6 +1,6 @@
 import { Transaction as NativeTx } from 'web3-core';
 
-import { Constants, getConstants } from '@/libzeropool-rs';
+import { Constants } from '@/libzeropool-rs';
 import { Transaction, TxStatus } from '../transaction';
 
 // TODO: getConstants is unusable if the wasm module is not loaded yet.
