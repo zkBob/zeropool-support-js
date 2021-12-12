@@ -246,6 +246,14 @@ export class EthereumCoin extends Coin {
    * @param raw hex-encoded transaction data
    */
   private cachePrivateTx(raw: string) {
+    const signature = this.web3.eth.abi.encodeFunctionSignature('transact()');
+    const txSignature = raw.slice(10);
+
+    if (signature !== txSignature) {
+      // ignore non-Message event
+      return;
+    }
+
     const txData = EthPrivateTransaction.decode(raw);
     const ciphertext = hexToBuf(txData.ciphertext);
     const pair = this.privateAccount.decryptPair(ciphertext);
