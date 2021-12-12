@@ -76,6 +76,15 @@ export class RelayerBackend {
         this.config = config;
     }
 
+    public async mint(privateKey: string, amount: string): Promise<void> {
+        const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
+        await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
+    }
+
+    public async getTokenBalance(address: string) {
+        return this.tokenContract.methods.balanceOf(address).call();
+    }
+
     public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Deposit;
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
@@ -131,7 +140,6 @@ export class RelayerBackend {
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
         // await this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).send({ from: address })
 
-        await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
         const encodedTx = this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).encodeABI();
         var txObject: TransactionConfig = {
             from: address,

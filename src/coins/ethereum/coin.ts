@@ -61,7 +61,7 @@ export class EthereumCoin extends Coin {
 
   public async getTokenBalance(account: number, tokenAddress: string): Promise<string> {
     const address = this.getAddress(account);
-    const balance = await this.erc20.methods.balanceOf(address).call({ from: address, to: tokenAddress });
+    const balance = await this.relayer.getTokenBalance(address);
 
     return balance;
   }
@@ -181,6 +181,11 @@ export class EthereumCoin extends Coin {
 
     // Transfer
     await this.transferPrivateToPrivate(account, outputs);
+  }
+
+  public async mint(account: number, amount: string): Promise<void> {
+    const privateKey = this.getPrivateKey(account);
+    return this.relayer.mint(privateKey, amount);
   }
 
   public async transferPrivateToPrivate(account: number, outs: Output[]): Promise<void> {
