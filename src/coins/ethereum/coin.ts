@@ -236,8 +236,8 @@ export class EthereumCoin extends Coin {
       this.cachePrivateTx(message);
     }
 
+    console.log('New events', logs);
 
-    console.log('Contract logs', logs);
     localStorage.setItem(STORAGE_PREFIX, curBlockNumber.toString());
   }
 
@@ -263,13 +263,13 @@ export class EthereumCoin extends Coin {
     const reader = new HexStringReader(txData.ciphertext);
     let numItems = reader.readNumber(4, true);
     if (!numItems || numItems > CONSTANTS.OUT + 1) {
-      console.info(`Skipping invalid transaction. Number of outputs too large ${numItems}`);
+      console.info(`Skipping invalid transaction: invalid number of outputs ${numItems}`);
       return;
     }
 
     const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
 
-    console.log('Updating state', this.privateAccount.getWholeState());
+    console.log('Private TX', txData, hashes);
 
     if (pair) {
       const notes = pair.notes.reduce<{ note: Note, index: number }[]>((acc, note, index) => {
@@ -277,16 +277,17 @@ export class EthereumCoin extends Coin {
         return acc;
       }, []);
 
+      console.debug('Adding account, notes, and hashes to state');
       this.privateAccount.addAccount(txData.transferIndex, hashes, pair.account, notes);
     } else if (onlyNotes.length > 0) {
+      console.debug('Adding notes and hashes to state');
       this.privateAccount.addNotes(txData.transferIndex, hashes, onlyNotes);
     } else {
-      // Temporarily cache everything
-      // TODO: Remove when transitioning to relayer-only
+      console.debug('Adding hashes to state');
       this.privateAccount.addHashes(txData.transferIndex, hashes);
     }
 
-    console.log('New balance:', this.privateAccount.totalBalance());
-    console.log('New state:', this.privateAccount.getWholeState());
+    console.debug('New balance:', this.privateAccount.totalBalance());
+    console.debug('New state:', this.privateAccount.getWholeState());
   }
 }
