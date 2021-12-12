@@ -38,9 +38,9 @@ export class RelayerAPI {
         return res;
     }
 
-    async sendTransaction(proof: Proof, memo: string, txType: TxType, withdrawSignature?: string): Promise<void> {
+    async sendTransaction(proof: Proof, memo: string, txType: TxType, depositSignature?: string): Promise<void> {
         const url = new URL('/transaction', this.url);
-        const res = await fetch(url.toString(), { method: 'POST', body: JSON.stringify({ proof, memo, txType, withdrawSignature }) });
+        const res = await fetch(url.toString(), { method: 'POST', body: JSON.stringify({ proof, memo, txType, depositSignature }) });
 
         if (!res.ok) {
             const body = await res.json();
