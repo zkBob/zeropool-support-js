@@ -59,7 +59,7 @@ export class EthereumCoin extends Coin {
     return await this.web3.eth.getBalance(this.getAddress(account));
   }
 
-  public async getTokenBalance(account: number, tokenAddress: string): Promise<string> {
+  public async getTokenBalance(account: number, /* tokenAddress: string */): Promise<string> {
     const address = this.getAddress(account);
     const balance = await this.relayer.getTokenBalance(address);
 
@@ -253,8 +253,8 @@ export class EthereumCoin extends Coin {
 
     const reader = new HexStringReader(txData.ciphertext);
     let numItems = reader.readNumber(4, true);
-    if (numItems > CONSTANTS.OUT + 1) {
-      console.warn(`Invalid transaction: number of outs is greater than ${CONSTANTS.OUT + 1} (${numItems})`);
+    if (!numItems || numItems > CONSTANTS.OUT + 1) {
+      console.warn(`Invalid transaction output length`);
       numItems = CONSTANTS.OUT + 1;
     }
 

@@ -64,7 +64,7 @@ export abstract class Coin {
    */
   public abstract getBalance(account: number): Promise<string>;
 
-  public getTokenBalance(account: number, tokenAddress: string): Promise<string> {
+  public getTokenBalance(account: number, /* tokenAddress: string */): Promise<string> {
     throw new Error('unimplemented');
   }
 
