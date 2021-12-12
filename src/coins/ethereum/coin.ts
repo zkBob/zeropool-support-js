@@ -254,8 +254,8 @@ export class EthereumCoin extends Coin {
     const reader = new HexStringReader(txData.ciphertext);
     let numItems = reader.readNumber(4, true);
     if (!numItems || numItems > CONSTANTS.OUT + 1) {
-      console.warn(`Invalid transaction output length`);
-      numItems = CONSTANTS.OUT + 1;
+      console.info(`Skipping invalid transaction. Number of outputs too large ${numItems}`);
+      return;
     }
 
     const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
