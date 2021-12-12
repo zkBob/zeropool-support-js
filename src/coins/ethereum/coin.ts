@@ -234,9 +234,10 @@ export class EthereumCoin extends Coin {
       const message = tx.input;
 
       this.cachePrivateTx(message);
-      console.log('Contract logs', logs);
     }
 
+
+    console.log('Contract logs', logs);
     localStorage.setItem(STORAGE_PREFIX, curBlockNumber.toString());
   }
 
