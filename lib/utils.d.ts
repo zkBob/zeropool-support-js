@@ -23,9 +23,9 @@ export declare class HexStringReader {
     data: string;
     curIndex: number;
     constructor(data: string);
-    readHex(numBytes: number): string;
-    readNumber(numBytes: number, le?: boolean): number;
-    readBigInt(numBytes: number, le?: boolean): bigint;
+    readHex(numBytes: number): string | null;
+    readNumber(numBytes: number, le?: boolean): number | null;
+    readBigInt(numBytes: number, le?: boolean): bigint | null;
     readBigIntArray(numElements: number, numBytesPerElement: number, le?: boolean): bigint[];
 }
 export declare function toTwosComplementHex(num: bigint, numBytes: number): string;

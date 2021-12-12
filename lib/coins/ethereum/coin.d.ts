@@ -18,7 +18,7 @@ export declare class EthereumCoin extends Coin {
     getPublicKey(account: number): string;
     getAddress(account: number): string;
     getBalance(account: number): Promise<string>;
-    getTokenBalance(account: number, tokenAddress: string): Promise<string>;
+    getTokenBalance(account: number): Promise<string>;
     transfer(account: number, to: string, amount: string): Promise<void>;
     getTransactions(account: number, limit: number, offset: number): Promise<Transaction[]>;
     /**

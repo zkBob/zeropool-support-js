@@ -23,7 +23,7 @@ export declare abstract class Coin {
      * Get native coin balance.
      */
     abstract getBalance(account: number): Promise<string>;
-    getTokenBalance(account: number, tokenAddress: string): Promise<string>;
+    getTokenBalance(account: number): Promise<string>;
     /**
      * Get balances for specified number of accounts with offset.
      * @param numAccounts
