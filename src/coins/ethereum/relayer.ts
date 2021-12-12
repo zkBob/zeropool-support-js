@@ -78,7 +78,22 @@ export class RelayerBackend {
 
     public async mint(privateKey: string, amount: string): Promise<void> {
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
-        await this.tokenContract.methods.mint(address, BigInt(amount)).send({ from: address });
+        const encodedTx = await this.tokenContract.methods.mint(address, BigInt(amount)).encodeABI();
+        var txObject: TransactionConfig = {
+            from: address,
+            to: this.config.tokenContractAddress,
+            data: encodedTx,
+        };
+
+        const gas = await this.web3.eth.estimateGas(txObject);
+        const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+        const nonce = await this.web3.eth.getTransactionCount(address);
+        txObject.gas = gas;
+        txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+        txObject.nonce = nonce;
+
+        const signedTx = await this.web3.eth.accounts.signTransaction(txObject, privateKey);
+        await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction!);
     }
 
     public async getTokenBalance(address: string) {
