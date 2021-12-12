@@ -39,6 +39,7 @@ export declare class EthereumCoin extends Coin {
      * @param outputs
      */
     transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
+    mint(account: number, amount: string): Promise<void>;
     transferPrivateToPrivate(account: number, outs: Output[]): Promise<void>;
     depositPrivate(account: number, amount: string): Promise<void>;
     withdrawPrivate(account: number, amount: string): Promise<void>;

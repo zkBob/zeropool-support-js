@@ -25,6 +25,8 @@ export declare class RelayerBackend {
     private web3;
     private snarkParams;
     constructor(url: URL, web3: Web3, state: ZeroPoolState, snarkParams: SnarkParams, config: Config, worker: any);
+    mint(privateKey: string, amount: string): Promise<void>;
+    getTokenBalance(address: string): Promise<any>;
     deposit(privateKey: string, amountWei: string, fee?: string): Promise<void>;
     transfer(_privateKey: string, outsWei: Output[], fee?: string): Promise<void>;
     withdraw(privateKey: string, amountWei: string, fee?: string): Promise<void>;
