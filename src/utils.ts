@@ -135,32 +135,50 @@ export class HexStringReader {
     this.curIndex = 0;
   }
 
-  readHex(numBytes: number): string {
+  readHex(numBytes: number): string | null {
     const sliceEnd = this.curIndex + numBytes * 2;
+
+    if (sliceEnd > this.data.length) {
+      return null;
+    }
+
     const res = this.data.slice(this.curIndex, sliceEnd);
     this.curIndex = sliceEnd;
     return res;
   }
 
-  readNumber(numBytes: number, le: boolean = false): number {
+  readNumber(numBytes: number, le: boolean = false): number | null {
     let hex = this.readHex(numBytes);
+    if (!hex) return null;
+
     if (le) {
-      hex = hex.match(/../g)!.reverse().join('')
+      hex = hex.match(/../g)!.reverse().join('');
     }
     return parseInt(hex, 16);
   }
 
-  readBigInt(numBytes: number, le: boolean = false): bigint {
+  readBigInt(numBytes: number, le: boolean = false): bigint | null {
     let hex = this.readHex(numBytes);
+    if (!hex) return null;
     if (le) {
       hex = hex.match(/../g)!.reverse().join('')
     }
     return BigInt('0x' + hex);
   }
 
+
   readBigIntArray(numElements: number, numBytesPerElement: number, le: boolean = false): bigint[] {
-    return [...Array(numElements)]
-      .map(() => this.readBigInt(numBytesPerElement, le));
+    const elements: bigint[] = [];
+    for (let i = 0; i < numElements; ++i) {
+      const num = this.readBigInt(numBytesPerElement, le);
+      if (!num) {
+        break;
+      }
+
+      elements.push(num);
+    }
+
+    return elements;
   }
 }
 

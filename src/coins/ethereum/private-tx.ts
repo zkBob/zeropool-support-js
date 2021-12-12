@@ -146,18 +146,28 @@ export class EthPrivateTransaction {
     let tx = new EthPrivateTransaction();
     let reader = new HexStringReader(data);
 
-    tx.selector = reader.readHex(4);
-    tx.nullifier = reader.readBigInt(32);
-    tx.outCommit = reader.readBigInt(32);
-    tx.transferIndex = reader.readBigInt(6);
-    tx.energyAmount = reader.readBigInt(14);
-    tx.tokenAmount = reader.readBigInt(8);
+    tx.selector = reader.readHex(4)!;
+    assertNotNull(tx.selector);
+    tx.nullifier = reader.readBigInt(32)!;
+    assertNotNull(tx.nullifier);
+    tx.outCommit = reader.readBigInt(32)!;
+    assertNotNull(tx.outCommit);
+    tx.transferIndex = reader.readBigInt(6)!;
+    assertNotNull(tx.transferIndex);
+    tx.energyAmount = reader.readBigInt(14)!;
+    assertNotNull(tx.energyAmount);
+    tx.tokenAmount = reader.readBigInt(8)!;
+    assertNotNull(tx.tokenAmount);
     tx.transactProof = reader.readBigIntArray(8, 32);
-    tx.rootAfter = reader.readBigInt(32);
+    tx.rootAfter = reader.readBigInt(32)!;
+    assertNotNull(tx.rootAfter);
     tx.treeProof = reader.readBigIntArray(8, 32);
     tx.txType = reader.readHex(2) as TxType;
+    assertNotNull(tx.txType);
     const memoSize = reader.readNumber(2);
-    tx.memo = reader.readHex(memoSize);
+    assertNotNull(memoSize);
+    tx.memo = reader.readHex(memoSize)!;
+    assertNotNull(tx.memo);
 
     return tx;
   }
@@ -167,4 +177,10 @@ export function flattenSnarkProof(p: SnarkProof): bigint[] {
   return [p.a, p.b.flat(), p.c].flat().map(n => {
     return BigInt(n);
   });
+}
+
+function assertNotNull<T>(val: T): asserts val is NonNullable<T> {
+  if (val === undefined || val === null) {
+    throw new Error('Unexpected null');
+  }
 }
