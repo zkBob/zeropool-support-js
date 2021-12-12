@@ -100,6 +100,7 @@ export class RelayerBackend {
         return this.tokenContract.methods.balanceOf(address).call();
     }
 
+    // TODO: generalize wei/gwei
     public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Deposit;
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();

@@ -247,7 +247,7 @@ export class EthereumCoin extends Coin {
    */
   private cachePrivateTx(raw: string) {
     const signature = this.web3.eth.abi.encodeFunctionSignature('transact()');
-    const txSignature = raw.slice(10);
+    const txSignature = raw.slice(0, 10);
 
     if (signature !== txSignature) {
       // ignore non-Message event
