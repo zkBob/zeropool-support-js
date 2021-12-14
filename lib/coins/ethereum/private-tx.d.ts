@@ -1,5 +1,9 @@
 import Web3 from 'web3';
 import { TransactionData, Params, SnarkProof, UserAccount, VK } from "../../libzeropool-rs";
+export declare class InvalidNumberOfOutputs extends Error {
+    numOutputs: number;
+    constructor(numOutputs: number);
+}
 export declare enum TxType {
     Deposit = "0000",
     Transfer = "0001",
@@ -25,6 +29,7 @@ export declare class EthPrivateTransaction {
         treeVk?: VK;
     }, web3: Web3, worker: any): Promise<EthPrivateTransaction>;
     get ciphertext(): string;
+    get hashes(): string[];
     /**
      * Returns encoded transaction ready to use as data for the smart contract.
      */
