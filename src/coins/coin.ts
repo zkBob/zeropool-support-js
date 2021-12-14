@@ -4,6 +4,7 @@ import { hash } from 'tweetnacl';
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
 import { bufToHex, deriveEd25519 } from '@/utils';
+import { ZeroPoolState } from '@/state';
 
 export class Balance {
   public address: string;
@@ -15,41 +16,22 @@ export abstract class Coin {
   abstract getPublicKey(account: number): string;
   abstract getAddress(account: number): string;
 
-  public privateAccount: UserAccount;
+  public zpState: ZeroPoolState;
   protected mnemonic: string;
   protected worker: any;
-  private initPromise: Promise<void>;
 
-  constructor(mnemonic: string, worker: any) {
+  constructor(mnemonic: string, state: ZeroPoolState, worker: any) {
     this.mnemonic = mnemonic;
-    this.initPromise = this.init();
     this.worker = worker;
-  }
-
-  protected async init(): Promise<void> {
-    const sk = this.getPrivateSpendingKey();
-    const coinName = this.getCoinType();
-    const userId = bufToHex(hash(sk));
-    const state = await UserState.init(`zp.${coinName}.${userId}`);
-
-    try {
-      const acc = new UserAccount(sk, state);
-      this.privateAccount = acc;
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  public async ready(): Promise<void> {
-    await this.initPromise;
+    this.zpState = state;
   }
 
   public generatePrivateAddress(): string {
-    return this.privateAccount.generateAddress();
+    return this.zpState.account.generateAddress();
   }
 
   public isOwnPrivateAddress(address: string): boolean {
-    return this.privateAccount.isOwnAddress(address);
+    return this.zpState.account.isOwnAddress(address);
   }
 
   public getPrivateSpendingKey(): Uint8Array {
@@ -167,4 +149,6 @@ export abstract class Coin {
   public async getNotes(): Promise<[string]> {
     throw new Error('unimplemented');
   }
+
+  public free(): void { }
 }

@@ -5,7 +5,7 @@ import { bufToHex } from '@/utils';
 
 export class ZeroPoolState {
     public denominator: bigint;
-    public privateAccount: UserAccount;
+    public account: UserAccount;
 
     public static async create(sk: Uint8Array, coinName: string, denominator: bigint): Promise<ZeroPoolState> {
         const zpState = new ZeroPoolState();
@@ -15,7 +15,7 @@ export class ZeroPoolState {
 
         try {
             const acc = new UserAccount(sk, state);
-            zpState.privateAccount = acc;
+            zpState.account = acc;
         } catch (e) {
             console.error(e);
         }
@@ -28,10 +28,14 @@ export class ZeroPoolState {
     }
 
     public getBalances(): [string, string, string] {
-        const total = BigInt(this.privateAccount.totalBalance()) * this.denominator;
-        const acc = BigInt(this.privateAccount.accountBalance()) * this.denominator;
-        const note = BigInt(this.privateAccount.noteBalance()) * this.denominator;
+        const total = BigInt(this.account.totalBalance()) * this.denominator;
+        const acc = BigInt(this.account.accountBalance()) * this.denominator;
+        const note = BigInt(this.account.noteBalance()) * this.denominator;
 
         return [total.toString(), acc.toString(), note.toString()];
+    }
+
+    public free(): void {
+        this.account.free();
     }
 }

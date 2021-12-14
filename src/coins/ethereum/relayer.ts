@@ -71,7 +71,6 @@ export class RelayerBackend {
         this.web3 = web3;
         this.tokenContract = new this.web3.eth.Contract(tokenAbi as AbiItem[], config.tokenContractAddress) as Contract;
         this.relayer = new RelayerAPI(url);
-        this.zpState = state;
         this.snarkParams = snarkParams;
         this.config = config;
     }
@@ -104,7 +103,7 @@ export class RelayerBackend {
     public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
         const txType = TxType.Deposit;
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
-        const txData = await this.zpState.privateAccount.createDeposit({ amount: amountGwei, fee });
+        const txData = await this.zpState.account.createDeposit({ amount: amountGwei, fee });
         const txProof = await this.worker.proveTx(txData.public, txData.secret);
         const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
         if (!txValid) {
@@ -126,7 +125,7 @@ export class RelayerBackend {
             amount: (BigInt(amount) / this.zpState.denominator).toString(),
         }));
 
-        const txData = await this.zpState.privateAccount.createTransfer({ outputs: outGwei, fee });
+        const txData = await this.zpState.account.createTransfer({ outputs: outGwei, fee });
         const txProof = await this.worker.proveTx(txData.public, txData.secret);
         const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
         if (!txValid) {
@@ -142,7 +141,7 @@ export class RelayerBackend {
         const addressBin = hexToBuf(address);
 
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
-        const txData = await this.zpState.privateAccount.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: amountWei, energy_amount: '0' });
+        const txData = await this.zpState.account.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: amountWei, energy_amount: '0' });
         const txProof = await this.worker.proveTx(txData.public, txData.secret);
         const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
         if (!txValid) {
@@ -185,5 +184,9 @@ export class RelayerBackend {
      */
     public getBalances(): [string, string, string] {
         return this.zpState.getBalances();
+    }
+
+    public free(): void {
+        this.zpState.free();
     }
 }

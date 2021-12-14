@@ -10,8 +10,8 @@ const MEMO_META_WITHDRAW_SIZE: number = 8 + 8 + 20; // fee (u64) + amount + addr
 
 export enum TxType {
   Deposit = '0000',
-  Transfer = '0100',
-  Withdraw = '0200',
+  Transfer = '0001',
+  Withdraw = '0002',
 }
 
 export function txTypeToString(txType: TxType): string {

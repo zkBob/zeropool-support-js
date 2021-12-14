@@ -6,6 +6,7 @@ import { CoinType } from '@/coins/coin-type';
 import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
 import { Config } from './config';
 import { AccountCache } from './account';
+import { ZeroPoolState } from "@/state";
 
 export class WavesCoin extends Coin {
   private config: Config;
@@ -13,8 +14,8 @@ export class WavesCoin extends Coin {
   private api: ReturnType<typeof create>;
   private lastTxTimestamps: number[] = [];
 
-  constructor(mnemonic: string, config: Config, worker: any) {
-    super(mnemonic, worker);
+  constructor(mnemonic: string, config: Config, state: ZeroPoolState, worker: any) {
+    super(mnemonic, state, worker);
     this.mnemonic = mnemonic;
     this.config = config;
     this.api = create(config.nodeUrl);

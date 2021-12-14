@@ -15,6 +15,7 @@ import { AccountCache } from './account';
 import { EthPrivateTransaction } from './private-tx';
 import { RelayerBackend } from './relayer';
 import tokenAbi from './token-abi.json';
+import { ZeroPoolState } from '@/state';
 
 // TODO: Organize presistent state properly
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
@@ -28,19 +29,14 @@ export class EthereumCoin extends Coin {
   private relayer: RelayerBackend;
   private erc20: Contract;
 
-  constructor(mnemonic: string, web3: Web3, config: Config, relayer: RelayerBackend, worker: any) {
-    super(mnemonic, worker);
+  constructor(mnemonic: string, web3: Web3, config: Config, state: ZeroPoolState, relayer: RelayerBackend, worker: any) {
+    super(mnemonic, state, worker);
     this.web3 = web3;
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
     this.accounts = new AccountCache(mnemonic, this.web3);
     this.erc20 = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
     this.config = config;
     this.relayer = relayer;
-  }
-
-  protected async init() {
-    await super.init();
-    await this.updatePrivateState();
   }
 
   public getPrivateKey(account: number): string {
@@ -222,21 +218,21 @@ export class EthereumCoin extends Coin {
       return;
     }
 
+    console.info(`Processing contract events since block ${latestCheckedBlock} to ${curBlockNumber}`);
+
     const logs = await this.web3.eth.getPastLogs({
       fromBlock: latestCheckedBlock,
       toBlock: curBlockNumber,
       address: this.config.contractAddress,
     });
 
-    for (const log of logs) {
+    for (const [index, log] of logs.entries()) {
       // TODO: Batch getTransaction
       const tx = await this.web3.eth.getTransaction(log.transactionHash);
       const message = tx.input;
 
-      this.cachePrivateTx(message);
+      this.cachePrivateTx(message, index * (CONSTANTS.OUT + 1));
     }
-
-    console.log('New events', logs);
 
     localStorage.setItem(STORAGE_PREFIX, curBlockNumber.toString());
   }
@@ -246,7 +242,7 @@ export class EthereumCoin extends Coin {
    * Attempt to extract and save usable account/notes from transaction data.
    * @param raw hex-encoded transaction data
    */
-  private cachePrivateTx(raw: string) {
+  private cachePrivateTx(raw: string, index: number) {
     const signature = this.web3.eth.abi.encodeFunctionSignature('transact()');
     const txSignature = raw.slice(0, 10);
 
@@ -256,38 +252,42 @@ export class EthereumCoin extends Coin {
     }
 
     const txData = EthPrivateTransaction.decode(raw);
+    console.log('Private TX found', txData);
     const ciphertext = hexToBuf(txData.ciphertext);
-    const pair = this.privateAccount.decryptPair(ciphertext);
-    const onlyNotes = this.privateAccount.decryptNotes(ciphertext);
+    const pair = this.zpState.account.decryptPair(ciphertext);
+    const onlyNotes = this.zpState.account.decryptNotes(ciphertext);
 
     const reader = new HexStringReader(txData.ciphertext);
     let numItems = reader.readNumber(4, true);
     if (!numItems || numItems > CONSTANTS.OUT + 1) {
-      console.info(`Skipping invalid transaction: invalid number of outputs ${numItems}`);
+      console.info(`❌ Skipping invalid transaction: invalid number of outputs ${numItems}`);
       return;
     }
 
     const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
 
-    console.log('Private TX', txData, hashes);
-
+    // Can't rely on txData.transferIndex here since it can be anything as long as index <= pool index
     if (pair) {
-      const notes = pair.notes.reduce<{ note: Note, index: number }[]>((acc, note, index) => {
-        acc.push({ note, index: Number(txData.transferIndex) + 1 + index });
+      const notes = pair.notes.reduce<{ note: Note, index: number }[]>((acc, note, noteIndex) => {
+        acc.push({ note, index: index + 1 + noteIndex });
         return acc;
       }, []);
 
-      console.debug('Adding account, notes, and hashes to state');
-      this.privateAccount.addAccount(txData.transferIndex, hashes, pair.account, notes);
+      console.info(`📝 Adding account, notes, and hashes to state (at index ${index})`);
+      this.zpState.account.addAccount(BigInt(index), hashes, pair.account, notes);
     } else if (onlyNotes.length > 0) {
-      console.debug('Adding notes and hashes to state');
-      this.privateAccount.addNotes(txData.transferIndex, hashes, onlyNotes);
+      console.info(`📝 Adding notes and hashes to state (at index ${index})`);
+      this.zpState.account.addNotes(BigInt(index), hashes, onlyNotes);
     } else {
-      console.debug('Adding hashes to state');
-      this.privateAccount.addHashes(txData.transferIndex, hashes);
+      console.info(`📝 Adding hashes to state (at index ${index})`);
+      this.zpState.account.addHashes(BigInt(index), hashes);
     }
 
-    console.debug('New balance:', this.privateAccount.totalBalance());
-    console.debug('New state:', this.privateAccount.getWholeState());
+    console.log('New balance:', this.zpState.account.totalBalance());
+    console.log('New state:', this.zpState.account.getWholeState());
+  }
+
+  public free(): void {
+    this.relayer.free();
   }
 }

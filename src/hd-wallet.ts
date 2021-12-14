@@ -85,20 +85,24 @@ export class HDWallet {
     let coin: Coin;
     switch (coinType) {
       case CoinType.near: {
-        coin = new NearCoin(this.seed, config, this.worker);
+        const sk = deriveSpendingKey(this.seed, CoinType.ethereum);
+        const state = await ZeroPoolState.create(sk, CoinType.near as string, BigInt(1000000000));
+        coin = new NearCoin(this.seed, config, state, this.worker);
         break;
       }
       case CoinType.ethereum: {
         // TODO: Encapsulate backend selection and key derivation?
         const sk = deriveSpendingKey(this.seed, CoinType.ethereum);
-        const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000)); // FIXME: Replace with a constant
+        const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000));
         const web3 = new Web3(config.httpProviderUrl);
         const backend = new RelayerBackend(new URL(config.relayerUrl), web3, state, this.snarkParams, config, this.worker);
-        coin = new EthereumCoin(this.seed, web3, config, backend, this.worker);
+        coin = new EthereumCoin(this.seed, web3, config, state, backend, this.worker);
         break;
       }
       case CoinType.waves: {
-        coin = new WavesCoin(this.seed, config, this.worker);
+        const sk = deriveSpendingKey(this.seed, CoinType.waves);
+        const state = await ZeroPoolState.create(sk, CoinType.near as string, BigInt(1000000000));
+        coin = new WavesCoin(this.seed, config, state, this.worker);
         break;
       }
       default: {
@@ -106,16 +110,24 @@ export class HDWallet {
       }
     }
 
-    await coin.ready();
-
     this.coins[coinType] = coin;
   }
 
   public disableCoin(coin: CoinType) {
-    delete this.coins[coin];
+    if (this.coins[coin]) {
+      this.getCoin(coin)!.free();
+      delete this.coins[coin];
+    }
+
   }
 
   public getCoin(coinType: CoinType): Coin | undefined {
     return this.coins[coinType];
+  }
+
+  public free(): void {
+    for (const key of Object.keys(this.coins)) {
+      this.coins[key].free();
+    }
   }
 }
