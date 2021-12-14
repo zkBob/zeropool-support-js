@@ -1,6 +1,8 @@
 import { expose } from 'comlink';
 import { Proof, Params, default as init } from 'libzeropool-rs-wasm-web';
 
+import { FileCache } from './file-cache';
+
 let txParams: Params;
 let treeParams: Params;
 
@@ -9,9 +11,11 @@ const obj = {
     console.info('Initializing web worker...');
     await init(url);
 
-    const txParamsData = await (await fetch(paramUrls.txParams)).arrayBuffer();
+    const cache = await FileCache.init();
+
+    const txParamsData = await cache.getOrCache(paramUrls.txParams);
     txParams = Params.fromBinary(new Uint8Array(txParamsData));
-    const treeParamsData = await (await fetch(paramUrls.treeParams)).arrayBuffer();
+    const treeParamsData = await cache.getOrCache(paramUrls.treeParams);
     treeParams = Params.fromBinary(new Uint8Array(treeParamsData));
 
     console.info('Web worker init complete.');

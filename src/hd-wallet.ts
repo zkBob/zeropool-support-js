@@ -11,6 +11,7 @@ import { Params } from './libzeropool-rs';
 import { ZeroPoolState } from './state';
 import { RelayerBackend } from './coins/ethereum/relayer';
 import { deriveSpendingKey } from './utils';
+import { FileCache } from './file-cache';
 
 export class HDWallet {
   public seed: string;
@@ -22,10 +23,12 @@ export class HDWallet {
   public static async init(seed: string, config: Config): Promise<HDWallet> {
     const wallet = new HDWallet();
 
-    const txParamsData = await (await fetch(config.snarkParams.transferParamsUrl)).arrayBuffer();
+    const cache = await FileCache.init();
+
+    const txParamsData = await cache.getOrCache(config.snarkParams.transferParamsUrl);
     const transferParams = Params.fromBinary(new Uint8Array(txParamsData));
 
-    const treeParamsData = await (await fetch(config.snarkParams.treeParamsUrl)).arrayBuffer();
+    const treeParamsData = await cache.getOrCache(config.snarkParams.treeParamsUrl);
     const treeParams = Params.fromBinary(new Uint8Array(treeParamsData));
 
     const transferVk = await (await fetch(config.snarkParams.transferVkUrl)).json();
