@@ -8,6 +8,14 @@ import { CONSTANTS } from './utils';
 const MEMO_META_SIZE: number = 8; // fee (u64)
 const MEMO_META_WITHDRAW_SIZE: number = 8 + 8 + 20; // fee (u64) + amount + address (u160)
 
+export class InvalidNumberOfOutputs extends Error {
+  public numOutputs: number;
+  constructor(numOutputs: number) {
+    super(`Invalid transaction: invalid number of outputs ${numOutputs}`);
+    this.numOutputs = numOutputs;
+  }
+}
+
 export enum TxType {
   Deposit = '0000',
   Transfer = '0001',
@@ -118,6 +126,20 @@ export class EthPrivateTransaction {
     }
 
     return this.memo.slice(MEMO_META_SIZE * 2);
+  }
+
+  get hashes(): string[] {
+    const ciphertext = this.ciphertext;
+
+    const reader = new HexStringReader(ciphertext);
+    let numItems = reader.readNumber(4, true);
+    if (!numItems || numItems > CONSTANTS.OUT + 1) {
+      throw new InvalidNumberOfOutputs(numItems!);
+    }
+
+    const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
+
+    return hashes;
   }
 
   /**

@@ -226,12 +226,17 @@ export class EthereumCoin extends Coin {
       address: this.config.contractAddress,
     });
 
-    for (const [index, log] of logs.entries()) {
+    const STEP: number = (CONSTANTS.OUT + 1);
+    let index = Number(this.zpState.account.nextTreeIndex());
+    for (const log of logs) {
       // TODO: Batch getTransaction
       const tx = await this.web3.eth.getTransaction(log.transactionHash);
       const message = tx.input;
 
-      this.cachePrivateTx(message, index * (CONSTANTS.OUT + 1));
+      let res = this.cachePrivateTx(message, index);
+      if (res) {
+        index += STEP;
+      }
     }
 
     localStorage.setItem(STORAGE_PREFIX, curBlockNumber.toString());
@@ -242,13 +247,13 @@ export class EthereumCoin extends Coin {
    * Attempt to extract and save usable account/notes from transaction data.
    * @param raw hex-encoded transaction data
    */
-  private cachePrivateTx(raw: string, index: number) {
+  private cachePrivateTx(raw: string, index: number): boolean {
     const signature = this.web3.eth.abi.encodeFunctionSignature('transact()');
     const txSignature = raw.slice(0, 10);
 
     if (signature !== txSignature) {
       // ignore non-Message event
-      return;
+      return false;
     }
 
     const txData = EthPrivateTransaction.decode(raw);
@@ -257,14 +262,13 @@ export class EthereumCoin extends Coin {
     const pair = this.zpState.account.decryptPair(ciphertext);
     const onlyNotes = this.zpState.account.decryptNotes(ciphertext);
 
-    const reader = new HexStringReader(txData.ciphertext);
-    let numItems = reader.readNumber(4, true);
-    if (!numItems || numItems > CONSTANTS.OUT + 1) {
-      console.info(`❌ Skipping invalid transaction: invalid number of outputs ${numItems}`);
-      return;
+    let hashes;
+    try {
+      hashes = txData.hashes;
+    } catch (err) {
+      console.info(`❌ Skipping invalid transaction: invalid number of outputs ${err.numOutputs}`);
+      return false;
     }
-
-    const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
 
     // Can't rely on txData.transferIndex here since it can be anything as long as index <= pool index
     if (pair) {
@@ -285,6 +289,8 @@ export class EthereumCoin extends Coin {
 
     console.log('New balance:', this.zpState.account.totalBalance());
     console.log('New state:', this.zpState.account.getWholeState());
+
+    return true;
   }
 
   public free(): void {

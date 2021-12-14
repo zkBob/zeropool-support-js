@@ -141,7 +141,7 @@ export class RelayerBackend {
         const addressBin = hexToBuf(address);
 
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
-        const txData = await this.zpState.account.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: amountWei, energy_amount: '0' });
+        const txData = await this.zpState.account.createWithdraw({ amount: amountGwei, to: addressBin, fee, native_amount: '0', energy_amount: '0' });
         const txProof = await this.worker.proveTx(txData.public, txData.secret);
         const txValid = Proof.verify(this.snarkParams.transferVk!, txProof.inputs, txProof.proof);
         if (!txValid) {
