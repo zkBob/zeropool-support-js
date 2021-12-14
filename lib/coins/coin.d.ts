@@ -1,6 +1,7 @@
-import { UserAccount, Output } from '../libzeropool-rs';
+import { Output } from '../libzeropool-rs';
 import { Transaction, TxFee } from './transaction';
 import { CoinType } from './coin-type';
+import { ZeroPoolState } from "../state";
 export declare class Balance {
     address: string;
     balance: string;
@@ -9,13 +10,10 @@ export declare abstract class Coin {
     abstract getPrivateKey(account: number): string;
     abstract getPublicKey(account: number): string;
     abstract getAddress(account: number): string;
-    privateAccount: UserAccount;
+    zpState: ZeroPoolState;
     protected mnemonic: string;
     protected worker: any;
-    private initPromise;
-    constructor(mnemonic: string, worker: any);
-    protected init(): Promise<void>;
-    ready(): Promise<void>;
+    constructor(mnemonic: string, state: ZeroPoolState, worker: any);
     generatePrivateAddress(): string;
     isOwnPrivateAddress(address: string): boolean;
     getPrivateSpendingKey(): Uint8Array;
@@ -71,4 +69,5 @@ export declare abstract class Coin {
     abstract estimateTxFee(): Promise<TxFee>;
     abstract getCoinType(): CoinType;
     getNotes(): Promise<[string]>;
+    free(): void;
 }

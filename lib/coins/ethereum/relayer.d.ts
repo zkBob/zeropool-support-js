@@ -36,4 +36,5 @@ export declare class RelayerBackend {
      * @returns [total, account, note]
      */
     getBalances(): [string, string, string];
+    free(): void;
 }

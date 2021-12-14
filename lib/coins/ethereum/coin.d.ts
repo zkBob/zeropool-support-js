@@ -5,6 +5,7 @@ import { CoinType } from "../coin-type";
 import { Transaction, TxFee } from "../transaction";
 import { Config } from './config';
 import { RelayerBackend } from './relayer';
+import { ZeroPoolState } from "../../state";
 export declare class EthereumCoin extends Coin {
     private web3;
     private txStorage;
@@ -12,8 +13,7 @@ export declare class EthereumCoin extends Coin {
     private config;
     private relayer;
     private erc20;
-    constructor(mnemonic: string, web3: Web3, config: Config, relayer: RelayerBackend, worker: any);
-    protected init(): Promise<void>;
+    constructor(mnemonic: string, web3: Web3, config: Config, state: ZeroPoolState, relayer: RelayerBackend, worker: any);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
     getAddress(account: number): string;
@@ -51,4 +51,5 @@ export declare class EthereumCoin extends Coin {
      * @param raw hex-encoded transaction data
      */
     private cachePrivateTx;
+    free(): void;
 }

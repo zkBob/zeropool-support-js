@@ -16,4 +16,5 @@ export declare class HDWallet {
     enableCoin(coinType: CoinType, config: any): Promise<void>;
     disableCoin(coin: CoinType): void;
     getCoin(coinType: CoinType): Coin | undefined;
+    free(): void;
 }

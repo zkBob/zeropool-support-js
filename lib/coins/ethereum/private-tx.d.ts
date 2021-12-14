@@ -2,8 +2,8 @@ import Web3 from 'web3';
 import { TransactionData, Params, SnarkProof, UserAccount, VK } from "../../libzeropool-rs";
 export declare enum TxType {
     Deposit = "0000",
-    Transfer = "0100",
-    Withdraw = "0200"
+    Transfer = "0001",
+    Withdraw = "0002"
 }
 export declare function txTypeToString(txType: TxType): string;
 export declare class EthPrivateTransaction {
