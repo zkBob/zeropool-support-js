@@ -201,7 +201,15 @@ export class RelayerBackend {
 
     private async approveAllowance(privateKey: string, amount: string): Promise<void> {
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
-        // await this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).send({ from: address })
+        const curAllowance = await this.tokenContract.methods.allowance(address, this.config.contractAddress).call();
+
+        if (amount <= curAllowance) {
+            console.log(`No need to approve allowance. Current: ${curAllowance}, needed: ${amount}.`);
+            return;
+        } else {
+            console.log(`Approving allowance. Current: ${curAllowance}, needed: ${amount}.`);
+            amount = (BigInt(amount) - BigInt(curAllowance)).toString();
+        }
 
         const encodedTx = this.tokenContract.methods.approve(this.config.contractAddress, BigInt(amount)).encodeABI();
         var txObject: TransactionConfig = {
@@ -219,8 +227,6 @@ export class RelayerBackend {
 
         const signedTx = await this.web3.eth.accounts.signTransaction(txObject, privateKey);
         const result = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction!);
-
-        console.log('approve', result);
     }
 
     public getTotalBalance(): string {
