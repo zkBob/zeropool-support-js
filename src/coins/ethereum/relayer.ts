@@ -39,13 +39,48 @@ export class RelayerAPI {
         return res;
     }
 
-    async sendTransaction(proof: Proof, memo: string, txType: TxType, depositSignature?: string): Promise<void> {
+    async sendTransaction(proof: Proof, memo: string, txType: TxType, depositSignature?: string): Promise<string> {
         const url = new URL('/transaction', this.url);
         const res = await fetch(url.toString(), { method: 'POST', body: JSON.stringify({ proof, memo, txType, depositSignature }) });
 
         if (!res.ok) {
             const body = await res.json();
             throw new Error(`Error ${res.status}: ${JSON.stringify(body)}`)
+        }
+
+        const json = await res.json();
+
+        const INTERVAL_MS = 1000;
+        let hash;
+        while (true) {
+            const job = await this.getJob(json.jobId);
+
+            if (job === null) {
+                console.error(`Job ${json.jobId} not found.`);
+                throw new Error('Job not found');
+            } else if (job.state === 'failed') {
+                throw new Error('Transaction failed');
+            } else if (job.state = 'completed') {
+                hash = job.txHash;
+                break;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, INTERVAL_MS));
+        }
+
+        console.info(`Transaction successful: ${hash}`);
+
+        return hash;
+    }
+
+    async getJob(id: string): Promise<{ state: string, txHash: string } | null> {
+        const url = new URL(`/job/${id}`, this.url);
+        const res = await (await fetch(url.toString())).json();
+
+        if (typeof res === 'string') {
+            return null;
+        } else {
+            return res;
         }
     }
 
