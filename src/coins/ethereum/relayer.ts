@@ -157,7 +157,7 @@ export class RelayerBackend {
         const signature = toCompactSignature(sign.signature).slice(2);
 
         await this.approveAllowance(privateKey, amountWei);
-        this.relayer.sendTransaction(txProof, txData.memo, txType, signature);
+        await this.relayer.sendTransaction(txProof, txData.memo, txType, signature);
     }
 
     public async transfer(_privateKey: string, outsWei: Output[], fee: string = '0'): Promise<void> {
@@ -180,7 +180,7 @@ export class RelayerBackend {
             throw new Error('invalid tx proof');
         }
 
-        this.relayer.sendTransaction(txProof, txData.memo, txType);
+        await this.relayer.sendTransaction(txProof, txData.memo, txType);
     }
 
     public async withdraw(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
@@ -196,7 +196,7 @@ export class RelayerBackend {
             throw new Error('invalid tx proof');
         }
 
-        this.relayer.sendTransaction(txProof, txData.memo, txType);
+        await this.relayer.sendTransaction(txProof, txData.memo, txType);
     }
 
     private async approveAllowance(privateKey: string, amount: string): Promise<void> {
@@ -226,7 +226,7 @@ export class RelayerBackend {
         txObject.nonce = nonce;
 
         const signedTx = await this.web3.eth.accounts.signTransaction(txObject, privateKey);
-        const result = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction!);
+        await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction!);
     }
 
     public getTotalBalance(): string {
