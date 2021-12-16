@@ -2,6 +2,7 @@ import Web3 from 'web3';
 import { TransactionConfig } from 'web3-eth';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
+import { validateAddress } from 'libzeropool-rs-wasm-web';
 
 import { Output, Proof } from '@/libzeropool-rs';
 import { SnarkParams } from '@/config';
@@ -120,10 +121,16 @@ export class RelayerBackend {
 
     public async transfer(_privateKey: string, outsWei: Output[], fee: string = '0'): Promise<void> {
         const txType = TxType.Transfer;
-        const outGwei = outsWei.map(({ to, amount }) => ({
-            to,
-            amount: (BigInt(amount) / this.zpState.denominator).toString(),
-        }));
+        const outGwei = outsWei.map(({ to, amount }) => {
+            if (!validateAddress(to)) {
+                throw new Error('Invalid address. Expected a shielded address.');
+            }
+
+            return {
+                to,
+                amount: (BigInt(amount) / this.zpState.denominator).toString(),
+            }
+        });
 
         const txData = await this.zpState.account.createTransfer({ outputs: outGwei, fee });
         const txProof = await this.worker.proveTx(txData.public, txData.secret);
