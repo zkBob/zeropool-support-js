@@ -13,7 +13,11 @@ export declare class RelayerAPI {
     constructor(url: URL);
     updateUrl(newUrl: URL): void;
     fetchTransactions(offset: BigInt, limit?: number): Promise<string[]>;
-    sendTransaction(proof: Proof, memo: string, txType: TxType, depositSignature?: string): Promise<void>;
+    sendTransaction(proof: Proof, memo: string, txType: TxType, depositSignature?: string): Promise<string>;
+    getJob(id: string): Promise<{
+        state: string;
+        txHash: string;
+    } | null>;
     info(): Promise<RelayerInfo>;
 }
 export declare class RelayerBackend {
