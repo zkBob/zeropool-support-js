@@ -137,6 +137,12 @@ export class RelayerBackend {
 
     // TODO: generalize wei/gwei
     public async deposit(privateKey: string, amountWei: string, fee: string = '0'): Promise<void> {
+        const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
+        const tokenBalance = await this.getTokenBalance(address);
+        if (amountWei > tokenBalance) {
+            throw new Error(`Insufficient balance for deposit. Current balance: ${tokenBalance}`);
+        }
+
         const txType = TxType.Deposit;
         const amountGwei = (BigInt(amountWei) / this.zpState.denominator).toString();
         const txData = await this.zpState.account.createDeposit({ amount: amountGwei, fee });
