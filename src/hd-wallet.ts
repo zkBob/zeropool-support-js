@@ -93,10 +93,11 @@ export class HDWallet {
         coin = new NearCoin(this.seed, config, state, this.worker);
         break;
       }
-      case CoinType.ethereum: {
-        // TODO: Encapsulate backend selection and key derivation?
-        const sk = deriveSpendingKey(this.seed, CoinType.ethereum);
-        const state = await ZeroPoolState.create(sk, CoinType.ethereum as string, BigInt(1000000000));
+      case CoinType.ethereum:
+      case CoinType.xdai:
+      case CoinType.aurora: {
+        const sk = deriveSpendingKey(this.seed, coinType);
+        const state = await ZeroPoolState.create(sk, coinType as string, BigInt(1000000000));
         const web3 = new Web3(config.httpProviderUrl);
         const backend = new RelayerBackend(new URL(config.relayerUrl), web3, state, this.snarkParams, config, this.worker);
         coin = new EthereumCoin(this.seed, web3, config, state, backend, this.worker);

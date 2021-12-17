@@ -3,6 +3,8 @@ export const ZEROPOOL_PURPOSE = 2448;
 // Using strings here for better debuggability
 export enum CoinType {
   ethereum = 'ethereum',
+  xdai = 'xdai',
+  aurora = 'aurora',
   near = 'near',
   waves = 'waves',
 }
@@ -23,6 +25,8 @@ export namespace CoinType {
   export function accountPath(coin: CoinType, account: number): string {
     switch (coin) {
       case CoinType.ethereum:
+      case CoinType.xdai:
+      case CoinType.aurora:
         return `/0'/0/${account}`;
       case CoinType.near:
         return `/${account}'`;
@@ -31,10 +35,15 @@ export namespace CoinType {
     }
   }
 
+  // TODO: Use a full list of coins.
   export function coinNumber(coin: CoinType): number {
     switch (coin) {
       case CoinType.ethereum:
         return 60;
+      case CoinType.xdai:
+        return 700;
+      case CoinType.aurora:
+        return 2570;
       case CoinType.near:
         return 397;
       case CoinType.waves:
