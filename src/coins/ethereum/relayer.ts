@@ -68,6 +68,10 @@ export class RelayerAPI {
             await new Promise(resolve => setTimeout(resolve, INTERVAL_MS));
         }
 
+        if (!hash) {
+            throw new Error('Transaction failed');
+        }
+
         console.info(`Transaction successful: ${hash}`);
 
         return hash;
