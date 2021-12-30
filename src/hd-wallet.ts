@@ -99,7 +99,8 @@ export class HDWallet {
         const sk = deriveSpendingKey(this.seed, coinType);
         const state = await ZeroPoolState.create(sk, coinType as string, BigInt(1000000000));
         const web3 = new Web3(config.httpProviderUrl);
-        const backend = new RelayerBackend(new URL(config.relayerUrl), web3, state, this.snarkParams, config, this.worker);
+        const tokens = config.networks[coinType];
+        const backend = new RelayerBackend(tokens, web3, state, this.snarkParams, this.worker);
         coin = new EthereumCoin(this.seed, web3, config, state, backend, this.worker);
         break;
       }

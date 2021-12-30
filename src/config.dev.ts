@@ -5,15 +5,11 @@ const config: Config = {
   near: {
     networkId: 'default',
     nodeUrl: 'https://rpc.testnet.near.org',
-    walletUrl: 'https://wallet.testnet.near.org',
-    helperUrl: 'https://helper.testnet.near.org',
     explorerUrl: 'https://explorer.testnet.near.org',
   },
   ethereum: {
     httpProviderUrl: 'https://localhost:8535',
     relayerUrl: 'http://localhost:3000',
-    contractAddress: '',
-    tokenContractAddress: '',
   },
   waves: {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',
@@ -25,8 +21,9 @@ const config: Config = {
     transferVkUrl: 'transfer_verification_key.json',
     treeVkUrl: 'tree_update_verification_key.json'
   },
+  networks: {},
   wasmPath: '',
-  workerPath: ''
+  workerPath: 'worker.js'
 };
 
 export default config;

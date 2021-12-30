@@ -46,10 +46,9 @@ export abstract class Coin {
    */
   public abstract getBalance(account: number): Promise<string>;
 
-  public getTokenBalance(account: number, /* tokenAddress: string */): Promise<string> {
+  public getTokenBalance(account: number, tokenAddress: string): Promise<string> {
     throw new Error('unimplemented');
   }
-
   /**
    * Get balances for specified number of accounts with offset.
    * @param numAccounts
@@ -79,28 +78,23 @@ export abstract class Coin {
    */
   abstract transfer(account: number, to: string, amount: string): Promise<void>;
 
-  public mint(account: number, amount: string): Promise<void> {
+  public transferToken(account: number, tokenAddress: string, to: string, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  // TODO: Extract private tx methods into a separate class
-  public transferPublicToPrivate(account: number, outputs: Output[]): Promise<void> {
+  public mint(account: number, tokenAddres: string, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  public transferPrivateToPrivate(account: number, outputs: Output[]): Promise<void> {
+  public transferShielded(tokenAddress: string, outputs: Output[]): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  public depositPrivate(account: number, amount: string): Promise<void> {
+  public depositShielded(account: number, tokenAddress: string, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 
-  public mergePrivate(): Promise<void> {
-    throw new Error('unimplemented');
-  }
-
-  public withdrawPrivate(account: number, amount: string): Promise<void> {
+  public withdrawShielded(account: number, tokenAddress: string, amount: string): Promise<void> {
     throw new Error('unimplemented');
   }
 

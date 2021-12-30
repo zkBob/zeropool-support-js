@@ -54,7 +54,7 @@ export class NearCoin extends Coin {
    * @param to
    * @param amount in yoctoNEAR
    */
-  public async transfer(accountIndex: number, to: string, amount: string) {
+  public async transfer(accountIndex: number, to: string, amount: string): Promise<void> {
     const account = await this.accounts.getOrInit(this.mnemonic, accountIndex, this.config, this.keyStore);
     await account.account!.sendMoney(to, new BN(amount));
   }
