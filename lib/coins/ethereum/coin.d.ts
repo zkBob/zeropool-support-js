@@ -11,14 +11,15 @@ export declare class EthereumCoin extends Coin {
     private txStorage;
     private accounts;
     private config;
-    private relayer;
-    private erc20;
-    constructor(mnemonic: string, web3: Web3, config: Config, state: ZeroPoolState, relayer: RelayerBackend, worker: any);
+    private zp;
+    private token;
+    constructor(mnemonic: string, web3: Web3, config: Config, state: ZeroPoolState, zpBackend: RelayerBackend, worker: any);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
     getAddress(account: number): string;
     getBalance(account: number): Promise<string>;
-    getTokenBalance(account: number): Promise<string>;
+    getTokenBalance(account: number, tokenAddress: string): Promise<string>;
+    transferToken(account: number, tokenAddress: string, to: string, amount: string): Promise<void>;
     transfer(account: number, to: string, amount: string): Promise<void>;
     getTransactions(account: number, limit: number, offset: number): Promise<Transaction[]>;
     /**
@@ -33,23 +34,11 @@ export declare class EthereumCoin extends Coin {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     getCoinType(): CoinType;
-    /**
-     * coin.transferPublicToPrivate(0, [{ to: 'addr', amount: '123' }])
-     * @param account
-     * @param outputs
-     */
-    transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
-    mint(account: number, amount: string): Promise<void>;
-    transferPrivateToPrivate(account: number, outs: Output[]): Promise<void>;
-    depositPrivate(account: number, amount: string): Promise<void>;
-    withdrawPrivate(account: number, amount: string): Promise<void>;
+    mint(account: number, tokenAddress: string, amount: string): Promise<void>;
+    transferShielded(tokenAddress: string, outs: Output[]): Promise<void>;
+    depositShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
+    withdrawShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
     getPrivateBalance(): string;
     getPrivateBalances(): [string, string, string];
-    updatePrivateState(): Promise<void>;
-    /**
-     * Attempt to extract and save usable account/notes from transaction data.
-     * @param raw hex-encoded transaction data
-     */
-    private cachePrivateTx;
     free(): void;
 }

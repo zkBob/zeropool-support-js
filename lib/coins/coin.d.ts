@@ -21,7 +21,7 @@ export declare abstract class Coin {
      * Get native coin balance.
      */
     abstract getBalance(account: number): Promise<string>;
-    getTokenBalance(account: number): Promise<string>;
+    getTokenBalance(account: number, tokenAddress: string): Promise<string>;
     /**
      * Get balances for specified number of accounts with offset.
      * @param numAccounts
@@ -34,12 +34,11 @@ export declare abstract class Coin {
      * @param amount as base unit
      */
     abstract transfer(account: number, to: string, amount: string): Promise<void>;
-    mint(account: number, amount: string): Promise<void>;
-    transferPublicToPrivate(account: number, outputs: Output[]): Promise<void>;
-    transferPrivateToPrivate(account: number, outputs: Output[]): Promise<void>;
-    depositPrivate(account: number, amount: string): Promise<void>;
-    mergePrivate(): Promise<void>;
-    withdrawPrivate(account: number, amount: string): Promise<void>;
+    transferToken(account: number, tokenAddress: string, to: string, amount: string): Promise<void>;
+    mint(account: number, tokenAddres: string, amount: string): Promise<void>;
+    transferShielded(tokenAddress: string, outputs: Output[]): Promise<void>;
+    depositShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
+    withdrawShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
     /**
      * Get current total private balance (account + unspent notes).
      */

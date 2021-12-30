@@ -1,6 +1,8 @@
 export declare const ZEROPOOL_PURPOSE = 2448;
 export declare enum CoinType {
     ethereum = "ethereum",
+    xdai = "xdai",
+    aurora = "aurora",
     near = "near",
     waves = "waves"
 }
