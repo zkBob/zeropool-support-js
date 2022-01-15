@@ -1,5 +1,5 @@
-export { CoinType } from './coins/coin-type';
-export { Coin, Balance } from './coins/coin';
+export { NetworkType } from './networks/network-type';
+export { Network, Balance } from './networks/network';
 export { HDWallet } from './hd-wallet';
 export { validateAddress, init } from './libzeropool-rs';
 export { default as devConfig } from './config.dev';

@@ -1,11 +1,11 @@
 import * as HDKey from 'hdkey';
 import { SignKeyPair } from 'tweetnacl';
-import { CoinType } from './coins/coin-type';
+import { NetworkType } from './networks/network-type';
 export { HDKey as Secp256k1HDKey };
 export declare function preprocessMnemonic(mnemonic: string): string;
 export declare function generateMnemonic(): string;
 export declare function deriveEd25519(path: string, mnemonic: string): SignKeyPair;
-export declare function deriveSpendingKey(mnemonic: string, coinType: CoinType): Uint8Array;
+export declare function deriveSpendingKey(mnemonic: string, networkType: NetworkType): Uint8Array;
 export declare function validateMnemonic(mnemonic: string): boolean;
 export declare function bufToHex(buffer: Uint8Array): string;
 export declare function base64ToHex(data: string): string;

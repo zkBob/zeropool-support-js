@@ -1,20 +1,20 @@
-import { Coin, Balance } from './coins/coin';
-import { CoinType } from './coins/coin-type';
+import { Network, Balance } from './networks/network';
+import { NetworkType } from './networks/network-type';
 import { Config } from './config';
 export declare class HDWallet {
     seed: string;
-    private coins;
+    private networks;
     private config;
     private snarkParams;
     private worker;
     static init(seed: string, config: Config): Promise<HDWallet>;
-    getRegularAddress(coinType: CoinType, account: number): string | undefined;
-    getRegularPrivateKey(coinType: CoinType, account: number): string | undefined;
+    getRegularAddress(networkType: NetworkType, account: number): string | undefined;
+    getRegularPrivateKey(networkType: NetworkType, account: number): string | undefined;
     getBalances(numAccounts: number, offset?: number): Promise<{
-        [key in CoinType]?: Balance[];
+        [key in NetworkType]?: Balance[];
     }>;
-    enableCoin(coinType: CoinType, config: any): Promise<void>;
-    disableCoin(coin: CoinType): void;
-    getCoin(coinType: CoinType): Coin | undefined;
+    enableNetwork(networkType: NetworkType, config: any): Promise<void>;
+    disableNetwork(network: NetworkType): void;
+    getNetwork(networkType: NetworkType): Network | undefined;
     free(): void;
 }
