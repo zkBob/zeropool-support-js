@@ -5,14 +5,14 @@ import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import { KeyStore, InMemoryKeyStore } from 'near-api-js/lib/key_stores';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 
-import { Coin } from '@/coins/coin';
-import { CoinType } from '@/coins/coin-type';
-import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
+import { Network } from '@/networks/network';
+import { NetworkType } from '@/networks/network-type';
+import { Transaction, TxFee, TxStatus } from '@/networks/transaction';
 import { Config } from './config';
 import { AccountCache } from './account';
 import { ZeroPoolState } from '@/state';
 
-export class NearCoin extends Coin {
+export class NearNetwork extends Network {
   private keyStore: KeyStore;
   private config: Config;
   private lastTxTimestamps: number[] = [];
@@ -142,7 +142,7 @@ export class NearCoin extends Coin {
     };
   }
 
-  public getCoinType(): CoinType {
-    return CoinType.near;
+  public getNetworkType(): NetworkType {
+    return NetworkType.near;
   }
 }

@@ -7,11 +7,11 @@ export class ZeroPoolState {
     public denominator: bigint;
     public account: UserAccount;
 
-    public static async create(sk: Uint8Array, coinName: string, denominator: bigint): Promise<ZeroPoolState> {
+    public static async create(sk: Uint8Array, networkName: string, denominator: bigint): Promise<ZeroPoolState> {
         const zpState = new ZeroPoolState();
         zpState.denominator = denominator;
         const userId = bufToHex(hash(sk));
-        const state = await UserState.init(`zp.${coinName}.${userId}`);
+        const state = await UserState.init(`zp.${networkName}.${userId}`);
 
         try {
             const acc = new UserAccount(sk, state);

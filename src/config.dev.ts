@@ -1,5 +1,5 @@
 import { Config } from './config';
-import { ChainId as WavesChainId } from './coins/waves/config';
+import { ChainId as WavesChainId } from './networks/waves/config';
 
 const config: Config = {
   near: {
@@ -9,7 +9,6 @@ const config: Config = {
   },
   ethereum: {
     httpProviderUrl: 'https://localhost:8535',
-    relayerUrl: 'http://localhost:3000',
   },
   waves: {
     nodeUrl: 'https://nodes-testnet.wavesnodes.com',

@@ -3,8 +3,8 @@ if (typeof localStorage === 'undefined' || localStorage === null) {
   global.localStorage = new LocalStorage('./tmp');
 }
 
-export { CoinType } from './coins/coin-type';
-export { Coin, Balance } from './coins/coin';
+export { NetworkType } from './networks/network-type';
+export { Network, Balance } from './networks/network';
 export { HDWallet } from './hd-wallet';
 export { validateAddress, init } from './libzeropool-rs';
 

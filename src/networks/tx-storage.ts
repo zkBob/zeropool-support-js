@@ -1,9 +1,9 @@
 import { Transaction } from './transaction';
-import { CoinType } from './coin-type';
+import { NetworkType } from './network-type';
 
 export interface TxStorage {
-  add(coin: CoinType, address: string, tx: Transaction);
-  list(coin: CoinType, address: string): Transaction[];
+  add(coin: NetworkType, address: string, tx: Transaction);
+  list(coin: NetworkType, address: string): Transaction[];
 }
 
 export class LocalTxStorage implements TxStorage {
@@ -13,13 +13,13 @@ export class LocalTxStorage implements TxStorage {
     this.prefix = prefix;
   }
 
-  add(coin: CoinType, address: string, tx: Transaction) {
+  add(coin: NetworkType, address: string, tx: Transaction) {
     const txs = this.list(coin, address);
     txs.unshift(tx);
     localStorage.setItem(`${this.prefix}.${coin}.${address}`, JSON.stringify(txs));
   }
 
-  list(coin: CoinType, address: string): Transaction[] {
+  list(coin: NetworkType, address: string): Transaction[] {
     const data = localStorage.getItem(`${this.prefix}.${coin}.${address}`);
 
     if (!data) {

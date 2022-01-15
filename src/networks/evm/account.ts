@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import { Account } from 'web3-core';
 
 import { preprocessMnemonic, Secp256k1HDKey } from '@/utils';
-import { CoinType } from '../coin-type';
+import { NetworkType } from '../network-type';
 
 export class CachedAccount {
   public account: Account;
@@ -27,7 +27,7 @@ export class AccountCache {
     // validate mnemonic
     bip39.mnemonicToEntropy(processed);
 
-    const path = CoinType.chainPath(CoinType.ethereum);
+    const path = NetworkType.chainPath(NetworkType.ethereum);
     const seed = bip39.mnemonicToSeed(processed);
 
     const hdkey = Secp256k1HDKey.fromMasterSeed(seed);
@@ -41,7 +41,7 @@ export class AccountCache {
       return account;
     }
 
-    const keypair = this.root.derive('m' + CoinType.accountPath(CoinType.ethereum, accountNumber));
+    const keypair = this.root.derive('m' + NetworkType.accountPath(NetworkType.ethereum, accountNumber));
     account = new CachedAccount(keypair, this.web3);
     this.accounts[accountNumber] = account;
 

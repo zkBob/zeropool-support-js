@@ -3,6 +3,7 @@ import Web3 from 'web3';
 import { TransactionData, Proof, Params, SnarkProof, UserAccount, VK } from '@/libzeropool-rs';
 import { HexStringReader, HexStringWriter } from '@/utils';
 import { CONSTANTS } from './utils';
+import parse from '@waves/node-api-js/cjs/tools/parse';
 
 // Sizes in bytes
 const MEMO_META_SIZE: number = 8; // fee (u64)
@@ -130,16 +131,7 @@ export class EthPrivateTransaction {
 
   get hashes(): string[] {
     const ciphertext = this.ciphertext;
-
-    const reader = new HexStringReader(ciphertext);
-    let numItems = reader.readNumber(4, true);
-    if (!numItems || numItems > CONSTANTS.OUT + 1) {
-      throw new InvalidNumberOfOutputs(numItems!);
-    }
-
-    const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
-
-    return hashes;
+    return parseHashes(ciphertext);
   }
 
   /**
@@ -193,6 +185,18 @@ export class EthPrivateTransaction {
 
     return tx;
   }
+}
+
+export function parseHashes(ciphertext: string): string[] {
+  const reader = new HexStringReader(ciphertext);
+  let numItems = reader.readNumber(4, true);
+  if (!numItems || numItems > CONSTANTS.OUT + 1) {
+    throw new InvalidNumberOfOutputs(numItems!);
+  }
+
+  const hashes = reader.readBigIntArray(numItems, 32, true).map(num => num.toString());
+
+  return hashes;
 }
 
 export function flattenSnarkProof(p: SnarkProof): bigint[] {

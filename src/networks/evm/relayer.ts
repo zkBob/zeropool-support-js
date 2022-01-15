@@ -8,7 +8,7 @@ import { Output, Proof } from '@/libzeropool-rs';
 import { SnarkParams, Tokens } from '@/config';
 import { hexToBuf } from '@/utils';
 import { ZeroPoolState } from '@/state';
-import { EthPrivateTransaction, TxType } from './private-tx';
+import { EthPrivateTransaction, parseHashes, TxType } from './private-tx';
 import tokenAbi from './token-abi.json';
 import { CONSTANTS, toCompactSignature } from './utils';
 
@@ -239,8 +239,27 @@ export class RelayerBackend {
         return this.zpState.getBalances();
     }
 
+    public async fetchTransactionsFromRelayer(tokenAddress: string): Promise<void> {
+        const OUT = 128;
+
+        const token = this.tokens[tokenAddress];
+
+        let totalNumTx = 100;
+        for (let i = 0; i < totalNumTx; i += OUT) { // FIXME: step
+            const data = await fetchTransactions(token.relayerUrl, BigInt(i), 100);
+
+            for (let tx of data) {
+                let hashes = parseHashes(tx);
+                this.cachePrivateTx(tx, hashes, i);
+            }
+        }
+    }
+
     public async updatePrivateState(tokenAddress: string): Promise<void> {
         const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
+
+        // TODO: Fetch txs from relayer
+        // await this.fetchTransactionsFromRelayer(tokenAddress);
 
         const token = this.tokens[tokenAddress];
         const curBlockNumber = await this.web3.eth.getBlockNumber();
@@ -268,8 +287,17 @@ export class RelayerBackend {
             // TODO: Batch getTransaction
             const tx = await this.web3.eth.getTransaction(log.transactionHash);
             const message = tx.input;
+            const txData = EthPrivateTransaction.decode(message);
 
-            let res = this.cachePrivateTx(message, index);
+            let hashes;
+            try {
+                hashes = txData.hashes;
+            } catch (err) {
+                console.info(`❌ Skipping invalid transaction: invalid number of outputs ${err.numOutputs}`);
+                continue;
+            }
+
+            let res = this.cachePrivateTx(txData.ciphertext, hashes, index);
             if (res) {
                 index += STEP;
             }
@@ -283,20 +311,10 @@ export class RelayerBackend {
      * Attempt to extract and save usable account/notes from transaction data.
      * @param raw hex-encoded transaction data
      */
-    private cachePrivateTx(raw: string, index: number): boolean {
-        const txData = EthPrivateTransaction.decode(raw);
-        console.log('Private TX found', txData);
-        const ciphertext = hexToBuf(txData.ciphertext);
-        const pair = this.zpState.account.decryptPair(ciphertext);
-        const onlyNotes = this.zpState.account.decryptNotes(ciphertext);
-
-        let hashes;
-        try {
-            hashes = txData.hashes;
-        } catch (err) {
-            console.info(`❌ Skipping invalid transaction: invalid number of outputs ${err.numOutputs}`);
-            return false;
-        }
+    private cachePrivateTx(ciphertext: string, hashes: string[], index: number): boolean {
+        const data = hexToBuf(ciphertext);
+        const pair = this.zpState.account.decryptPair(data);
+        const onlyNotes = this.zpState.account.decryptNotes(data);
 
         // Can't rely on txData.transferIndex here since it can be anything as long as index <= pool index
         if (pair) {

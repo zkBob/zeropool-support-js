@@ -6,7 +6,7 @@ import { numberToHex, padLeft } from 'web3-utils';
 import { Privkey } from 'hdwallet-babyjub';
 
 import { reduceSpendingKey } from './libzeropool-rs';
-import { CoinType } from './coins/coin-type';
+import { NetworkType } from './networks/network-type';
 
 export { HDKey as Secp256k1HDKey };
 

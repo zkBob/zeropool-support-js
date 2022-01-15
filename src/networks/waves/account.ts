@@ -5,7 +5,7 @@ import { blake2b, keccak } from '@waves/ts-lib-crypto'
 import bip39 from 'bip39-light';
 
 import { ChainId } from './config';
-import { CoinType } from '@/coins/coin-type';
+import { NetworkType } from '@/networks/network-type';
 import { preprocessMnemonic } from '@/utils';
 
 
@@ -56,7 +56,7 @@ export class AccountCache {
       return cachedAccount;
     }
 
-    const path = CoinType.derivationPath(CoinType.waves, account);
+    const path = NetworkType.derivationPath(NetworkType.waves, account);
     const { key } = derivePath(path, this.seed.toString('hex'));
     const keypair = sign.keyPair.fromSeed(key);
     cachedAccount = new CachedAccount(keypair, this.chainId);

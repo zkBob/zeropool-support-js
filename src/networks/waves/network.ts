@@ -1,14 +1,14 @@
 import { nodeInteraction, broadcast, transfer } from "@waves/waves-transactions";
 import { create } from '@waves/node-api-js';
 
-import { Coin } from '@/coins/coin';
-import { CoinType } from '@/coins/coin-type';
-import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
+import { Network } from '@/networks/network';
+import { NetworkType } from '@/networks/network-type';
+import { Transaction, TxFee, TxStatus } from '@/networks/transaction';
 import { Config } from './config';
 import { AccountCache } from './account';
 import { ZeroPoolState } from "@/state";
 
-export class WavesCoin extends Coin {
+export class WavesNetwork extends Network {
   private config: Config;
   private accounts: AccountCache;
   private api: ReturnType<typeof create>;
@@ -98,7 +98,7 @@ export class WavesCoin extends Coin {
     };
   }
 
-  public getCoinType(): CoinType {
-    return CoinType.waves;
+  public getNetworkType(): NetworkType {
+    return NetworkType.waves;
   }
 }

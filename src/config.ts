@@ -1,8 +1,8 @@
-import { Config as NearConfig } from './coins/near';
-import { Config as EvmConfig } from './coins/ethereum';
-import { Config as WavesConfig } from './coins/waves';
+import { Config as NearConfig } from './networks/near';
+import { Config as EvmConfig } from './networks/evm';
+import { Config as WavesConfig } from './networks/waves';
 import { Params, VK } from './libzeropool-rs';
-import { CoinType } from '.';
+import { NetworkType } from '.';
 
 export interface Config {
   near?: NearConfig;
@@ -31,7 +31,7 @@ export interface SnarkParams {
 }
 
 export type Networks = {
-  [ty in CoinType]?: Tokens;
+  [ty in NetworkType]?: Tokens;
 }
 
 export interface Tokens {

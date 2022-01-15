@@ -2,7 +2,7 @@ import { UserAccount, reduceSpendingKey, UserState, Output } from '../libzeropoo
 import { hash } from 'tweetnacl';
 
 import { Transaction, TxFee } from './transaction';
-import { CoinType } from './coin-type';
+import { NetworkType } from './network-type';
 import { bufToHex, deriveEd25519 } from '@/utils';
 import { ZeroPoolState } from '@/state';
 
@@ -11,7 +11,7 @@ export class Balance {
   public balance: string;
 }
 
-export abstract class Coin {
+export abstract class Network {
   abstract getPrivateKey(account: number): string;
   abstract getPublicKey(account: number): string;
   abstract getAddress(account: number): string;
@@ -35,7 +35,7 @@ export abstract class Coin {
   }
 
   public getPrivateSpendingKey(): Uint8Array {
-    const path = CoinType.privateDerivationPath(this.getCoinType());
+    const path = NetworkType.privateDerivationPath(this.getNetworkType());
     const pair = deriveEd25519(path, this.mnemonic); // FIXME: Derive on BabyJubJub
 
     return reduceSpendingKey(pair.secretKey.slice(0, 32));
@@ -138,7 +138,7 @@ export abstract class Coin {
    */
   public abstract estimateTxFee(): Promise<TxFee>;
 
-  public abstract getCoinType(): CoinType;
+  public abstract getNetworkType(): NetworkType;
 
   public async getNotes(): Promise<[string]> {
     throw new Error('unimplemented');

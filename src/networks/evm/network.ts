@@ -4,22 +4,21 @@ import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
 
 import { Output } from '@/libzeropool-rs';
-import { Coin } from '@/coins/coin';
-import { CoinType } from '@/coins/coin-type';
-import { Transaction, TxFee, TxStatus } from '@/coins/transaction';
+import { Network } from '@/networks/network';
+import { NetworkType } from '@/networks/network-type';
+import { ZeroPoolState } from '@/state';
+import { Transaction, TxFee, TxStatus } from '@/networks/transaction';
 import { convertTransaction } from './utils';
 import { Config } from './config';
 import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { RelayerBackend } from './relayer';
 import tokenAbi from './token-abi.json';
-import { ZeroPoolState } from '@/state';
 
 // TODO: Organize presistent state properly
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
-const STATE_STORAGE_PREFIX = 'zeropool.eth.state';
 
-export class EthereumCoin extends Coin {
+export class EvmNetwork extends Network {
   private web3: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
@@ -175,8 +174,8 @@ export class EthereumCoin extends Coin {
     };
   }
 
-  public getCoinType(): CoinType {
-    return CoinType.ethereum;
+  public getNetworkType(): NetworkType {
+    return NetworkType.ethereum;
   }
 
   public async mint(account: number, tokenAddress: string, amount: string): Promise<void> {
