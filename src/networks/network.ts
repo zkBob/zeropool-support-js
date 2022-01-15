@@ -101,14 +101,14 @@ export abstract class Network {
   /**
    * Get current total private balance (account + unspent notes).
    */
-  public getPrivateBalance(): string {
+  public getShieldedBalance(): string {
     throw new Error('unimplemented');
   }
 
   /**
  * Get total, account, and note balances.
  */
-  public getPrivateBalances(): [string, string, string] {
+  public getShieldedBalances(): [string, string, string] {
     throw new Error('unimplemented');
   }
 
