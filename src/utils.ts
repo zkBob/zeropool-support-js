@@ -3,6 +3,7 @@ import * as HDKey from 'hdkey';
 import { derivePath } from 'ed25519-hd-key';
 import { sign, SignKeyPair } from 'tweetnacl';
 import { numberToHex, padLeft } from 'web3-utils';
+import { Privkey } from 'hdwallet-babyjub';
 
 import { reduceSpendingKey } from './libzeropool-rs';
 import { CoinType } from './coins/coin-type';
@@ -31,11 +32,11 @@ export function deriveEd25519(path: string, mnemonic: string): SignKeyPair {
 }
 
 
-export function deriveSpendingKey(mnemonic: string, coinType: CoinType): Uint8Array {
-  const path = CoinType.privateDerivationPath(coinType);
-  const pair = deriveEd25519(path, mnemonic); // FIXME: Derive on BabyJubJub
+export function deriveSpendingKey(mnemonic: string, networkType: NetworkType): Uint8Array {
+  const path = NetworkType.privateDerivationPath(networkType);
+  const sk = Privkey(mnemonic, path).k;
 
-  return reduceSpendingKey(pair.secretKey.slice(0, 32));
+  return sk;
 }
 
 export function validateMnemonic(mnemonic: string): boolean {
