@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import { TransactionConfig } from 'web3-eth';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem, keccak256 } from 'web3-utils';
-import { Note, validateAddress } from 'libzeropool-rs-wasm-web';
+import { assembleAddress, Note, validateAddress } from 'libzeropool-rs-wasm-web';
 
 import { Output, Proof } from '@/libzeropool-rs';
 import { SnarkParams, Tokens } from '@/config';
@@ -319,7 +319,10 @@ export class RelayerBackend {
         // Can't rely on txData.transferIndex here since it can be anything as long as index <= pool index
         if (pair) {
             const notes = pair.notes.reduce<{ note: Note, index: number }[]>((acc, note, noteIndex) => {
-                acc.push({ note, index: index + 1 + noteIndex });
+                const address = assembleAddress(note.d, note.p_d);
+                if (this.zpState.account.isOwnAddress(address)) {
+                    acc.push({ note, index: index + 1 + noteIndex });
+                }
                 return acc;
             }, []);
 
