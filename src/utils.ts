@@ -5,7 +5,6 @@ import { sign, SignKeyPair } from 'tweetnacl';
 import { numberToHex, padLeft } from 'web3-utils';
 import { Privkey } from 'hdwallet-babyjub';
 
-import { reduceSpendingKey } from './libzeropool-rs';
 import { NetworkType } from './networks/network-type';
 
 export { HDKey as Secp256k1HDKey };
@@ -34,7 +33,7 @@ export function deriveEd25519(path: string, mnemonic: string): SignKeyPair {
 
 export function deriveSpendingKey(mnemonic: string, networkType: NetworkType): Uint8Array {
   const path = NetworkType.privateDerivationPath(networkType);
-  const sk = Privkey(mnemonic, path).k;
+  const sk = bigintToArrayLe(Privkey(mnemonic, path).k);
 
   return sk;
 }
@@ -73,6 +72,18 @@ export function base64ToHex(data: string): string {
 
   return octets.join('');
 }
+
+export function bigintToArrayLe(num: bigint): Uint8Array {
+  let result = new Uint8Array(32);
+
+  for (let i = 0; num > BigInt(0); ++i) {
+    result[i] = Number(num % BigInt(256));
+    num = num / BigInt(256);
+  }
+
+  return result;
+}
+
 
 export function hexToBuf(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) {
