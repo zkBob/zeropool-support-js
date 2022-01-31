@@ -1,18 +1,24 @@
+import { NetworkType } from '.';
 import { Config } from './config';
 import { ChainId as WavesChainId } from './networks/waves/config';
 
 const config: Config = {
-  near: {
-    networkId: 'default',
-    nodeUrl: 'https://rpc.testnet.near.org',
-    explorerUrl: 'https://explorer.testnet.near.org',
-  },
-  ethereum: {
-    httpProviderUrl: 'https://localhost:8535',
-  },
-  waves: {
-    nodeUrl: 'https://nodes-testnet.wavesnodes.com',
-    chainId: WavesChainId.Testnet,
+  networks: {
+    [NetworkType.near]: {
+      networkId: 'default',
+      nodeUrl: 'https://rpc.testnet.near.org',
+      explorerUrl: 'https://explorer.testnet.near.org',
+      tokens: {},
+    },
+    [NetworkType.ethereum]: {
+      httpProviderUrl: 'https://localhost:8535',
+      tokens: {},
+    },
+    [NetworkType.waves]: {
+      nodeUrl: 'https://nodes-testnet.wavesnodes.com',
+      chainId: WavesChainId.Testnet,
+      tokens: {},
+    },
   },
   snarkParams: {
     transferParamsUrl: 'transfer_params.bin',
@@ -20,7 +26,6 @@ const config: Config = {
     transferVkUrl: 'transfer_verification_key.json',
     treeVkUrl: 'tree_update_verification_key.json'
   },
-  networks: {},
   wasmPath: '',
   workerPath: 'worker.js'
 };

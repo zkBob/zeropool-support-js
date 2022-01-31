@@ -1,20 +1,26 @@
+import { NetworkType } from '.';
 import { Config } from './config';
 import { ChainId as WavesChainId } from './networks/waves/config';
 
+
 const config: Config = {
-  near: {
-    networkId: 'mainnet',
-    nodeUrl: 'https://rpc.mainnet.near.org',
-    explorerUrl: 'https://explorer.mainnet.near.org',
+  networks: {
+    [NetworkType.near]: {
+      networkId: 'mainnet',
+      nodeUrl: 'https://rpc.mainnet.near.org',
+      explorerUrl: 'https://explorer.mainnet.near.org',
+      tokens: {},
+    },
+    [NetworkType.ethereum]: {
+      httpProviderUrl: 'https://main-rpc.linkpool.io',
+      tokens: {},
+    },
+    [NetworkType.waves]: {
+      nodeUrl: 'https://nodes.wavesplatform.com',
+      chainId: WavesChainId.Mainnet,
+      tokens: {},
+    },
   },
-  ethereum: {
-    httpProviderUrl: 'https://main-rpc.linkpool.io',
-  },
-  waves: {
-    nodeUrl: 'https://nodes.wavesplatform.com',
-    chainId: WavesChainId.Mainnet,
-  },
-  networks: {},
   snarkParams: {
     transferParamsUrl: 'transfer_params.bin',
     treeParamsUrl: 'tree_update_params.bin',

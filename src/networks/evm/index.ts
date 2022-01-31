@@ -1,2 +1,2 @@
-export { EvmNetwork as EthereumNetwork } from './network';
+export { EvmNetwork } from './network';
 export { Config } from './config';

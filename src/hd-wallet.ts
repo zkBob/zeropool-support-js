@@ -4,7 +4,7 @@ import { wrap } from 'comlink';
 import { Network, Balance } from './networks/network';
 import { NetworkType } from './networks/network-type';
 import { NearNetwork } from './networks/near';
-import { EthereumNetwork } from './networks/evm';
+import { EvmNetwork } from './networks/evm';
 import { WavesNetwork } from './networks/waves';
 import { Config, SnarkParams } from './config';
 import { Params } from './libzeropool-rs';
@@ -52,8 +52,8 @@ export class HDWallet {
 
     const promises: Promise<void>[] = [];
     for (let networkType in NetworkType) {
-      if (config[networkType]) {
-        promises.push(wallet.enableNetwork(networkType as NetworkType, config[networkType]));
+      if (config.networks[networkType]) {
+        promises.push(wallet.enableNetwork(networkType as NetworkType, config.networks[networkType]));
       }
     }
 
@@ -97,11 +97,10 @@ export class HDWallet {
       case NetworkType.xdai:
       case NetworkType.aurora: {
         const sk = deriveSpendingKey(this.seed, networkType);
-        const state = await ZeroPoolState.create(sk, networkType as string, BigInt(1000000000));
+        const state = await ZeroPoolState.create(sk, networkType as string, BigInt(1000000000)); // FIXME: use token config
         const web3 = new Web3(config.httpProviderUrl);
-        const tokens = config.networks[networkType];
-        const backend = new RelayerBackend(tokens, web3, state, this.snarkParams, this.worker);
-        network = new EthereumNetwork(this.seed, web3, config, state, backend, this.worker);
+        const backend = new RelayerBackend(config.tokens, web3, state, this.snarkParams, this.worker);
+        network = new EvmNetwork(this.seed, web3, config, state, backend, this.worker);
         break;
       }
       case NetworkType.waves: {
