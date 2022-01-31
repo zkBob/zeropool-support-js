@@ -9,6 +9,7 @@ export declare function deriveSpendingKey(mnemonic: string, networkType: Network
 export declare function validateMnemonic(mnemonic: string): boolean;
 export declare function bufToHex(buffer: Uint8Array): string;
 export declare function base64ToHex(data: string): string;
+export declare function bigintToArrayLe(num: bigint): Uint8Array;
 export declare function hexToBuf(hex: string): Uint8Array;
 export declare class HexStringWriter {
     buf: string;

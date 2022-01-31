@@ -6,6 +6,8 @@ export declare class Balance {
     address: string;
     balance: string;
 }
+/** Account number or address */
+export declare type AccountId = number | string;
 export declare abstract class Network {
     abstract getPrivateKey(account: number): string;
     abstract getPublicKey(account: number): string;
