@@ -24,7 +24,7 @@ export class ZeroPoolState {
   }
 
   public getTotalBalance(): string {
-    return this.getBalances()[0];
+    return (BigInt(this.account.totalBalance()) * this.denominator).toString();
   }
 
   public getBalances(): [string, string, string] {
