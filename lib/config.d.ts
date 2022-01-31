@@ -4,11 +4,6 @@ import { Config as WavesConfig } from './networks/waves';
 import { Params, VK } from './libzeropool-rs';
 import { NetworkType } from '.';
 export interface Config {
-    near?: NearConfig;
-    ethereum?: EvmConfig;
-    aurora?: EvmConfig;
-    xdai?: EvmConfig;
-    waves?: WavesConfig;
     networks: Networks;
     snarkParams: SnarkConfigParams;
     wasmPath: string;
@@ -27,7 +22,9 @@ export interface SnarkParams {
     treeVk?: VK;
 }
 export declare type Networks = {
-    [ty in NetworkType]?: Tokens;
+    [ty in NetworkType]?: (NearConfig | EvmConfig | WavesConfig) & {
+        tokens: Tokens;
+    };
 };
 export interface Tokens {
     [address: string]: Token;
