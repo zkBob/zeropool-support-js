@@ -133,7 +133,7 @@ export class RelayerBackend {
         const token = this.tokens[tokenAddress];
         const address = this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
         const tokenBalance = await this.getTokenBalance(address, tokenAddress);
-        if (amountWei > tokenBalance) {
+        if (BigInt(amountWei) > BigInt(tokenBalance)) {
             throw new Error(`Insufficient balance for deposit. Current balance: ${tokenBalance}`);
         }
 
