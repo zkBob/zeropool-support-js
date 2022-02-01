@@ -38,7 +38,7 @@ export declare class EvmNetwork extends Network {
     transferShielded(tokenAddress: string, outs: Output[]): Promise<void>;
     depositShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
     withdrawShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
-    getShieldeBalance(): string;
+    getShieldedBalance(): string;
     getShieldedBalances(): [string, string, string];
     free(): void;
 }

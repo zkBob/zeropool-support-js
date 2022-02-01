@@ -42,14 +42,17 @@ export declare abstract class Network {
     depositShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
     withdrawShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
     /**
-     * Get current total private balance (account + unspent notes).
+     * Get current total shielded balance (account + unspent notes).
      */
     getShieldedBalance(): string;
     /**
-   * Get total, account, and note balances.
-   */
+     * Get total, account, and note balances.
+     */
     getShieldedBalances(): [string, string, string];
-    updatePrivateState(): Promise<void>;
+    /**
+     *
+     */
+    updateState(): Promise<void>;
     /**
      * Fetch account transactions.
      */

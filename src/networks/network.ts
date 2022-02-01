@@ -99,20 +99,23 @@ export abstract class Network {
   }
 
   /**
-   * Get current total private balance (account + unspent notes).
+   * Get current total shielded balance (account + unspent notes).
    */
   public getShieldedBalance(): string {
     throw new Error('unimplemented');
   }
 
   /**
- * Get total, account, and note balances.
- */
+   * Get total, account, and note balances.
+   */
   public getShieldedBalances(): [string, string, string] {
     throw new Error('unimplemented');
   }
 
-  public updatePrivateState(): Promise<void> {
+  /**
+   * 
+   */
+  public updateState(): Promise<void> {
     throw new Error('unimplemented');
   }
 

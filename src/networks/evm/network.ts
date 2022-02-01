@@ -197,7 +197,7 @@ export class EvmNetwork extends Network {
     return this.zp.withdraw(tokenAddress, privateKey, amount);
   }
 
-  public getShieldeBalance(): string {
+  public getShieldedBalance(): string {
     return this.zp.getTotalBalance();
   }
 
