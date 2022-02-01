@@ -22,13 +22,14 @@ export interface SnarkParams {
     treeVk?: VK;
 }
 export declare type Networks = {
-    [ty in NetworkType]?: (NearConfig | EvmConfig | WavesConfig) & {
-        tokens: Tokens;
-    };
+    [ty in NetworkType]?: NetworkConfig;
 };
-export interface Tokens {
+export declare type NetworkConfig = (NearConfig | EvmConfig | WavesConfig) & {
+    tokens: Tokens;
+};
+export declare type Tokens = {
     [address: string]: Token;
-}
+};
 export interface Token {
     poolAddress: string;
     relayerUrl: string;

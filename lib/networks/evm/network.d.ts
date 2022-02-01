@@ -6,6 +6,7 @@ import { ZeroPoolState } from "../../state";
 import { Transaction, TxFee } from "../transaction";
 import { Config } from './config';
 import { RelayerBackend } from './relayer';
+import { Tokens } from "../../config";
 export declare class EvmNetwork extends Network {
     private web3;
     private txStorage;
@@ -13,7 +14,9 @@ export declare class EvmNetwork extends Network {
     private config;
     private zp;
     private token;
-    constructor(mnemonic: string, web3: Web3, config: Config, state: ZeroPoolState, zpBackend: RelayerBackend, worker: any);
+    constructor(mnemonic: string, web3: Web3, config: Config & {
+        tokens: Tokens;
+    }, state: ZeroPoolState, zpBackend: RelayerBackend, worker: any);
     getPrivateKey(account: number): string;
     getPublicKey(account: number): string;
     getAddress(account: number): string;
@@ -40,5 +43,6 @@ export declare class EvmNetwork extends Network {
     withdrawShielded(account: number, tokenAddress: string, amount: string): Promise<void>;
     getShieldedBalance(): string;
     getShieldedBalances(): [string, string, string];
+    updateState(): Promise<void>;
     free(): void;
 }

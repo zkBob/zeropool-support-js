@@ -26,12 +26,14 @@ export interface SnarkParams {
 }
 
 export type Networks = {
-  [ty in NetworkType]?: (NearConfig | EvmConfig | WavesConfig) & { tokens: Tokens };
+  [ty in NetworkType]?: NetworkConfig;
 }
 
-export interface Tokens {
+export type NetworkConfig = (NearConfig | EvmConfig | WavesConfig) & { tokens: Tokens };
+
+export type Tokens = {
   [address: string]: Token;
-}
+};
 
 export interface Token {
   poolAddress: string;

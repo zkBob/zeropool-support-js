@@ -14,6 +14,7 @@ import { LocalTxStorage } from './storage';
 import { AccountCache } from './account';
 import { RelayerBackend } from './relayer';
 import tokenAbi from './token-abi.json';
+import { Tokens } from '@/config';
 
 // TODO: Organize presistent state properly
 const TX_STORAGE_PREFIX = 'zeropool.eth-txs';
@@ -22,11 +23,11 @@ export class EvmNetwork extends Network {
   private web3: Web3;
   private txStorage: LocalTxStorage;
   private accounts: AccountCache;
-  private config: Config;
+  private config: Config & { tokens: Tokens };
   private zp: RelayerBackend;
   private token: Contract;
 
-  constructor(mnemonic: string, web3: Web3, config: Config, state: ZeroPoolState, zpBackend: RelayerBackend, worker: any) {
+  constructor(mnemonic: string, web3: Web3, config: Config & { tokens: Tokens }, state: ZeroPoolState, zpBackend: RelayerBackend, worker: any) {
     super(mnemonic, state, worker);
     this.web3 = web3;
     this.txStorage = new LocalTxStorage(TX_STORAGE_PREFIX);
@@ -203,6 +204,12 @@ export class EvmNetwork extends Network {
 
   public getShieldedBalances(): [string, string, string] {
     return this.zp.getBalances();
+  }
+
+  public async updateState(): Promise<void> {
+    for (let address of Object.keys(this.config.tokens)) {
+      await this.zp.updateState(address); // FIXME: Separate instances per token
+    }
   }
 
   public free(): void {

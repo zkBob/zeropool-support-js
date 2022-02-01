@@ -255,7 +255,7 @@ export class RelayerBackend {
         }
     }
 
-    public async updatePrivateState(tokenAddress: string): Promise<void> {
+    public async updateState(tokenAddress: string): Promise<void> {
         const STORAGE_PREFIX = `${STATE_STORAGE_PREFIX}.latestCheckedBlock`;
 
         // TODO: Fetch txs from relayer

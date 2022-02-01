@@ -26,7 +26,7 @@ export declare class RelayerBackend {
      */
     getBalances(): [string, string, string];
     fetchTransactionsFromRelayer(tokenAddress: string): Promise<void>;
-    updatePrivateState(tokenAddress: string): Promise<void>;
+    updateState(tokenAddress: string): Promise<void>;
     /**
      * Attempt to extract and save usable account/notes from transaction data.
      * @param raw hex-encoded transaction data
