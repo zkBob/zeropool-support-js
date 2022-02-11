@@ -59,9 +59,9 @@ async function sendTransaction(relayerUrl: string, proof: Proof, memo: string, t
         await new Promise(resolve => setTimeout(resolve, INTERVAL_MS));
     }
 
-    if (!hash) {
-        throw new Error('Transaction failed');
-    }
+    // if (!hash) {
+    //     throw new Error('Transaction failed');
+    // }
 
     console.info(`Transaction successful: ${hash}`);
 
@@ -210,10 +210,10 @@ export class RelayerBackend {
             amount = (BigInt(amount) - BigInt(curAllowance)).toString();
         }
 
-        const encodedTx = this.tokenContract.methods.approve(token.poolAddress, BigInt(amount)).encodeABI();
+        const encodedTx = this.tokenContract.methods.approve(token.poolAddress, amount).encodeABI();
         var txObject: TransactionConfig = {
             from: address,
-            to: token.poolAddress,
+            to: tokenAddress,
             data: encodedTx,
         };
 

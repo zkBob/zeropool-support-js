@@ -3,7 +3,6 @@ import Web3 from 'web3';
 import { TransactionData, Proof, Params, SnarkProof, UserAccount, VK } from '@/libzeropool-rs';
 import { HexStringReader, HexStringWriter } from '@/utils';
 import { CONSTANTS } from './utils';
-import parse from '@waves/node-api-js/cjs/tools/parse';
 
 // Sizes in bytes
 const MEMO_META_SIZE: number = 8; // fee (u64)
