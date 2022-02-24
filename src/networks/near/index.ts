@@ -1,3 +1,2 @@
-export { Config } from './config';
-export { NearNetwork } from './network';
+// export { NearClient } from './client';
 
