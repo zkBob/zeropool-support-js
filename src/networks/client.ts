@@ -1,10 +1,5 @@
 import { Transaction, TxFee } from './transaction';
 
-export class Balance {
-  public address: string;
-  public balance: string;
-}
-
 /** Account number or address */
 export type AccountId = number | string;
 

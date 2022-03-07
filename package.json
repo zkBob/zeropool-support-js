@@ -11,9 +11,8 @@
     "src"
   ],
   "scripts": {
-    "build": "ts-patch install -s && rm -rf lib/",
-    "build:node": "rm -rf node && npx tsc --p tsconfig.node.json",
-    "prepare": "ts-patch install -s"
+    "build": "rm -rf lib/ && npx tsc --p tsconfig.json",
+    "build:node": "rm -rf node && npx tsc --p tsconfig.node.json"
   },
   "dependencies": {
     "@ethereumjs/tx": "^3.2.1",
