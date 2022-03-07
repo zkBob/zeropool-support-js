@@ -1,0 +1,1 @@
+export { EthereumClient } from './client';
