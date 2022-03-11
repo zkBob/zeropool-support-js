@@ -1,14 +1,15 @@
-import { provider } from 'web3-core';
-import { TxFee } from '@/networks/transaction';
+import '@polkadot/api-augment/substrate';
 import { Client } from '@/networks/client';
-export declare class EthereumClient extends Client {
-    private web3;
-    private token;
-    constructor(provider: provider);
+import { ApiPromise } from '@polkadot/api';
+import { Keyring } from '@polkadot/keyring';
+import { KeyringPair } from '@polkadot/keyring/types';
+export declare class PolkadotClient extends Client {
+    keyring: Keyring;
+    account: KeyringPair;
+    api: ApiPromise;
+    static create(account: string, rpcUrl: string): Promise<PolkadotClient>;
     getAddress(): string;
     getBalance(): Promise<string>;
-    getTokenBalance(tokenAddress: string): Promise<string>;
-    transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
     transfer(to: string, amount: string): Promise<void>;
     /**
      * Converts ether to Wei.
@@ -20,6 +21,5 @@ export declare class EthereumClient extends Client {
      * @param amount in Wei
      */
     fromBaseUnit(amount: string): string;
-    estimateTxFee(): Promise<TxFee>;
     mint(tokenAddress: string, amount: string): Promise<void>;
 }

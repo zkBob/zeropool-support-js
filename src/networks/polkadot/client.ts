@@ -1,5 +1,7 @@
 
-import { TxFee } from '@/networks/transaction';
+import '@polkadot/api-augment/substrate';
+
+// import { TxFee } from '@/networks/transaction';
 import { Client } from '@/networks/client';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
@@ -32,7 +34,7 @@ export class PolkadotClient extends Client {
     // @ts-ignore
     const { data: { free } } = await this.api.query.system.account(this.account.address);
 
-    return free;
+    return free.toString();
   }
 
   public async transfer(to: string, amount: string): Promise<void> {
