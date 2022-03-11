@@ -156,4 +156,11 @@ export class EthereumClient extends Client {
     const signedTx = await this.web3.eth.signTransaction(txObject);
     await this.web3.eth.sendSignedTransaction(signedTx.raw);
   }
+
+  public async sign(data: string): Promise<string> {
+    const address = this.getAddress();
+    const signature = await this.web3.eth.sign(data, address);
+
+    return signature;
+  }
 }

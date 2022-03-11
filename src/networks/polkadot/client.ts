@@ -6,6 +6,7 @@ import { Client } from '@/networks/client';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
+import { stringToU8a, u8aToHex } from '@polkadot/util';
 
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
@@ -43,19 +44,19 @@ export class PolkadotClient extends Client {
   }
 
   /**
-   * Converts ether to Wei.
+   * Converts DOT to Planck.
    * @param amount in Ether
    */
   public toBaseUnit(amount: string): string {
-    throw new Error('unimplemented')
+    return amount; // FIXME: How to properly implement these methods? Use a configurable denominator?
   }
 
   /**
-   * Converts Wei to ether.
+   * Converts Planck to DOT.
    * @param amount in Wei
    */
   public fromBaseUnit(amount: string): string {
-    throw new Error('unimplemented')
+    return amount; // FIXME:
   }
 
   // public async estimateTxFee(): Promise<TxFee> {
@@ -72,5 +73,12 @@ export class PolkadotClient extends Client {
         this.api.tx.balances.setBalance(this.account.address, amount, '0')
       )
       .signAndSend(alice, { nonce });
+  }
+
+  public async sign(data: string): Promise<string> {
+    const message = stringToU8a(data);
+    const signature = u8aToHex(this.account.sign(message));
+
+    return signature;
   }
 }

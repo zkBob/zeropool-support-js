@@ -12,14 +12,15 @@ export declare class PolkadotClient extends Client {
     getBalance(): Promise<string>;
     transfer(to: string, amount: string): Promise<void>;
     /**
-     * Converts ether to Wei.
+     * Converts DOT to Planck.
      * @param amount in Ether
      */
     toBaseUnit(amount: string): string;
     /**
-     * Converts Wei to ether.
+     * Converts Planck to DOT.
      * @param amount in Wei
      */
     fromBaseUnit(amount: string): string;
     mint(tokenAddress: string, amount: string): Promise<void>;
+    sign(data: string): Promise<string>;
 }

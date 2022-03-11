@@ -34,4 +34,5 @@ export declare abstract class Client {
      * Get estimated transaction fee.
      */
     estimateTxFee(): Promise<TxFee>;
+    sign(data: string): Promise<string>;
 }

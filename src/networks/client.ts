@@ -82,4 +82,8 @@ export abstract class Client {
   public estimateTxFee(): Promise<TxFee> {
     throw new Error('unimplemented');
   }
+
+  public async sign(data: string): Promise<string> {
+    throw new Error('unimplemented');
+  }
 }
