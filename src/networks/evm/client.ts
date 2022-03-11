@@ -20,12 +20,12 @@ export class EthereumClient extends Client {
     this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
   }
 
-  public getAddress(): string {
-    return this.web3.eth.getAccounts()[0];
+  public async getAddress(): Promise<string> {
+    return (await this.web3.eth.getAccounts())[0];
   }
 
   public async getBalance(): Promise<string> {
-    return await this.web3.eth.getBalance(this.getAddress());
+    return await this.web3.eth.getBalance(await this.getAddress());
   }
 
   public async getTokenBalance(tokenAddress: string): Promise<string> {
@@ -37,8 +37,8 @@ export class EthereumClient extends Client {
   }
 
   public async transferToken(tokenAddress: string, to: string, amount: string): Promise<void> {
-    const from = this.getAddress();
-    const nonce = await this.web3.eth.getTransactionCount(this.getAddress());
+    const from = await this.getAddress();
+    const nonce = await this.web3.eth.getTransactionCount(from);
     const gas = await this.web3.eth.estimateGas({ from, to, value: amount });
     const gasPrice = await this.web3.eth.getGasPrice();
 
@@ -73,7 +73,7 @@ export class EthereumClient extends Client {
   }
 
   public async transfer(to: string, amount: string): Promise<void> {
-    const from = this.getAddress();
+    const from = await this.getAddress();
     const nonce = await this.web3.eth.getTransactionCount(from);
     const gas = await this.web3.eth.estimateGas({ from, to, value: amount });
     const gasPrice = await this.web3.eth.getGasPrice();
@@ -122,9 +122,10 @@ export class EthereumClient extends Client {
   }
 
   public async estimateTxFee(): Promise<TxFee> {
+    const address = await this.getAddress();
     const gas = await this.web3.eth.estimateGas({
-      from: this.getAddress(),
-      to: this.getAddress(),
+      from: address,
+      to: address,
       value: this.toBaseUnit('1'),
     });
     const gasPrice = await this.web3.eth.getGasPrice();
@@ -138,7 +139,7 @@ export class EthereumClient extends Client {
   }
 
   public async mint(tokenAddress: string, amount: string): Promise<void> {
-    const address = this.getAddress();
+    const address = await this.getAddress();
     const encodedTx = await this.token.methods.mint(address, BigInt(amount)).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
@@ -158,7 +159,7 @@ export class EthereumClient extends Client {
   }
 
   public async sign(data: string): Promise<string> {
-    const address = this.getAddress();
+    const address = await this.getAddress();
     const signature = await this.web3.eth.sign(data, address);
 
     return signature;

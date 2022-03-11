@@ -8,7 +8,7 @@ export declare class PolkadotClient extends Client {
     account: KeyringPair;
     api: ApiPromise;
     static create(account: string, rpcUrl: string): Promise<PolkadotClient>;
-    getAddress(): string;
+    getAddress(): Promise<string>;
     getBalance(): Promise<string>;
     transfer(to: string, amount: string): Promise<void>;
     /**

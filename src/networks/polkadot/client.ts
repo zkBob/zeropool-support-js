@@ -25,7 +25,7 @@ export class PolkadotClient extends Client {
     return client;
   }
 
-  public getAddress(): string {
+  public async getAddress(): Promise<string> {
     return this.account.address;
   }
 

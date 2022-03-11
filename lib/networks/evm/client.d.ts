@@ -5,7 +5,7 @@ export declare class EthereumClient extends Client {
     private web3;
     private token;
     constructor(provider: provider);
-    getAddress(): string;
+    getAddress(): Promise<string>;
     getBalance(): Promise<string>;
     getTokenBalance(tokenAddress: string): Promise<string>;
     transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
