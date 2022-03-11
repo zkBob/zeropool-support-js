@@ -1,6 +1,6 @@
 import { provider } from 'web3-core';
-import { TxFee } from '@/networks/transaction';
-import { Client } from '@/networks/client';
+import { TxFee } from '../../networks/transaction';
+import { Client } from '../../networks/client';
 export declare class EthereumClient extends Client {
     private web3;
     private token;

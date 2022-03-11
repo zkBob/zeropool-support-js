@@ -1,5 +1,5 @@
 import '@polkadot/api-augment/substrate';
-import { Client } from '@/networks/client';
+import { Client } from '../../networks/client';
 import { ApiPromise } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';

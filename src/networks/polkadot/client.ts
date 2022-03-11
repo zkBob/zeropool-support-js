@@ -2,12 +2,11 @@
 import '@polkadot/api-augment/substrate';
 
 // import { TxFee } from '@/networks/transaction';
-import { Client } from '@/networks/client';
+import { Client } from '../../networks/client';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { stringToU8a, u8aToHex } from '@polkadot/util';
-
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 export class PolkadotClient extends Client {

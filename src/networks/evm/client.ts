@@ -5,10 +5,10 @@ import { AbiItem } from 'web3-utils';
 import { provider } from 'web3-core';
 import { TransactionConfig } from 'web3-core';
 
-import { TxFee, TxStatus } from '@/networks/transaction';
+import { TxFee, TxStatus } from '../../networks/transaction';
 import { convertTransaction } from './utils';
 import tokenAbi from './token-abi.json';
-import { Client } from '@/networks/client';
+import { Client } from '../../networks/client';
 
 export class EthereumClient extends Client {
   private web3: Web3;
