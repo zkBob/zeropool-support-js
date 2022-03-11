@@ -21,7 +21,7 @@ export class EthereumClient extends Client {
   }
 
   public getAddress(): string {
-    return this.web3.eth.accounts[0];
+    return this.web3.eth.getAccounts()[0];
   }
 
   public async getBalance(): Promise<string> {
