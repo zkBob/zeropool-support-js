@@ -16,8 +16,8 @@ export class EthereumClient extends Client {
 
   constructor(provider: provider) {
     super();
-    this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
     this.web3 = new Web3(provider);
+    this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
   }
 
   public getAddress(): string {
