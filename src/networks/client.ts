@@ -79,5 +79,7 @@ export abstract class Client {
   /**
    * Get estimated transaction fee.
    */
-  public abstract estimateTxFee(): Promise<TxFee>;
+  public estimateTxFee(): Promise<TxFee> {
+    throw new Error('unimplemented');
+  }
 }

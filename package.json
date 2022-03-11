@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@ethereumjs/tx": "^3.2.1",
+    "@polkadot/api": "^7.11.1",
+    "@polkadot/keyring": "^8.4.1",
+    "@polkadot/util-crypto": "^8.4.1",
     "@types/bn.js": "^5.1.0",
     "@waves/node-api-js": "^1.2.0",
     "@waves/ts-lib-crypto": "^1.4.3",
