@@ -5,6 +5,9 @@ export type AccountId = number | string;
 
 export abstract class Client {
   abstract getAddress(): Promise<string>;
+  getPublicKey(): Promise<string> {
+    throw new Error('unimplemented');
+  }
 
   /**
    * Get native coin balance.

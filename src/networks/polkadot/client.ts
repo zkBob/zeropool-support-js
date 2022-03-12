@@ -1,13 +1,14 @@
 
 import '@polkadot/api-augment/substrate';
 
-// import { TxFee } from '@/networks/transaction';
-import { Client } from '../../networks/client';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { stringToU8a, u8aToHex } from '@polkadot/util';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
+
+import { Client } from '../../networks/client';
+import { bufToHex } from '../../utils';
 
 export class PolkadotClient extends Client {
   keyring: Keyring;
@@ -27,6 +28,10 @@ export class PolkadotClient extends Client {
 
   public async getAddress(): Promise<string> {
     return this.account.address;
+  }
+
+  public async getPublicKey(): Promise<string> {
+    return bufToHex(this.account.publicKey);
   }
 
   public async getBalance(): Promise<string> {

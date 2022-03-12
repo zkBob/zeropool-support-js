@@ -3,6 +3,7 @@ import { TxFee } from './transaction';
 export declare type AccountId = number | string;
 export declare abstract class Client {
     abstract getAddress(): Promise<string>;
+    getPublicKey(): Promise<string>;
     /**
      * Get native coin balance.
      */
