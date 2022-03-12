@@ -17,7 +17,7 @@ export class PolkadotClient extends Client {
   public static async create(account: string, rpcUrl: string): Promise<PolkadotClient> {
     await cryptoWaitReady();
     const client = new PolkadotClient();
-    client.keyring = new Keyring();
+    client.keyring = new Keyring({ type: 'sr25519' });
     client.account = client.keyring.addFromUri(account);
     const wsProvider = new WsProvider(rpcUrl);
     client.api = await ApiPromise.create({ provider: wsProvider });
