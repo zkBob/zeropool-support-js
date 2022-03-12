@@ -4,11 +4,10 @@ import '@polkadot/api-augment/substrate';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { stringToU8a, u8aToHex } from '@polkadot/util';
+import { hexToU8a, u8aToHex } from '@polkadot/util';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 import { Client } from '../../networks/client';
-import { bufToHex } from '../../utils';
 
 export class PolkadotClient extends Client {
   keyring: Keyring;
@@ -31,7 +30,7 @@ export class PolkadotClient extends Client {
   }
 
   public async getPublicKey(): Promise<string> {
-    return bufToHex(this.account.publicKey);
+    return u8aToHex(this.account.publicKey, -1, false);
   }
 
   public async getBalance(): Promise<string> {
@@ -79,9 +78,10 @@ export class PolkadotClient extends Client {
       .signAndSend(alice, { nonce });
   }
 
+  /** Expects a hex string and returns a hex string */
   public async sign(data: string): Promise<string> {
-    const message = stringToU8a(data);
-    const signature = u8aToHex(this.account.sign(message));
+    const message = hexToU8a(data);
+    const signature = u8aToHex(this.account.sign(message), -1, false);
 
     return signature;
   }

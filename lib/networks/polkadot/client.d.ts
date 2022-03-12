@@ -23,5 +23,6 @@ export declare class PolkadotClient extends Client {
      */
     fromBaseUnit(amount: string): string;
     mint(tokenAddress: string, amount: string): Promise<void>;
+    /** Expects a hex string and returns a hex string */
     sign(data: string): Promise<string>;
 }
