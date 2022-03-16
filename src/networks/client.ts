@@ -18,28 +18,6 @@ export abstract class Client {
     throw new Error('unimplemented');
   }
 
-  // /**
-  //  * Get balances for specified number of accounts with offset.
-  //  * @param numAccounts
-  //  * @param offset
-  //  */
-  // public async getBalances(numAccounts: number, offset: number = 0): Promise<Balance[]> {
-  //   const promises: Promise<Balance>[] = [];
-
-  //   for (let account = offset; account < offset + numAccounts; ++account) {
-  //     const promise = this.getBalance()
-  //       .catch(_err => '0') // TODO: Log errors
-  //       .then((balance) => ({
-  //         address: this.getAddress(),
-  //         balance,
-  //       }));
-
-  //     promises.push(promise);
-  //   }
-
-  //   return Promise.all(promises);
-  // }
-
   /**
    * Transfer native coin.
    * @param to destination address

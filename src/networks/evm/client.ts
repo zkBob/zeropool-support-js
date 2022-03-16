@@ -29,7 +29,7 @@ export class EthereumClient extends Client {
   }
 
   public async getTokenBalance(tokenAddress: string): Promise<string> {
-    const address = this.getAddress();
+    const address = await this.getAddress();
     this.token.options.address = tokenAddress; // TODO: Is it possible to pass the contract address to the `call` method?
     const balance = this.token.methods.balanceOf(address).call();
 
