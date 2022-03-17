@@ -33,6 +33,10 @@ export abstract class Client {
     throw new Error('unimplemented');
   }
 
+  public approve(tokenAddress: string, spender: string, amount: string): Promise<void> {
+    throw new Error('unimplemented'); 
+  }
+
   /**
    * 
    */

@@ -17,6 +17,7 @@ export declare abstract class Client {
     abstract transfer(to: string, amount: string): Promise<void>;
     transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
     mint(tokenAddres: string, amount: string): Promise<void>;
+    approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
     /**
      *
      */
