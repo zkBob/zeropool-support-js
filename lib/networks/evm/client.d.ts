@@ -22,5 +22,6 @@ export declare class EthereumClient extends Client {
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
     mint(tokenAddress: string, amount: string): Promise<void>;
+    approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
     sign(data: string): Promise<string>;
 }
