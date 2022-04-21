@@ -9,18 +9,27 @@ import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 import { Client } from '../../networks/client';
 
+export interface Config {
+  rpcUrl: string;
+
+  /** Transaction URL template with the transaction hash place marked as {{tx}} */
+  transactionUrl: string;
+}
+
 export class PolkadotClient extends Client {
   keyring: Keyring;
   account: KeyringPair;
   api: ApiPromise;
+  config: Config;
 
-  public static async create(account: string, rpcUrl: string): Promise<PolkadotClient> {
+  public static async create(account: string, config: Config): Promise<PolkadotClient> {
     await cryptoWaitReady();
     const client = new PolkadotClient();
     client.keyring = new Keyring({ type: 'sr25519' });
     client.account = client.keyring.addFromUri(account);
-    const wsProvider = new WsProvider(rpcUrl);
+    const wsProvider = new WsProvider(config.rpcUrl);
     client.api = await ApiPromise.create({ provider: wsProvider });
+    client.transactionUrl = config.transactionUrl;
 
     return client;
   }
@@ -61,10 +70,6 @@ export class PolkadotClient extends Client {
   public fromBaseUnit(amount: string): string {
     return amount; // FIXME:
   }
-
-  // public async estimateTxFee(): Promise<TxFee> {
-
-  // }
 
   public async mint(tokenAddress: string, amount: string): Promise<void> {
     const alice = this.keyring.addFromUri('//Alice');

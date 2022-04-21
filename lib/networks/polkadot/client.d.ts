@@ -3,11 +3,17 @@ import { ApiPromise } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Client } from '../../networks/client';
+export interface Config {
+    rpcUrl: string;
+    /** Transaction URL template with the transaction hash place marked as {{tx}} */
+    transactionUrl: string;
+}
 export declare class PolkadotClient extends Client {
     keyring: Keyring;
     account: KeyringPair;
     api: ApiPromise;
-    static create(account: string, rpcUrl: string): Promise<PolkadotClient>;
+    config: Config;
+    static create(account: string, config: Config): Promise<PolkadotClient>;
     getAddress(): Promise<string>;
     getPublicKey(): Promise<string>;
     getBalance(): Promise<string>;

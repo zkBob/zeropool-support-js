@@ -4,6 +4,8 @@ import { Transaction, TxFee } from './transaction';
 export type AccountId = number | string;
 
 export abstract class Client {
+  transactionUrl: string;
+
   abstract getAddress(): Promise<string>;
   getPublicKey(): Promise<string> {
     throw new Error('unimplemented');
@@ -35,6 +37,10 @@ export abstract class Client {
 
   public approve(tokenAddress: string, spender: string, amount: string): Promise<void> {
     throw new Error('unimplemented'); 
+  }
+
+  public getTransactionUrl(tx: string): string {
+    return this.transactionUrl.replace('{{tx}}', tx);
   }
 
   /**
