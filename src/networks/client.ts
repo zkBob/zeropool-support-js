@@ -39,8 +39,8 @@ export abstract class Client {
     throw new Error('unimplemented'); 
   }
 
-  public getTransactionUrl(tx: string): string {
-    return this.transactionUrl.replace('{{tx}}', tx);
+  public getTransactionUrl(hash: string): string {
+    return this.transactionUrl.replace('{{hash}}', hash);
   }
 
   /**

@@ -10,14 +10,18 @@ import { convertTransaction } from './utils';
 import tokenAbi from './token-abi.json';
 import { Client } from '../../networks/client';
 
+export interface Config {
+  transactionUrl: string;
+}
 export class EthereumClient extends Client {
   private web3: Web3;
   private token: Contract;
 
-  constructor(provider: provider) {
+  constructor(provider: provider, config: Config = { transactionUrl: '{{hash}}' }) {
     super();
     this.web3 = new Web3(provider);
     this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
+    this.transactionUrl = config.transactionUrl;
   }
 
   public async getAddress(): Promise<string> {

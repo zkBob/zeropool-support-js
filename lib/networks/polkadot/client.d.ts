@@ -5,7 +5,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { Client } from '../../networks/client';
 export interface Config {
     rpcUrl: string;
-    /** Transaction URL template with the transaction hash place marked as {{tx}} */
+    /** Transaction URL template with the transaction hash place marked as {{hash}} */
     transactionUrl: string;
 }
 export declare class PolkadotClient extends Client {

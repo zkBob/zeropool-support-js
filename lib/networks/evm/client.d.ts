@@ -1,10 +1,13 @@
 import { provider } from 'web3-core';
 import { TxFee } from '../../networks/transaction';
 import { Client } from '../../networks/client';
+export interface Config {
+    transactionUrl: string;
+}
 export declare class EthereumClient extends Client {
     private web3;
     private token;
-    constructor(provider: provider);
+    constructor(provider: provider, config?: Config);
     getAddress(): Promise<string>;
     getBalance(): Promise<string>;
     getTokenBalance(tokenAddress: string): Promise<string>;

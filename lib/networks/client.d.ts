@@ -19,7 +19,7 @@ export declare abstract class Client {
     transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
     mint(tokenAddres: string, amount: string): Promise<void>;
     approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
-    getTransactionUrl(tx: string): string;
+    getTransactionUrl(hash: string): string;
     /**
      *
      */

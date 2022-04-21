@@ -12,7 +12,7 @@ import { Client } from '../../networks/client';
 export interface Config {
   rpcUrl: string;
 
-  /** Transaction URL template with the transaction hash place marked as {{tx}} */
+  /** Transaction URL template with the transaction hash place marked as {{hash}} */
   transactionUrl: string;
 }
 
