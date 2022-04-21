@@ -4,7 +4,7 @@ import { Transaction, TxFee } from './transaction';
 export type AccountId = number | string;
 
 export abstract class Client {
-  transactionUrl: string;
+  transactionUrl: string = '{{hash}}';
 
   abstract getAddress(): Promise<string>;
   getPublicKey(): Promise<string> {
