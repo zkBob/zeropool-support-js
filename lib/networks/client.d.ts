@@ -5,11 +5,14 @@ export declare abstract class Client {
     transactionUrl: string;
     abstract getAddress(): Promise<string>;
     getPublicKey(): Promise<string>;
+    getChainId(): Promise<number>;
     /**
      * Get native coin balance.
      */
     abstract getBalance(): Promise<string>;
     getTokenBalance(tokenAddress: string): Promise<string>;
+    getTokenNonce(tokenAddress: string): Promise<string>;
+    getTokenName(tokenAddress: string): Promise<string>;
     /**
      * Transfer native coin.
      * @param to destination address
@@ -39,4 +42,5 @@ export declare abstract class Client {
      */
     estimateTxFee(): Promise<TxFee>;
     sign(data: string): Promise<string>;
+    signTypedData(data: any): Promise<string>;
 }
