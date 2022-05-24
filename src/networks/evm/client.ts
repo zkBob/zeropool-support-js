@@ -217,7 +217,7 @@ export class EthereumClient extends Client {
 
       if (typeof provider != 'string' && typeof provider?.send != 'undefined') {
         provider.send(
-          { method: 'eth_signTypedData', params: [data, address], jsonrpc: '2.0' },
+          { method: 'eth_signTypedData_v4', params: [data, address.toLowerCase()], jsonrpc: '2.0' },
           function (error, result) {
             if (error) {
               reject(error);
