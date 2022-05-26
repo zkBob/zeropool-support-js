@@ -24,6 +24,10 @@ export class EthereumClient extends Client {
     this.transactionUrl = config.transactionUrl;
   }
 
+  public async getChainId(): Promise<number> {
+    return (await this.web3.eth.net.getId());
+  }
+
   public async getAddress(): Promise<string> {
     return (await this.web3.eth.getAccounts())[0];
   }
@@ -38,6 +42,21 @@ export class EthereumClient extends Client {
     const balance = this.token.methods.balanceOf(address).call();
 
     return balance;
+  }
+
+  public async getTokenNonce(tokenAddress: string): Promise<string> {
+    const address = await this.getAddress();
+    this.token.options.address = tokenAddress;
+    const nonce = this.token.methods.nonces(address).call();
+
+    return nonce;
+  }
+
+  public async getTokenName(tokenAddress: string): Promise<string> {
+    this.token.options.address = tokenAddress;
+    const name = this.token.methods.name().call();
+
+    return name;
   }
 
   public async transferToken(tokenAddress: string, to: string, amount: string): Promise<void> {
@@ -188,5 +207,33 @@ export class EthereumClient extends Client {
     const signature = await this.web3.eth.sign(data, address);
 
     return signature;
+  }
+
+  public async signTypedData(data: object): Promise<string> {
+    const address = await this.getAddress();
+    const provider = this.web3.currentProvider;
+
+    const signPromise = new Promise<string>((resolve, reject) => {
+
+      if (typeof provider != 'string' && typeof provider?.send != 'undefined') {
+        provider.send(
+          { method: 'eth_signTypedData_v4', params: [data, address.toLowerCase()], jsonrpc: '2.0' },
+          function (error, result) {
+            if (error) {
+              reject(error);
+            }
+
+            if (result?.result) {
+              resolve(result.result);
+            } else {
+              reject('Unable to sign: ' + result?.error);
+            }
+          });
+      } else {
+        reject(Error('Incorrect provider'));
+      }
+    });
+
+    return signPromise;
   }
 }

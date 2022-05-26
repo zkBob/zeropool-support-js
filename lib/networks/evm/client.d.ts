@@ -8,9 +8,12 @@ export declare class EthereumClient extends Client {
     private web3;
     private token;
     constructor(provider: provider, config?: Config);
+    getChainId(): Promise<number>;
     getAddress(): Promise<string>;
     getBalance(): Promise<string>;
     getTokenBalance(tokenAddress: string): Promise<string>;
+    getTokenNonce(tokenAddress: string): Promise<string>;
+    getTokenName(tokenAddress: string): Promise<string>;
     transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
     transfer(to: string, amount: string): Promise<void>;
     /**
@@ -27,4 +30,5 @@ export declare class EthereumClient extends Client {
     mint(tokenAddress: string, amount: string): Promise<void>;
     approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
     sign(data: string): Promise<string>;
+    signTypedData(data: object): Promise<string>;
 }

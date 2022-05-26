@@ -11,12 +11,24 @@ export abstract class Client {
     throw new Error('unimplemented');
   }
 
+  public getChainId(): Promise<number> {
+    throw new Error('unimplemented'); 
+  };
+
   /**
    * Get native coin balance.
    */
   public abstract getBalance(): Promise<string>;
 
   public getTokenBalance(tokenAddress: string): Promise<string> {
+    throw new Error('unimplemented');
+  }
+
+  public getTokenNonce(tokenAddress: string): Promise<string> {
+    throw new Error('unimplemented');
+  }
+
+  public getTokenName(tokenAddress: string): Promise<string> {
     throw new Error('unimplemented');
   }
 
@@ -75,6 +87,10 @@ export abstract class Client {
   }
 
   public async sign(data: string): Promise<string> {
+    throw new Error('unimplemented');
+  }
+
+  public async signTypedData(data: any): Promise<string> {
     throw new Error('unimplemented');
   }
 }
