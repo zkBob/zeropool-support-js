@@ -8,6 +8,7 @@ import { TransactionConfig } from 'web3-core';
 import { TxFee, TxStatus } from '../../networks/transaction';
 import { convertTransaction } from './utils';
 import tokenAbi from './token-abi.json';
+import minterAbi from './minter-abi.json';
 import { Client } from '../../networks/client';
 
 export interface Config {
@@ -16,11 +17,13 @@ export interface Config {
 export class EthereumClient extends Client {
   private web3: Web3;
   private token: Contract;
+  private minter: Contract;
 
   constructor(provider: provider, config: Config = { transactionUrl: '{{hash}}' }) {
     super();
     this.web3 = new Web3(provider);
     this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
+    this.minter = new this.web3.eth.Contract(minterAbi as AbiItem[]) as Contract;
     this.transactionUrl = config.transactionUrl;
   }
 
@@ -161,12 +164,12 @@ export class EthereumClient extends Client {
     };
   }
 
-  public async mint(tokenAddress: string, amount: string): Promise<void> {
+  public async mint(minterAddress: string, amount: string): Promise<void> {
     const address = await this.getAddress();
     const encodedTx = await this.token.methods.mint(address, BigInt(amount)).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
-      to: tokenAddress,
+      to: minterAddress,
       data: encodedTx,
     };
 

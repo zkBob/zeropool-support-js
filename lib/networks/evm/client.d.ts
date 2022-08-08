@@ -7,6 +7,7 @@ export interface Config {
 export declare class EthereumClient extends Client {
     private web3;
     private token;
+    private minter;
     constructor(provider: provider, config?: Config);
     getChainId(): Promise<number>;
     getAddress(): Promise<string>;
@@ -27,7 +28,7 @@ export declare class EthereumClient extends Client {
      */
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
-    mint(tokenAddress: string, amount: string): Promise<void>;
+    mint(minterAddress: string, amount: string): Promise<void>;
     approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
     sign(data: string): Promise<string>;
     signTypedData(data: object): Promise<string>;
