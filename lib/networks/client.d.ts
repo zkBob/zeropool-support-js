@@ -1,6 +1,6 @@
 import { TxFee } from './transaction';
 /** Account number or address */
-export declare type AccountId = number | string;
+export type AccountId = number | string;
 export declare abstract class Client {
     transactionUrl: string;
     abstract getAddress(): Promise<string>;
@@ -22,6 +22,7 @@ export declare abstract class Client {
     transferToken(tokenAddress: string, to: string, amount: string): Promise<string>;
     mint(tokenAddres: string, amount: string): Promise<string>;
     approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
+    increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string>;
     allowance(tokenAddress: string, spender: string): Promise<bigint>;
     getTransactionUrl(hash: string): string;
     /**

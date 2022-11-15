@@ -51,6 +51,10 @@ export abstract class Client {
     throw new Error('unimplemented'); 
   }
 
+  public increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string> {
+    throw new Error('unimplemented'); 
+  }
+
   public allowance(tokenAddress: string, spender: string): Promise<bigint> {
     throw new Error('unimplemented'); 
   }
