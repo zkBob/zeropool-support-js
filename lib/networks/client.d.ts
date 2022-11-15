@@ -18,10 +18,11 @@ export declare abstract class Client {
      * @param to destination address
      * @param amount as base unit
      */
-    abstract transfer(to: string, amount: string): Promise<void>;
-    transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
-    mint(tokenAddres: string, amount: string): Promise<void>;
-    approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
+    abstract transfer(to: string, amount: string): Promise<string>;
+    transferToken(tokenAddress: string, to: string, amount: string): Promise<string>;
+    mint(tokenAddres: string, amount: string): Promise<string>;
+    approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
+    allowance(tokenAddress: string, spender: string): Promise<bigint>;
     getTransactionUrl(hash: string): string;
     /**
      *

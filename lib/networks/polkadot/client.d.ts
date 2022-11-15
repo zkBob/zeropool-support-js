@@ -17,7 +17,7 @@ export declare class PolkadotClient extends Client {
     getAddress(): Promise<string>;
     getPublicKey(): Promise<string>;
     getBalance(): Promise<string>;
-    transfer(to: string, amount: string): Promise<void>;
+    transfer(to: string, amount: string): Promise<string>;
     /**
      * Converts DOT to Planck.
      * @param amount in Ether
@@ -28,7 +28,7 @@ export declare class PolkadotClient extends Client {
      * @param amount in Wei
      */
     fromBaseUnit(amount: string): string;
-    mint(tokenAddress: string, amount: string): Promise<void>;
+    mint(tokenAddress: string, amount: string): Promise<string>;
     /** Expects a hex string and returns a hex string */
     sign(data: string): Promise<string>;
 }

@@ -62,43 +62,7 @@ export class EthereumClient extends Client {
     return name;
   }
 
-  public async transferToken(tokenAddress: string, to: string, amount: string): Promise<void> {
-    const from = await this.getAddress();
-    const nonce = await this.web3.eth.getTransactionCount(from);
-    const gas = await this.web3.eth.estimateGas({ from, to, value: amount });
-    const gasPrice = await this.web3.eth.getGasPrice();
-
-    const data = this.token.methods.transfer(to, amount).encodeABI();
-    const raw = {
-      nonce,
-      gas,
-      gasPrice,
-      to: tokenAddress,
-      value: 0,
-      data,
-    };
-
-    const signed = await this.web3.eth.signTransaction(raw);
-    const receipt = await this.web3.eth.sendSignedTransaction(signed.raw);
-    const block = await this.web3.eth.getBlock(receipt.blockNumber);
-
-    let timestamp;
-    if (typeof block.timestamp == 'string') {
-      timestamp = parseInt(block.timestamp);
-    } else {
-      timestamp = block.timestamp;
-    }
-
-    let status = TxStatus.Completed;
-    if (!receipt.status) {
-      status = TxStatus.Error;
-    }
-
-    const nativeTx = await this.web3.eth.getTransaction(receipt.transactionHash);
-    convertTransaction(nativeTx, timestamp, status);
-  }
-
-  public async transfer(to: string, amount: string): Promise<void> {
+  public async transfer(to: string, amount: string): Promise<string> {
     const from = await this.getAddress();
     const nonce = await this.web3.eth.getTransactionCount(from);
     const gas = await this.web3.eth.estimateGas({ from, to, value: amount });
@@ -129,6 +93,8 @@ export class EthereumClient extends Client {
 
     const nativeTx = await this.web3.eth.getTransaction(receipt.transactionHash);
     convertTransaction(nativeTx, timestamp, status);
+
+    return receipt.transactionHash;
   }
 
   /**
@@ -164,7 +130,7 @@ export class EthereumClient extends Client {
     };
   }
 
-  public async mint(minterAddress: string, amount: string): Promise<void> {
+  public async mint(minterAddress: string, amount: string): Promise<string> {
     const address = await this.getAddress();
     const encodedTx = await this.token.methods.mint(address, BigInt(amount)).encodeABI();
     var txObject: TransactionConfig = {
@@ -181,10 +147,34 @@ export class EthereumClient extends Client {
     txObject.nonce = nonce;
 
     const signedTx = await this.web3.eth.signTransaction(txObject);
-    await this.web3.eth.sendSignedTransaction(signedTx.raw);
+    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
+
+    return receipt.transactionHash;
   }
 
-  public async approve(tokenAddress: string, spender: string, amount: string): Promise<void> {
+  public async transferToken(tokenAddress: string, to: string, amount: string): Promise<string> {
+    const address = await this.getAddress();
+    const encodedTx = await this.token.methods.transfer(to, BigInt(amount)).encodeABI();
+    var txObject: TransactionConfig = {
+      from: address,
+      to: tokenAddress,
+      data: encodedTx,
+    };
+
+    const gas = await this.web3.eth.estimateGas(txObject);
+    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+    const nonce = await this.web3.eth.getTransactionCount(address);
+    txObject.gas = gas;
+    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+    txObject.nonce = nonce;
+
+    const signedTx = await this.web3.eth.signTransaction(txObject);
+    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
+
+    return receipt.transactionHash;
+  }
+
+  public async approve(tokenAddress: string, spender: string, amount: string): Promise<string> {
     const address = await this.getAddress();
     const encodedTx = await this.token.methods.approve(spender, BigInt(amount)).encodeABI();
     var txObject: TransactionConfig = {
@@ -201,7 +191,39 @@ export class EthereumClient extends Client {
     txObject.nonce = nonce;
 
     const signedTx = await this.web3.eth.signTransaction(txObject);
-    await this.web3.eth.sendSignedTransaction(signedTx.raw);
+    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
+
+    return receipt.transactionHash;
+  }
+
+  public async increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string> {
+    const address = await this.getAddress();
+    const encodedTx = await this.token.methods.increaseAllowance(spender, BigInt(additionalAmount)).encodeABI();
+    var txObject: TransactionConfig = {
+      from: address,
+      to: tokenAddress,
+      data: encodedTx,
+    };
+
+    const gas = await this.web3.eth.estimateGas(txObject);
+    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+    const nonce = await this.web3.eth.getTransactionCount(address);
+    txObject.gas = gas;
+    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+    txObject.nonce = nonce;
+
+    const signedTx = await this.web3.eth.signTransaction(txObject);
+    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
+
+    return receipt.transactionHash;
+  }
+
+  public async allowance(tokenAddress: string, spender: string): Promise<bigint> {
+    const owner = await this.getAddress();
+    this.token.options.address = tokenAddress;
+    const nonce = await this.token.methods.allowance(owner, spender).call();
+
+    return BigInt(nonce);
   }
 
 

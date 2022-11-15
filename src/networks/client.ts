@@ -37,17 +37,21 @@ export abstract class Client {
    * @param to destination address
    * @param amount as base unit
    */
-  abstract transfer(to: string, amount: string): Promise<void>;
+  abstract transfer(to: string, amount: string): Promise<string>;
 
-  public transferToken(tokenAddress: string, to: string, amount: string): Promise<void> {
+  public transferToken(tokenAddress: string, to: string, amount: string): Promise<string> {
     throw new Error('unimplemented');
   }
 
-  public mint(tokenAddres: string, amount: string): Promise<void> {
+  public mint(tokenAddres: string, amount: string): Promise<string> {
     throw new Error('unimplemented');
   }
 
-  public approve(tokenAddress: string, spender: string, amount: string): Promise<void> {
+  public approve(tokenAddress: string, spender: string, amount: string): Promise<string> {
+    throw new Error('unimplemented'); 
+  }
+
+  public allowance(tokenAddress: string, spender: string): Promise<bigint> {
     throw new Error('unimplemented'); 
   }
 
