@@ -50,9 +50,11 @@ export class PolkadotClient extends Client {
     return free.toString();
   }
 
-  public async transfer(to: string, amount: string): Promise<void> {
-    await this.api.tx.balances.transfer(to, amount)
+  public async transfer(to: string, amount: string): Promise<string> {
+    const tx = await this.api.tx.balances.transfer(to, amount)
       .signAndSend(this.account);
+
+    return tx.toHex();
   }
 
   /**
@@ -71,16 +73,18 @@ export class PolkadotClient extends Client {
     return amount; // FIXME:
   }
 
-  public async mint(tokenAddress: string, amount: string): Promise<void> {
+  public async mint(tokenAddress: string, amount: string): Promise<string> {
     const alice = this.keyring.addFromUri('//Alice');
 
     // @ts-ignore
     const { nonce } = await this.api.query.system.account(alice.address);
-    await this.api.tx.sudo
+    const tx = await this.api.tx.sudo
       .sudo(
         this.api.tx.balances.setBalance(this.account.address, amount, '0')
       )
       .signAndSend(alice, { nonce });
+
+      return tx.toHex();
   }
 
   /** Expects a hex string and returns a hex string */

@@ -15,8 +15,7 @@ export declare class EthereumClient extends Client {
     getTokenBalance(tokenAddress: string): Promise<string>;
     getTokenNonce(tokenAddress: string): Promise<string>;
     getTokenName(tokenAddress: string): Promise<string>;
-    transferToken(tokenAddress: string, to: string, amount: string): Promise<void>;
-    transfer(to: string, amount: string): Promise<void>;
+    transfer(to: string, amount: string): Promise<string>;
     /**
      * Converts ether to Wei.
      * @param amount in Ether
@@ -28,8 +27,11 @@ export declare class EthereumClient extends Client {
      */
     fromBaseUnit(amount: string): string;
     estimateTxFee(): Promise<TxFee>;
-    mint(minterAddress: string, amount: string): Promise<void>;
-    approve(tokenAddress: string, spender: string, amount: string): Promise<void>;
+    mint(minterAddress: string, amount: string): Promise<string>;
+    transferToken(tokenAddress: string, to: string, amount: string): Promise<string>;
+    approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
+    increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string>;
+    allowance(tokenAddress: string, spender: string): Promise<bigint>;
     sign(data: string): Promise<string>;
     signTypedData(data: object): Promise<string>;
 }
