@@ -9,6 +9,8 @@ export declare class EthereumClient extends Client {
     private token;
     private minter;
     private pool;
+    private dd;
+    private ddContractAddresses;
     gasMultiplier: number;
     constructor(provider: provider, config?: Config);
     getChainId(): Promise<number>;
@@ -34,6 +36,7 @@ export declare class EthereumClient extends Client {
     approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
     increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string>;
     allowance(tokenAddress: string, spender: string): Promise<bigint>;
+    getDirectDepositContract(poolAddress: string): Promise<string>;
     directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
     sign(data: string): Promise<string>;
     signTypedData(data: object): Promise<string>;

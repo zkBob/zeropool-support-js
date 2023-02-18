@@ -10,6 +10,7 @@ import { convertTransaction } from './utils';
 import tokenAbi from './token-abi.json';
 import minterAbi from './minter-abi.json';
 import poolAbi from './pool-abi.json';
+import ddAbi from './dd-abi.json';
 import { Client } from '../../networks/client';
 
 const bs58 = require('bs58')
@@ -22,6 +23,9 @@ export class EthereumClient extends Client {
   private token: Contract;
   private minter: Contract;
   private pool: Contract;
+  private dd: Contract;
+
+  private ddContractAddresses = new Map<string, string>();    // poolContractAddress -> directDepositContractAddress
 
   public gasMultiplier: number = 1.0;
 
@@ -31,6 +35,7 @@ export class EthereumClient extends Client {
     this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
     this.minter = new this.web3.eth.Contract(minterAbi as AbiItem[]) as Contract;
     this.pool = new this.web3.eth.Contract(poolAbi as AbiItem[]) as Contract;
+    this.dd = new this.web3.eth.Contract(ddAbi as AbiItem[]) as Contract;
     this.transactionUrl = config.transactionUrl;
   }
 
@@ -233,13 +238,31 @@ export class EthereumClient extends Client {
     return BigInt(nonce);
   }
 
+  public async getDirectDepositContract(poolAddress: string): Promise<string> {
+    let ddContractAddr = this.ddContractAddresses.get(poolAddress);
+    if (!ddContractAddr) {
+        this.pool.options.address = poolAddress;
+        ddContractAddr = await this.pool.methods.direct_deposit_queue().call();
+        if (ddContractAddr) {
+            this.ddContractAddresses.set(poolAddress, ddContractAddr);
+        } else {
+            throw new Error(`Cannot fetch DD contract address`);
+        }
+    }
+
+    return ddContractAddr;
+  }
+
+
   public async directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string> {
+    let ddContractAddr = await this.getDirectDepositContract(poolAddress);
+
     const address = await this.getAddress();
-    const zkAddrBytes = Buffer.from(bs58.decode(zkAddress)).toString('hex');
-    const encodedTx = await this.pool.methods.directDeposit(address, BigInt(amount), bs58.decode(zkAddress)).encodeABI();
+    const zkAddrBytes = `0x${Buffer.from(bs58.decode(zkAddress)).toString('hex')}`;
+    const encodedTx = await this.dd.methods.directDeposit(address, BigInt(amount), zkAddrBytes).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
-      to: poolAddress,
+      to: ddContractAddr,
       data: encodedTx,
     };
 
