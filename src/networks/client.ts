@@ -59,6 +59,14 @@ export abstract class Client {
     throw new Error('unimplemented'); 
   }
 
+  public async getDirectDepositContract(poolAddress: string): Promise<string> {
+    throw new Error('unimplemented'); 
+  }
+
+  public directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string> {
+    throw new Error('unimplemented'); 
+  }
+
   public getTransactionUrl(hash: string): string {
     return this.transactionUrl.replace('{{hash}}', hash);
   }

@@ -9,7 +9,11 @@ import { TxFee, TxStatus } from '../../networks/transaction';
 import { convertTransaction } from './utils';
 import tokenAbi from './token-abi.json';
 import minterAbi from './minter-abi.json';
+import poolAbi from './pool-abi.json';
+import ddAbi from './dd-abi.json';
 import { Client } from '../../networks/client';
+
+const bs58 = require('bs58')
 
 export interface Config {
   transactionUrl: string;
@@ -18,12 +22,20 @@ export class EthereumClient extends Client {
   private web3: Web3;
   private token: Contract;
   private minter: Contract;
+  private pool: Contract;
+  private dd: Contract;
+
+  private ddContractAddresses = new Map<string, string>();    // poolContractAddress -> directDepositContractAddress
+
+  public gasMultiplier: number = 1.0;
 
   constructor(provider: provider, config: Config = { transactionUrl: '{{hash}}' }) {
     super();
     this.web3 = new Web3(provider);
     this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
     this.minter = new this.web3.eth.Contract(minterAbi as AbiItem[]) as Contract;
+    this.pool = new this.web3.eth.Contract(poolAbi as AbiItem[]) as Contract;
+    this.dd = new this.web3.eth.Contract(ddAbi as AbiItem[]) as Contract;
     this.transactionUrl = config.transactionUrl;
   }
 
@@ -73,7 +85,7 @@ export class EthereumClient extends Client {
       value: amount,
       nonce,
       gas,
-      gasPrice,
+      gasPrice: BigInt(Math.ceil(Number(gasPrice) * this.gasMultiplier)).toString(),
     });
 
     const receipt = await this.web3.eth.sendSignedTransaction(signed.raw);
@@ -120,12 +132,12 @@ export class EthereumClient extends Client {
       to: address,
       value: this.toBaseUnit('1'),
     });
-    const gasPrice = await this.web3.eth.getGasPrice();
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
     const fee = new BN(gas).mul(new BN(gasPrice));
 
     return {
       gas: gas.toString(),
-      gasPrice,
+      gasPrice: BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(),
       fee: this.fromBaseUnit(fee.toString()),
     };
   }
@@ -140,10 +152,10 @@ export class EthereumClient extends Client {
     };
 
     const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
     const nonce = await this.web3.eth.getTransactionCount(address);
     txObject.gas = gas;
-    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
     txObject.nonce = nonce;
 
     const signedTx = await this.web3.eth.signTransaction(txObject);
@@ -162,10 +174,10 @@ export class EthereumClient extends Client {
     };
 
     const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
     const nonce = await this.web3.eth.getTransactionCount(address);
     txObject.gas = gas;
-    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
     txObject.nonce = nonce;
 
     const signedTx = await this.web3.eth.signTransaction(txObject);
@@ -184,10 +196,10 @@ export class EthereumClient extends Client {
     };
 
     const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
     const nonce = await this.web3.eth.getTransactionCount(address);
     txObject.gas = gas;
-    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
     txObject.nonce = nonce;
 
     const signedTx = await this.web3.eth.signTransaction(txObject);
@@ -206,10 +218,10 @@ export class EthereumClient extends Client {
     };
 
     const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = BigInt(await this.web3.eth.getGasPrice());
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
     const nonce = await this.web3.eth.getTransactionCount(address);
     txObject.gas = gas;
-    txObject.gasPrice = `0x${gasPrice.toString(16)}`;
+    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
     txObject.nonce = nonce;
 
     const signedTx = await this.web3.eth.signTransaction(txObject);
@@ -224,6 +236,47 @@ export class EthereumClient extends Client {
     const nonce = await this.token.methods.allowance(owner, spender).call();
 
     return BigInt(nonce);
+  }
+
+  public async getDirectDepositContract(poolAddress: string): Promise<string> {
+    let ddContractAddr = this.ddContractAddresses.get(poolAddress);
+    if (!ddContractAddr) {
+        this.pool.options.address = poolAddress;
+        ddContractAddr = await this.pool.methods.direct_deposit_queue().call();
+        if (ddContractAddr) {
+            this.ddContractAddresses.set(poolAddress, ddContractAddr);
+        } else {
+            throw new Error(`Cannot fetch DD contract address`);
+        }
+    }
+
+    return ddContractAddr;
+  }
+
+
+  public async directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string> {
+    let ddContractAddr = await this.getDirectDepositContract(poolAddress);
+
+    const address = await this.getAddress();
+    const zkAddrBytes = `0x${Buffer.from(bs58.decode(zkAddress)).toString('hex')}`;
+    const encodedTx = await this.dd.methods["directDeposit(address,uint256,bytes)"](address, BigInt(amount), zkAddrBytes).encodeABI();
+    var txObject: TransactionConfig = {
+      from: address,
+      to: ddContractAddr,
+      data: encodedTx,
+    };
+
+    const gas = await this.web3.eth.estimateGas(txObject);
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
+    const nonce = await this.web3.eth.getTransactionCount(address);
+    txObject.gas = gas;
+    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
+    txObject.nonce = nonce;
+
+    const signedTx = await this.web3.eth.signTransaction(txObject);
+    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
+
+    return receipt.transactionHash;
   }
 
 

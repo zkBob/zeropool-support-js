@@ -24,6 +24,8 @@ export declare abstract class Client {
     approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
     increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string>;
     allowance(tokenAddress: string, spender: string): Promise<bigint>;
+    getDirectDepositContract(poolAddress: string): Promise<string>;
+    directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
     getTransactionUrl(hash: string): string;
     /**
      *
