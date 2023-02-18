@@ -259,7 +259,7 @@ export class EthereumClient extends Client {
 
     const address = await this.getAddress();
     const zkAddrBytes = `0x${Buffer.from(bs58.decode(zkAddress)).toString('hex')}`;
-    const encodedTx = await this.dd.methods.directDeposit(address, BigInt(amount), zkAddrBytes).encodeABI();
+    const encodedTx = await this.dd.methods["directDeposit(address,uint256,bytes)"](address, BigInt(amount), zkAddrBytes).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
       to: ddContractAddr,
