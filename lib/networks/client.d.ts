@@ -1,6 +1,6 @@
 import { TxFee } from './transaction';
 /** Account number or address */
-export type AccountId = number | string;
+export declare type AccountId = number | string;
 export declare abstract class Client {
     transactionUrl: string;
     abstract getAddress(): Promise<string>;
@@ -27,20 +27,17 @@ export declare abstract class Client {
     getDirectDepositContract(poolAddress: string): Promise<string>;
     directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
     getTransactionUrl(hash: string): string;
-    /**
-     *
-     */
-    updateState(): Promise<void>;
+    decimals(tokenAddress: string): Promise<number>;
     /**
      * Convert human-readable representation of coin to smallest non-divisible (base) representation.
      * @param amount
      */
-    abstract toBaseUnit(amount: string): string;
+    abstract toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     /**
     * Convert coin represented with smallest non-divisible units to a human-readable representation.
     * @param amount
     */
-    abstract fromBaseUnit(amount: string): string;
+    abstract fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     /**
      * Get estimated transaction fee.
      */

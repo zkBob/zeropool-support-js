@@ -11,6 +11,7 @@ export declare class EthereumClient extends Client {
     private pool;
     private dd;
     private ddContractAddresses;
+    private tokenDecimals;
     gasMultiplier: number;
     constructor(provider: provider, config?: Config);
     getChainId(): Promise<number>;
@@ -20,16 +21,18 @@ export declare class EthereumClient extends Client {
     getTokenNonce(tokenAddress: string): Promise<string>;
     getTokenName(tokenAddress: string): Promise<string>;
     transfer(to: string, amount: string): Promise<string>;
+    decimals(tokenAddress: string): Promise<number>;
     /**
-     * Converts ether to Wei.
-     * @param amount in Ether
+     * Converts a token amount to the minimum supported resolution
+     * Resolution depends on token's `decimal` property
+     * @param amount in Ether\tokens
      */
-    toBaseUnit(amount: string): string;
+    toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     /**
      * Converts Wei to ether.
      * @param amount in Wei
      */
-    fromBaseUnit(amount: string): string;
+    fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     estimateTxFee(): Promise<TxFee>;
     mint(minterAddress: string, amount: string): Promise<string>;
     transferToken(tokenAddress: string, to: string, amount: string): Promise<string>;
