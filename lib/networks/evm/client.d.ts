@@ -29,8 +29,8 @@ export declare class EthereumClient extends Client {
      */
     toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     /**
-     * Converts Wei to ether.
-     * @param amount in Wei
+     * Converts token native amount to the humah-readable representations
+     * @param amount in minimum supported units
      */
     fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     estimateTxFee(): Promise<TxFee>;

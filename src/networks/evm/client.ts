@@ -134,18 +134,26 @@ export class EthereumClient extends Client {
   public async toBaseUnit(tokenAddress: string, amount: string): Promise<string> {
     const decimals = BigInt(await this.decimals(tokenAddress));
     const wei = BigInt(this.web3.utils.toWei(amount, 'ether'));
-    const baseUnits = wei / (10n ** (18n - decimals));
-    
+
+    const baseDecimals = 18n;
+    const baseUnits = (decimals <= baseDecimals) ?
+                      wei / (10n ** (baseDecimals - decimals)) :
+                      wei * (10n ** (decimals - baseDecimals));
+
     return baseUnits.toString(10);
   }
 
   /**
-   * Converts Wei to ether.
-   * @param amount in Wei
+   * Converts token native amount to the humah-readable representations
+   * @param amount in minimum supported units
    */
   public async fromBaseUnit(tokenAddress: string, amount: string): Promise<string> {
     const decimals = BigInt(await this.decimals(tokenAddress));
-    const wei = BigInt(amount) * (10n ** (18n - decimals));
+
+    const baseDecimals = 18n;
+    const wei = (decimals <= baseDecimals) ?
+                BigInt(amount) * (10n ** (baseDecimals - decimals)) :
+                BigInt(amount) / (10n ** (decimals - baseDecimals));
 
     return this.web3.utils.fromWei(wei.toString(10), 'ether');
   }
