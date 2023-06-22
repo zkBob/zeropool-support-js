@@ -26,6 +26,7 @@ export class EthereumClient extends Client {
   private dd: Contract;
 
   private ddContractAddresses = new Map<string, string>();    // poolContractAddress -> directDepositContractAddress
+  private tokenDecimals = new Map<string, number>();  // tokenAddress -> decimals
 
   public gasMultiplier: number = 1.0;
 
@@ -109,20 +110,52 @@ export class EthereumClient extends Client {
     return receipt.transactionHash;
   }
 
-  /**
-   * Converts ether to Wei.
-   * @param amount in Ether
-   */
-  public toBaseUnit(amount: string): string {
-    return this.web3.utils.toWei(amount, 'ether');
+  public async decimals(tokenAddress: string): Promise<number> {
+    let res = this.tokenDecimals.get(tokenAddress);
+    if (!res) {
+      try {
+        this.token.options.address = tokenAddress;
+        res = Number(await this.token.methods.decimals().call());
+        this.tokenDecimals.set(tokenAddress, res);
+      } catch (err) {
+        console.log(`Cannot fetch decimals for the token ${tokenAddress}, using default (18). Reason: ${err.message}`);
+        res = 18;
+      }
+    }
+    
+    return res;
   }
 
   /**
-   * Converts Wei to ether.
-   * @param amount in Wei
+   * Converts a token amount to the minimum supported resolution
+   * Resolution depends on token's `decimal` property
+   * @param amount in Ether\tokens
    */
-  public fromBaseUnit(amount: string): string {
-    return this.web3.utils.fromWei(amount, 'ether');
+  public async toBaseUnit(tokenAddress: string, amount: string): Promise<string> {
+    const decimals = BigInt(await this.decimals(tokenAddress));
+    const wei = BigInt(this.web3.utils.toWei(amount, 'ether'));
+
+    const baseDecimals = 18n;
+    const baseUnits = (decimals <= baseDecimals) ?
+                      wei / (10n ** (baseDecimals - decimals)) :
+                      wei * (10n ** (decimals - baseDecimals));
+
+    return baseUnits.toString(10);
+  }
+
+  /**
+   * Converts token native amount to the humah-readable representations
+   * @param amount in minimum supported units
+   */
+  public async fromBaseUnit(tokenAddress: string, amount: string): Promise<string> {
+    const decimals = BigInt(await this.decimals(tokenAddress));
+
+    const baseDecimals = 18n;
+    const wei = (decimals <= baseDecimals) ?
+                BigInt(amount) * (10n ** (baseDecimals - decimals)) :
+                BigInt(amount) / (10n ** (decimals - baseDecimals));
+
+    return this.web3.utils.fromWei(wei.toString(10), 'ether');
   }
 
   public async estimateTxFee(): Promise<TxFee> {
@@ -130,7 +163,7 @@ export class EthereumClient extends Client {
     const gas = await this.web3.eth.estimateGas({
       from: address,
       to: address,
-      value: this.toBaseUnit('1'),
+      value: '1',
     });
     const gasPrice = Number(await this.web3.eth.getGasPrice());
     const fee = new BN(gas).mul(new BN(gasPrice));
@@ -138,7 +171,7 @@ export class EthereumClient extends Client {
     return {
       gas: gas.toString(),
       gasPrice: BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(),
-      fee: this.fromBaseUnit(fee.toString()),
+      fee: this.web3.utils.fromWei(fee.toString(10), 'ether'),
     };
   }
 

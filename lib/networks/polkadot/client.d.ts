@@ -22,12 +22,12 @@ export declare class PolkadotClient extends Client {
      * Converts DOT to Planck.
      * @param amount in Ether
      */
-    toBaseUnit(amount: string): string;
+    toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     /**
      * Converts Planck to DOT.
      * @param amount in Wei
      */
-    fromBaseUnit(amount: string): string;
+    fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
     mint(tokenAddress: string, amount: string): Promise<string>;
     /** Expects a hex string and returns a hex string */
     sign(data: string): Promise<string>;

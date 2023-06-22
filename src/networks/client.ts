@@ -71,29 +71,21 @@ export abstract class Client {
     return this.transactionUrl.replace('{{hash}}', hash);
   }
 
-  /**
-   * 
-   */
-  public updateState(): Promise<void> {
+  public async decimals(tokenAddress: string): Promise<number> {
     throw new Error('unimplemented');
   }
-
-  // /**
-  //  * Fetch account transactions.
-  //  */
-  // public abstract getTransactions(limit?: number, offset?: number): Promise<Transaction[]>;
 
   /**
    * Convert human-readable representation of coin to smallest non-divisible (base) representation.
    * @param amount
    */
-  public abstract toBaseUnit(amount: string): string;
+  public abstract toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
 
   /**
   * Convert coin represented with smallest non-divisible units to a human-readable representation.
   * @param amount
   */
-  public abstract fromBaseUnit(amount: string): string;
+  public abstract fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
 
   /**
    * Get estimated transaction fee.
