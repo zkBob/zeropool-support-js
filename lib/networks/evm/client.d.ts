@@ -43,4 +43,5 @@ export declare class EthereumClient extends Client {
     directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
     sign(data: string): Promise<string>;
     signTypedData(data: object): Promise<string>;
+    sendTransaction(to: string, amount: bigint, data: string): Promise<string>;
 }

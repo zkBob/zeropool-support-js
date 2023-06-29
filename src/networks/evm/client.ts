@@ -347,4 +347,26 @@ export class EthereumClient extends Client {
 
     return signPromise;
   }
+
+  public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {
+    const address = await this.getAddress();
+    var txObject: TransactionConfig = {
+      from: address,
+      to,
+      value: amount.toString(),
+      data,
+    };
+
+    const gas = await this.web3.eth.estimateGas(txObject);
+    const gasPrice = Number(await this.web3.eth.getGasPrice());
+    const nonce = await this.web3.eth.getTransactionCount(address);
+    txObject.gas = gas;
+    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
+    txObject.nonce = nonce;
+
+    const signedTx = await this.web3.eth.signTransaction(txObject);
+    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
+
+    return receipt.transactionHash;
+  }
 }

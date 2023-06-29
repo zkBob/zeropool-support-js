@@ -44,4 +44,5 @@ export declare abstract class Client {
     estimateTxFee(): Promise<TxFee>;
     sign(data: string): Promise<string>;
     signTypedData(data: any): Promise<string>;
+    sendTransaction(to: string, amount: bigint, data: string): Promise<string>;
 }
