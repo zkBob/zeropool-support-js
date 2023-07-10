@@ -101,4 +101,8 @@ export abstract class Client {
   public async signTypedData(data: any): Promise<string> {
     throw new Error('unimplemented');
   }
+
+  public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {
+    throw new Error('unimplemented');
+  }
 }
