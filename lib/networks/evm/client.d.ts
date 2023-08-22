@@ -1,10 +1,9 @@
-import { provider } from 'web3-core';
 import { TxFee } from '../../networks/transaction';
 import { Client } from '../../networks/client';
-export interface Config {
-    transactionUrl: string;
-}
+import HDWalletProvider from '@truffle/hdwallet-provider';
+import { Config } from '../../index';
 export declare class EthereumClient extends Client {
+    private provider?;
     private web3;
     private token;
     private minter;
@@ -13,35 +12,30 @@ export declare class EthereumClient extends Client {
     private ddContractAddresses;
     private tokenDecimals;
     gasMultiplier: number;
-    constructor(provider: provider, config?: Config);
+    constructor(provider: HDWalletProvider, config?: Config);
+    haltClient(): void;
     getChainId(): Promise<number>;
+    getTokenName(tokenAddress: string): Promise<string>;
+    decimals(tokenAddress: string): Promise<number>;
+    baseUnit(): string;
+    toBaseUnit(humanAmount: string): string;
+    fromBaseUnit(baseAmount: string): string;
+    toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<string>;
+    fromBaseTokenUnit(tokenAddress: string, baseAmount: string): Promise<string>;
     getAddress(): Promise<string>;
     getBalance(): Promise<string>;
     getTokenBalance(tokenAddress: string): Promise<string>;
     getTokenNonce(tokenAddress: string): Promise<string>;
-    getTokenName(tokenAddress: string): Promise<string>;
-    transfer(to: string, amount: string): Promise<string>;
-    decimals(tokenAddress: string): Promise<number>;
-    /**
-     * Converts a token amount to the minimum supported resolution
-     * Resolution depends on token's `decimal` property
-     * @param amount in Ether\tokens
-     */
-    toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
-    /**
-     * Converts token native amount to the humah-readable representations
-     * @param amount in minimum supported units
-     */
-    fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
+    allowance(tokenAddress: string, spender: string): Promise<bigint>;
     estimateTxFee(): Promise<TxFee>;
-    mint(minterAddress: string, amount: string): Promise<string>;
+    sendTransaction(to: string, amount: bigint, data: string): Promise<string>;
+    transfer(to: string, amount: string): Promise<string>;
     transferToken(tokenAddress: string, to: string, amount: string): Promise<string>;
     approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
     increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string>;
-    allowance(tokenAddress: string, spender: string): Promise<bigint>;
-    getDirectDepositContract(poolAddress: string): Promise<string>;
-    directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
+    mint(minterAddress: string, amount: string): Promise<string>;
     sign(data: string): Promise<string>;
     signTypedData(data: object): Promise<string>;
-    sendTransaction(to: string, amount: bigint, data: string): Promise<string>;
+    getDirectDepositContract(poolAddress: string): Promise<string>;
+    directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
 }
