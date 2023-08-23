@@ -33,7 +33,7 @@ export abstract class Client {
 
   // active blockchain interaction
   public estimateTxFee(): Promise<TxFee> { throw new Error('unimplemented'); }
-  public sendTransaction(to: string, amount: bigint, data: string): Promise<string> { throw new Error('unimplemented'); }
+  public sendTransaction(to: string, amount: bigint, data: string, selector?: string): Promise<string> { throw new Error('unimplemented'); }
   public abstract transfer(to: string, amount: string): Promise<string>;
   public abstract transferToken(tokenAddress: string, to: string, amount: string): Promise<string>
   public approve(tokenAddress: string, spender: string, amount: string): Promise<string> { throw new Error('unimplemented'); }

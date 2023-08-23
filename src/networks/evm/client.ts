@@ -6,10 +6,10 @@ import { provider } from 'web3-core';
 import { TransactionConfig } from 'web3-core';
 import { TxFee, TxStatus } from '../../networks/transaction';
 import { convertTransaction } from './utils';
-import tokenAbi from './token-abi.json';
-import minterAbi from './minter-abi.json';
-import poolAbi from './pool-abi.json';
-import ddAbi from './dd-abi.json';
+import tokenAbi from './abi/token-abi.json';
+import minterAbi from './abi/minter-abi.json';
+import poolAbi from './abi/pool-abi.json';
+import ddAbi from './abi/dd-abi.json';
 import { Client } from '../../networks/client';
 import HDWalletProvider from '@truffle/hdwallet-provider';
 import { Config } from '../../index';
@@ -70,7 +70,7 @@ export class EthereumClient extends Client {
         res = Number(await this.token.methods.decimals().call());
         this.tokenDecimals.set(tokenAddress, res);
       } catch (err) {
-        console.log(`Cannot fetch decimals for the token ${tokenAddress}, using default (18). Reason: ${err.message}`);
+        console.warn(`Cannot fetch decimals for the token ${tokenAddress}, using default (18). Reason: ${err.message}`);
         res = 18;
       }
     }
@@ -96,7 +96,7 @@ export class EthereumClient extends Client {
   
   public async toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<string> {
     const decimals = BigInt(await this.decimals(tokenAddress));
-    const wei = BigInt(this.web3.utils.toWei(humanAmount, 'ether'));
+    const wei = BigInt(this.toBaseUnit(humanAmount));
 
     const baseDecimals = 18n;
     const baseUnits = (decimals <= baseDecimals) ?
@@ -114,7 +114,7 @@ export class EthereumClient extends Client {
                 BigInt(baseAmount) * (10n ** (baseDecimals - decimals)) :
                 BigInt(baseAmount) / (10n ** (decimals - baseDecimals));
 
-    return this.web3.utils.fromWei(wei.toString(10), 'ether');
+    return this.fromBaseUnit(wei.toString(10));
   }
 
 
