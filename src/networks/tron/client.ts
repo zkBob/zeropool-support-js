@@ -215,7 +215,7 @@ export class TronClient extends Client {
         const token = await this.getTokenContract(tokenAddress);
         let result = await token.allowance(await this.getAddress(), spender).call();
 
-        return result.toString(10);
+        return BigInt(result);
     }
 
 
