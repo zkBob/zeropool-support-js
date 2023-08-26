@@ -1,10 +1,10 @@
 import { Client } from "../client";
 import { Config } from '../../index';
 import { TxFee } from "../transaction";
-
 import tokenAbi from './abi/usdt-abi.json';
-import poolAbi from './abi/pool-abi.json';
-import ddAbi from './abi/dd-abi.json';
+import poolAbi from '../evm/abi/pool-abi.json';
+import ddAbi from '../evm/abi/dd-abi.json';
+import { hexToBytes } from "web3-utils";
 
 const TronWeb = require('tronweb')
 const bs58 = require('bs58')
@@ -275,12 +275,17 @@ export class TronClient extends Client {
     // ------------------------------------------------------------------------------
 
     public async sign(data: string): Promise<string> {
-        return await this.tronWeb.trx.sign(data);
+        if (typeof data === 'string') {
+            const bytes = hexToBytes(data);
+            return this.tronWeb.trx.signMessageV2(bytes);
+        }
+
+        throw new Error('Incorrect signing request: data must be a hex string');
     }
 
     public async signTypedData(data: any): Promise<string> {
         if (data && data.domain && data.types && data.message) {
-            return await this.tronWeb.trx._signTypedData(data.domain, data.types, data.message);
+            return this.tronWeb.trx._signTypedData(data.domain, data.types, data.message);
         }
 
         throw new Error('Incorrect signing request: it must contains at least domain, types and message keys')
