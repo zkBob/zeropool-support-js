@@ -14,7 +14,7 @@ export interface Transaction {
     timestamp: number;
 }
 export interface TxFee {
-    gas: string;
-    gasPrice: string;
+    gas: bigint;
+    gasPrice: bigint;
     fee: string;
 }

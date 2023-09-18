@@ -5,6 +5,7 @@ import tokenAbi from './abi/usdt-abi.json';
 import poolAbi from '../evm/abi/pool-abi.json';
 import ddAbi from '../evm/abi/dd-abi.json';
 import { hexToBytes } from "web3-utils";
+import promiseRetry from 'promise-retry';
 
 const TronWeb = require('tronweb')
 const bs58 = require('bs58')
@@ -12,6 +13,7 @@ const bs58 = require('bs58')
 const DEFAULT_DECIMALS = 6;
 const DEFAULT_CHAIN_ID = 0x2b6653dc;
 const DEFAULT_ENERGY_FEE = 420;
+const RETRY_COUNT = 5;
 
 export class TronClient extends Client {
     protected rpcUrl: string;
@@ -46,6 +48,33 @@ export class TronClient extends Client {
         
     }
 
+    private contractCallRetry(contract: any, method: string, args: any[] = []): Promise<any> {
+        return this.commonRpcRetry(async () => {
+                return await contract[method](...args).call()
+            },
+            `[SupportJS] Contract call (${method}) error`,
+            RETRY_COUNT,
+        );
+      }
+
+    private commonRpcRetry(closure: () => any, errorPattern: string, retriesCnt: number): Promise<any> {
+        return promiseRetry(
+            async (retry, attempt) => {
+            try {
+                return await closure();
+            } catch (e) {
+                console.error(`${errorPattern ?? '[SupportJS] Error occured'} [attempt #${attempt}]: ${e.message}`);
+                retry(e)
+            }
+            },
+            {
+            retries: retriesCnt,
+            minTimeout: 500,
+            maxTimeout: 500,
+            }
+        );
+    }
+
     protected async getTokenContract(tokenAddres: string): Promise<any> {
         let contract = this.tokenContracts.get(tokenAddres);
         if (!contract) {
@@ -53,7 +82,7 @@ export class TronClient extends Client {
             if (contract) {
                 this.tokenContracts.set(tokenAddres, contract);
             } else {
-                throw new Error(`Cannot initialize a contact object for the token ${tokenAddres}`);
+                throw new Error(`[SupportJS] Cannot initialize a contact object for the token ${tokenAddres}`);
             }
         }
 
@@ -67,7 +96,7 @@ export class TronClient extends Client {
             if (contract) {
                 this.poolContracts.set(poolAddres, contract);
             } else {
-                throw new Error(`Cannot initialize a contact object for the pool ${poolAddres}`);
+                throw new Error(`[SupportJS] Cannot initialize a contact object for the pool ${poolAddres}`);
             }
         }
 
@@ -81,7 +110,7 @@ export class TronClient extends Client {
             if (contract) {
                 this.ddContracts.set(ddQueueAddress, contract);
             } else {
-                throw new Error(`Cannot initialize a contact object for the DD queue ${ddQueueAddress}`);
+                throw new Error(`[SupportJS] Cannot initialize a contact object for the DD queue ${ddQueueAddress}`);
             }
         }
 
@@ -98,16 +127,18 @@ export class TronClient extends Client {
             const tryUrls = [`${this.rpcUrl}jsonrpc`, this.rpcUrl];
             for (let aAttemptUrl of tryUrls) {
                 try {
-                    const chainId = await this.fetchChainIdFrom(aAttemptUrl);
+                    const chainId = await this.commonRpcRetry(() => {
+                      return this.fetchChainIdFrom(aAttemptUrl);  
+                    }, `[SupportJS] Cannot get chain ID from ${aAttemptUrl}`, 2);
                     this.chainId = chainId;
                     return chainId;
                 } catch(err) {
-                    console.warn(`Cannot fetch chainId from ${aAttemptUrl}: ${err.message}`);
+                    console.warn(`[SupportJS] Cannot fetch chainId from ${aAttemptUrl}: ${err.message}`);
                 }
             }
 
             // unable to fetch
-            console.warn(`Unable to get actual chainId. Will using default for Tron mainnet (${DEFAULT_CHAIN_ID})`)
+            console.warn(`[SupportJS] Unable to get actual chainId. Will using default for Tron mainnet (${DEFAULT_CHAIN_ID})`)
 
             return DEFAULT_CHAIN_ID;
         }
@@ -120,14 +151,14 @@ export class TronClient extends Client {
         if (!res) {
             try {
                 const token = await this.getTokenContract(tokenAddress);
-                res = await token.symbol().call();
+                res = await this.contractCallRetry(token, 'symbol');
                 if (typeof res === 'string') {
                     this.tokenSymbols.set(tokenAddress, res);
                 } else {
-                    throw new Error(`returned token symbol has ${typeof res} type (string expected)`);
+                    throw new Error(`[SupportJS] returned token symbol has ${typeof res} type (string expected)`);
                 }
             } catch (err) {
-                console.warn(`Cannot fetch symbol for the token ${tokenAddress}. Reason: ${err.message}`);
+                console.warn(`[SupportJS] Cannot fetch symbol for the token ${tokenAddress}. Reason: ${err.message}`);
             }
         }
         
@@ -139,10 +170,10 @@ export class TronClient extends Client {
         if (!res) {
             try {
                 const token = await this.getTokenContract(tokenAddress);
-                res = Number(await token.decimals().call());
+                res = Number(await this.contractCallRetry(token, 'decimals'));
                 this.tokenDecimals.set(tokenAddress, res);
             } catch (err) {
-                console.warn(`Cannot fetch decimals for the token ${tokenAddress}, using default (${DEFAULT_DECIMALS}). Reason: ${err.message}`);
+                console.warn(`[SupportJS] Cannot fetch decimals for the token ${tokenAddress}, using default (${DEFAULT_DECIMALS}). Reason: ${err.message}`);
             }
         }
         
@@ -156,15 +187,15 @@ export class TronClient extends Client {
         return 'sun';
     }
     
-    public toBaseUnit(humanAmount: string): string {
-        return TronWeb.toSun(Number(humanAmount));
+    public toBaseUnit(humanAmount: string): bigint {
+        return BigInt(TronWeb.toSun(Number(humanAmount)));
     }
 
-    public fromBaseUnit(baseAmount: string): string {
-        return TronWeb.fromSun(baseAmount)
+    public fromBaseUnit(baseAmount: bigint): string {
+        return TronWeb.fromSun(baseAmount.toString())
     }
     
-    public async toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<string> {
+    public async toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint> {
         const decimals = BigInt(await this.decimals(tokenAddress));
         const wei = BigInt(this.toBaseUnit(humanAmount));
 
@@ -173,10 +204,10 @@ export class TronClient extends Client {
                         wei / (10n ** (baseDecimals - decimals)) :
                         wei * (10n ** (decimals - baseDecimals));
 
-        return baseUnits.toString(10);
+        return baseUnits;
     }
 
-    public async fromBaseTokenUnit(tokenAddress: string, baseAmount: string): Promise<string> {
+    public async fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string> {
         const decimals = BigInt(await this.decimals(tokenAddress));
 
         const baseDecimals = 6n;
@@ -184,7 +215,7 @@ export class TronClient extends Client {
                     BigInt(baseAmount) * (10n ** (baseDecimals - decimals)) :
                     BigInt(baseAmount) / (10n ** (decimals - baseDecimals));
 
-        return this.fromBaseUnit(wei.toString(10));
+        return this.fromBaseUnit(wei);
     }
 
 
@@ -196,24 +227,26 @@ export class TronClient extends Client {
         return this.address;
     }
 
-    public async getBalance(): Promise<string> {
-        return String(await this.tronWeb.trx.getBalance(await this.getAddress()));
+    public async getBalance(): Promise<bigint> {
+        return this.commonRpcRetry(async () => {
+            return BigInt(await this.tronWeb.trx.getBalance(await this.getAddress()));    
+        }, '[SupportJS] Cannot get native balance', RETRY_COUNT);
     }
 
-    public async getTokenBalance(tokenAddress: string): Promise<string> {
+    public async getTokenBalance(tokenAddress: string): Promise<bigint> {
         const token = await this.getTokenContract(tokenAddress);
-        let result = await token.balanceOf(await this.getAddress()).call();
+        let result = await this.contractCallRetry(token, 'balanceOf', [await this.getAddress()]);
 
-        return result.toString(10);
+        return BigInt(result);
     }
 
-    public async getTokenNonce(tokenAddress: string): Promise<string> {
-        throw new Error("Method not implemented.");
+    public async getTokenNonce(tokenAddress: string): Promise<number> {
+        throw new Error("[SupportJS] Method not implemented");
     }
     
     public async allowance(tokenAddress: string, spender: string): Promise<bigint> {
         const token = await this.getTokenContract(tokenAddress);
-        let result = await token.allowance(await this.getAddress(), spender).call();
+        let result = await this.contractCallRetry(token, 'allowance', [await this.getAddress(), spender]);
 
         return BigInt(result);
     }
@@ -224,20 +257,30 @@ export class TronClient extends Client {
     // ------------------------------------------------------------------------------
 
     public async estimateTxFee(): Promise<TxFee> {
-        throw new Error("Method not implemented.");
+        throw new Error("[SupportJS] Method not implemented.");
     }
 
     public async sendTransaction(to: string, amount: bigint, data: string, selector: string): Promise<string> {
         // TODO: check it! Add validation 
-        let tx = await this.tronWeb.transactionBuilder.triggerSmartContract(to, selector, { feeLimit: 100_000_000, rawParameter: this.truncateHexPrefix(data), callValue: Number(amount) }, []);
+        const txObject = {
+            feeLimit: 100_000_000,
+            rawParameter: this.truncateHexPrefix(data),
+            callValue: Number(amount)
+        };
+        let tx = await this.tronWeb.transactionBuilder.triggerSmartContract(to, selector, txObject, []);
         const signedTx = await this.tronWeb.trx.sign(tx.transaction);
-        const result = await this.tronWeb.trx.sendRawTransaction(signedTx);
+
+        const result = await this.commonRpcRetry(async () => {
+            return this.tronWeb.trx.sendRawTransaction(signedTx);
+        }, '[SupportJS] Unable to send transaction', RETRY_COUNT);
 
         return result.txid;
     }
 
-    public async transfer(to: string, amount: string): Promise<string> {
-        const result = await this.tronWeb.trx.sendTransaction(to, amount);        
+    public async transfer(to: string, amount: bigint): Promise<string> {
+        const result = await await this.commonRpcRetry(async () => {
+            return this.tronWeb.trx.sendTransaction(to, amount.toString(10));
+        }, '[SupportJS] Unable to send transaction', RETRY_COUNT);
         if (result.result == true && result.transaction) {
             return result.transaction.txID;
         }
@@ -248,23 +291,23 @@ export class TronClient extends Client {
         throw new Error(`${result.code ?? 'TX ERROR'}`);
     }
 
-    public async transferToken(tokenAddress: string, to: string, amount: string): Promise<string> {
+    public async transferToken(tokenAddress: string, to: string, amount: bigint): Promise<string> {
         const selector = 'transfer(address,uint256)';
-        const parameters = [{type: 'address', value: to}, {type: 'uint256', value: amount}]
+        const parameters = [{type: 'address', value: to}, {type: 'uint256', value: amount.toString(10)}]
 
         return this.verifyAndSendTx(tokenAddress, selector, parameters)
     }
 
-    public async approve(tokenAddress: string, spender: string, amount: string): Promise<string> {
+    public async approve(tokenAddress: string, spender: string, amount: bigint): Promise<string> {
         const selector = 'approve(address,uint256)';
-        const parameters = [{type: 'address', value: spender}, {type: 'uint256', value: amount}];
+        const parameters = [{type: 'address', value: spender}, {type: 'uint256', value: amount.toString(10)}];
         
         return this.verifyAndSendTx(tokenAddress, selector, parameters)
     }
     
-    public async increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string> {
+    public async increaseAllowance(tokenAddress: string, spender: string, additionalAmount: bigint): Promise<string> {
         const selector = 'increaseAllowance(address,uint256)';
-        const parameters = [{type: 'address', value: spender}, {type: 'uint256', value: additionalAmount}]
+        const parameters = [{type: 'address', value: spender}, {type: 'uint256', value: additionalAmount.toString(10)}]
         
         return this.verifyAndSendTx(tokenAddress, selector, parameters)
     }
@@ -300,7 +343,8 @@ export class TronClient extends Client {
         let ddContractAddr = this.ddContractAddresses.get(poolAddress);
         if (!ddContractAddr) {
             const pool = await this.getPoolContract(poolAddress);
-            ddContractAddr = TronWeb.address.fromHex(await pool.direct_deposit_queue().call());
+            const ddRawAddr = await this.contractCallRetry(pool, 'direct_deposit_queue');
+            ddContractAddr = TronWeb.address.fromHex(ddRawAddr);
             if (typeof ddContractAddr === 'string') {
                 this.ddContractAddresses.set(poolAddress, ddContractAddr);
             } else {
@@ -312,13 +356,13 @@ export class TronClient extends Client {
     }
 
 
-    public async directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string> {
+    public async directDeposit(poolAddress: string, amount: bigint, zkAddress: string): Promise<string> {
         const address = await this.getAddress();
         let ddContractAddr = await this.getDirectDepositContract(poolAddress);
         const zkAddrBytes = `0x${Buffer.from(bs58.decode(zkAddress.substring(zkAddress.indexOf(':') + 1))).toString('hex')}`;
 
         const selector = 'directDeposit(address,uint256,bytes)';
-        const parameters = [{type: 'address', value: address}, {type: 'uint256', value: amount}, {type: 'bytes', value: zkAddrBytes}];
+        const parameters = [{type: 'address', value: address}, {type: 'uint256', value: amount.toString(10)}, {type: 'bytes', value: zkAddrBytes}];
         
         return this.verifyAndSendTx(ddContractAddr, selector, parameters);
     }
@@ -385,7 +429,7 @@ export class TronClient extends Client {
             const accResources = await this.tronWeb.trx.getAccountResources(await this.getAddress());
             return Number(accResources.EnergyLimit ?? 0) - Number(accResources.EnergyUsed ?? 0);
         } catch(err) {
-            console.warn(`Cannot get account energy: ${err}`);
+            console.warn(`[SupportJS] Cannot get account energy: ${err}`);
         }
         
         return 0;
@@ -422,7 +466,9 @@ export class TronClient extends Client {
         tx = await this.tronWeb.transactionBuilder.triggerSmartContract(contractAddress, selector, { feeLimit }, parameters);
         // sign and send
         const signedTx = await this.tronWeb.trx.sign(tx.transaction);
-        const result = await this.tronWeb.trx.sendRawTransaction(signedTx);
+        const result = await this.commonRpcRetry(() => {
+            return this.tronWeb.trx.sendRawTransaction(signedTx);
+        }, '[SupportJS] Cannot send raw transactions', RETRY_COUNT);
 
         return result.txid;
     }

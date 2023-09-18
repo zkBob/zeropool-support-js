@@ -16,7 +16,7 @@ export interface Transaction {
 }
 
 export interface TxFee {
-  gas: string;
-  gasPrice: string;
-  fee: string;
+  gas: bigint;
+  gasPrice: bigint;
+  fee: string;  // human-readable
 }
