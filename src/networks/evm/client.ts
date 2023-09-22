@@ -88,6 +88,12 @@ export class EthereumClient extends Client {
     }, '[SupportJS] Cannot get chain ID', RETRY_COUNT);
   }
 
+  public async getBlockNumber(): Promise<number> {
+    return this.commonRpcRetry(async () => {
+      return this.web3.eth.getBlockNumber();
+    }, '[SupportJS] Cannot get block number', RETRY_COUNT);
+  }
+
   public async getTokenName(tokenAddress: string): Promise<string> {
     return this.contractCallRetry(this.token, tokenAddress, 'name');
   }

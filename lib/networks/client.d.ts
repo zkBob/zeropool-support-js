@@ -1,10 +1,11 @@
 import { TxFee } from './transaction';
 /** Account number or address */
-export type AccountId = number | string;
+export declare type AccountId = number | string;
 export declare abstract class Client {
     transactionUrl: string;
     abstract haltClient(): void;
     getChainId(): Promise<number>;
+    abstract getBlockNumber(): Promise<number>;
     abstract getTokenName(tokenAddress: string): Promise<string>;
     abstract decimals(tokenAddress: string): Promise<number>;
     abstract baseUnit(): string;

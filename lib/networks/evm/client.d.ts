@@ -17,6 +17,7 @@ export declare class EthereumClient extends Client {
     private contractCallRetry;
     private commonRpcRetry;
     getChainId(): Promise<number>;
+    getBlockNumber(): Promise<number>;
     getTokenName(tokenAddress: string): Promise<string>;
     decimals(tokenAddress: string): Promise<number>;
     baseUnit(): string;

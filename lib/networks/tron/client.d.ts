@@ -21,6 +21,7 @@ export declare class TronClient extends Client {
     protected getPoolContract(poolAddres: string): Promise<any>;
     protected getDdContract(ddQueueAddress: string): Promise<any>;
     getChainId(): Promise<number>;
+    getBlockNumber(): Promise<number>;
     getTokenName(tokenAddress: string): Promise<string>;
     decimals(tokenAddress: string): Promise<number>;
     baseUnit(): string;

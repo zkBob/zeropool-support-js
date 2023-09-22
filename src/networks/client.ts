@@ -11,6 +11,7 @@ export abstract class Client {
 
   // getting neccessary data from the blockchain
   public getChainId(): Promise<number> { throw new Error('unimplemented'); };
+  public abstract getBlockNumber(): Promise<number>;
   public abstract getTokenName(tokenAddress: string): Promise<string>;
   public abstract decimals(tokenAddress: string): Promise<number>;
 

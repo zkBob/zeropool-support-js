@@ -145,6 +145,13 @@ export class TronClient extends Client {
 
         return this.chainId;
     }
+
+    public async getBlockNumber(): Promise<number> {
+        return this.commonRpcRetry(async () => {
+            const block = await this.tronWeb.trx.getCurrentBlock();
+            return block.block_header.raw_data.number;
+        }, '[SupportJS] Cannot get block number', RETRY_COUNT);
+    }
     
     public async getTokenName(tokenAddress: string): Promise<string> {
         let res = this.tokenSymbols.get(tokenAddress);
