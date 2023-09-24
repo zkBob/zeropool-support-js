@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import BN from 'bn.js';
 import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
+import { AbiItem, isAddress } from 'web3-utils';
 import { TransactionReceipt, provider } from 'web3-core';
 import { TransactionConfig } from 'web3-core';
 import { TxFee, TxStatus } from '../../networks/transaction';
@@ -153,6 +153,10 @@ export class EthereumClient extends Client {
     return this.fromBaseUnit(wei);
   }
 
+  public validateAddress(address: string): boolean {
+    return isAddress(address);
+  }
+
 
   // ----------------=========< Fetching address info >=========-------------------
   // | Native&token balances, nonces, etc                                         |
@@ -220,9 +224,8 @@ export class EthereumClient extends Client {
   }
 
   private async sendSignedTx(rawSignedTx: string): Promise<TransactionReceipt> {
-    return this.commonRpcRetry(async () => {
-      return this.web3.eth.sendSignedTransaction(rawSignedTx);
-    }, '[SupportJS] Unable to send transaction', RETRY_COUNT);
+    // do not retry sending here to avoid possible side effects
+    return this.web3.eth.sendSignedTransaction(rawSignedTx);
   }
 
   public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {

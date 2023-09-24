@@ -21,8 +21,8 @@ export abstract class Client {
   public abstract fromBaseUnit(baseAmount: bigint): string;
   public abstract toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint>;
   public abstract fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string>;
-  public getTransactionUrl(hash: string): string { return this.transactionUrl.replace('{{hash}}', hash); }
-
+  public abstract validateAddress(address: string): boolean;
+  public getTransactionUrl(hash: string): string { return this.transactionUrl.replace('{{hash}}', hash); };
 
   // fetching address info
   public abstract getAddress(): Promise<string>

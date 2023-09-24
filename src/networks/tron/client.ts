@@ -225,6 +225,11 @@ export class TronClient extends Client {
         return this.fromBaseUnit(wei);
     }
 
+    public validateAddress(address: string): boolean {
+        return TronWeb.isAddress(address);
+      }
+    
+
 
     // ----------------=========< Fetching address info >=========-------------------
     // | Native&token balances, nonces, etc                                         |
@@ -473,9 +478,8 @@ export class TronClient extends Client {
         tx = await this.tronWeb.transactionBuilder.triggerSmartContract(contractAddress, selector, { feeLimit }, parameters);
         // sign and send
         const signedTx = await this.tronWeb.trx.sign(tx.transaction);
-        const result = await this.commonRpcRetry(() => {
-            return this.tronWeb.trx.sendRawTransaction(signedTx);
-        }, '[SupportJS] Cannot send raw transactions', RETRY_COUNT);
+        // do not retry sending here to avoid possible side effects
+        const result = await this.tronWeb.trx.sendRawTransaction(signedTx);
 
         return result.txid;
     }

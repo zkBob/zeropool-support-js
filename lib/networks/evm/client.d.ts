@@ -25,6 +25,7 @@ export declare class EthereumClient extends Client {
     fromBaseUnit(baseAmount: bigint): string;
     toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint>;
     fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string>;
+    validateAddress(address: string): boolean;
     getAddress(): Promise<string>;
     getBalance(): Promise<bigint>;
     getTokenBalance(tokenAddress: string): Promise<bigint>;

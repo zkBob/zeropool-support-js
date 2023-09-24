@@ -1,6 +1,6 @@
 import { TxFee } from './transaction';
 /** Account number or address */
-export declare type AccountId = number | string;
+export type AccountId = number | string;
 export declare abstract class Client {
     transactionUrl: string;
     abstract haltClient(): void;
@@ -13,6 +13,7 @@ export declare abstract class Client {
     abstract fromBaseUnit(baseAmount: bigint): string;
     abstract toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint>;
     abstract fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string>;
+    abstract validateAddress(address: string): boolean;
     getTransactionUrl(hash: string): string;
     abstract getAddress(): Promise<string>;
     getPublicKey(): Promise<string>;
