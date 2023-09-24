@@ -225,7 +225,11 @@ export class EthereumClient extends Client {
 
   private async sendSignedTx(rawSignedTx: string): Promise<TransactionReceipt> {
     // do not retry sending here to avoid possible side effects
-    return this.web3.eth.sendSignedTransaction(rawSignedTx);
+    try {
+      return this.web3.eth.sendSignedTransaction(rawSignedTx);
+    } catch (err) {
+      throw new Error(`[SupportJS] Cannot send transaction: ${err.message}`);
+    }
   }
 
   public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {
