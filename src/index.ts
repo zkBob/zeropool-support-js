@@ -28,6 +28,7 @@ function networkType(chainId: number): SupportedNetwork | undefined {
 
 export interface Config {
     transactionUrl: string;
+    gasMultiplier?: number;
 }
 
 export class ClientFactory {

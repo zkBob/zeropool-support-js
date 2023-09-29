@@ -28,7 +28,7 @@ export class EthereumClient extends Client {
   private ddContractAddresses = new Map<string, string>();    // poolContractAddress -> directDepositContractAddress
   private tokenDecimals = new Map<string, number>();  // tokenAddress -> decimals
 
-  public gasMultiplier: number = 1.0;
+  private gasMultiplier: number;
 
   constructor(provider: HDWalletProvider, config: Config = { transactionUrl: '{{hash}}' }) {
     super();
@@ -39,6 +39,7 @@ export class EthereumClient extends Client {
     this.pool = new this.web3.eth.Contract(poolAbi as AbiItem[]) as Contract;
     this.dd = new this.web3.eth.Contract(ddAbi as AbiItem[]) as Contract;
     this.transactionUrl = config.transactionUrl;
+    this.gasMultiplier = config.gasMultiplier ?? 1.0;
   }
 
   public haltClient() {

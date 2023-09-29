@@ -11,7 +11,7 @@ export declare class EthereumClient extends Client {
     private dd;
     private ddContractAddresses;
     private tokenDecimals;
-    gasMultiplier: number;
+    private gasMultiplier;
     constructor(provider: HDWalletProvider, config?: Config);
     haltClient(): void;
     private contractCallRetry;
