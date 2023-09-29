@@ -33,7 +33,7 @@ export declare class EthereumClient extends Client {
     allowance(tokenAddress: string, spender: string): Promise<bigint>;
     estimateTxFee(txObject?: any): Promise<TxFee>;
     private getNativeNonce;
-    private sendSignedTx;
+    private signAndSendTx;
     sendTransaction(to: string, amount: bigint, data: string): Promise<string>;
     transfer(to: string, amount: bigint): Promise<string>;
     transferToken(tokenAddress: string, to: string, amount: bigint): Promise<string>;

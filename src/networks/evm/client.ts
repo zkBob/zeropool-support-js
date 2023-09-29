@@ -106,8 +106,7 @@ export class EthereumClient extends Client {
         res = Number(await await this.contractCallRetry(this.token, tokenAddress, 'decimals'));
         this.tokenDecimals.set(tokenAddress, res);
       } catch (err) {
-        console.warn(`[SupportJS] Cannot fetch decimals for the token ${tokenAddress}, using default (18). Reason: ${err.message}`);
-        res = 18;
+        throw new Error(`[SupportJS] Cannot fetch decimals for the token ${tokenAddress}: ${err.message}`);
       }
     }
     
@@ -223,10 +222,17 @@ export class EthereumClient extends Client {
     }, '[SupportJS] Cannot get native nonce', RETRY_COUNT);
   }
 
-  private async sendSignedTx(rawSignedTx: string): Promise<TransactionReceipt> {
-    // do not retry sending here to avoid possible side effects
+  private async signAndSendTx(txObject: TransactionConfig): Promise<TransactionReceipt> {
     try {
-      return this.web3.eth.sendSignedTransaction(rawSignedTx);
+      const txFee = await this.estimateTxFee(txObject);
+      const nonce = await this.getNativeNonce();
+      txObject.gas = Number(txFee.gas);
+      txObject.gasPrice = `0x${txFee.gasPrice.toString(16)}`;
+      txObject.nonce = nonce;
+
+      const signedTx = await this.web3.eth.signTransaction(txObject);
+
+      return this.web3.eth.sendSignedTransaction(signedTx.raw);
     } catch (err) {
       throw new Error(`[SupportJS] Cannot send transaction: ${err.message}`);
     }
@@ -241,32 +247,18 @@ export class EthereumClient extends Client {
       data,
     };
 
-    const txFee = await this.estimateTxFee(txObject);
-    const nonce = await this.getNativeNonce();
-    txObject.gas = Number(txFee.gas);
-    txObject.gasPrice = `0x${BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-
-    const receipt = await this.sendSignedTx(signedTx.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
   public async transfer(to: string, amount: bigint): Promise<string> {
-    const from = await this.getAddress();
-    const nonce = await this.getNativeNonce();
-    const txFee = await this.estimateTxFee();
-    const signed = await this.web3.eth.signTransaction({
-      from,
+    const txObject: TransactionConfig = {
+      from: await this.getAddress(),
       to,
       value: amount.toString(),
-      nonce,
-      gas: txFee.gas.toString(),
-      gasPrice: BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(),
-    });
+    };
 
-    const receipt = await this.sendSignedTx(signed.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
@@ -279,14 +271,7 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const txFee = await this.estimateTxFee(txObject);
-    const nonce = await this.getNativeNonce();
-    txObject.gas = txFee.gas.toString();
-    txObject.gasPrice = `0x${BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.sendSignedTx(signedTx.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
@@ -299,14 +284,7 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const txFee = await this.estimateTxFee(txObject);
-    const nonce = await this.getNativeNonce();
-    txObject.gas = txFee.gas.toString();
-    txObject.gasPrice = `0x${BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.sendSignedTx(signedTx.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
@@ -319,14 +297,7 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const txFee = await this.estimateTxFee(txObject);
-    const nonce = await this.getNativeNonce();
-    txObject.gas = txFee.gas.toString();
-    txObject.gasPrice = `0x${BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.sendSignedTx(signedTx.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
@@ -339,14 +310,7 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const txFee = await this.estimateTxFee(txObject);
-    const nonce = await this.getNativeNonce();
-    txObject.gas = txFee.gas.toString();
-    txObject.gasPrice = `0x${BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.sendSignedTx(signedTx.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
@@ -423,14 +387,7 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const txFee = await this.estimateTxFee(txObject);
-    const nonce = await this.getNativeNonce();
-    txObject.gas = txFee.gas.toString();
-    txObject.gasPrice = `0x${BigInt(Math.ceil(Number(txFee.gasPrice) * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.sendSignedTx(signedTx.raw);
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 }
