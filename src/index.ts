@@ -11,12 +11,12 @@ export { Client } from './networks/client';
 export { EthereumClient } from './networks/evm';
 export { TronClient } from './networks/tron'
 
-export enum SupportedNetwork {
+enum SupportedNetwork {
     EvmNetwork,
     TronNetwork,
 }
 
-export function networkType(chainId: number): SupportedNetwork | undefined {
+function networkType(chainId: number): SupportedNetwork | undefined {
     if ([0x2b6653dc, 0x94a9059e].includes(chainId)) {
         return SupportedNetwork.TronNetwork;
     } else if ([1, 137, 10, 11155111, 5, 420, 1337, 31337].includes(chainId)) {
