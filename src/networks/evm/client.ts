@@ -1,11 +1,9 @@
 import Web3 from 'web3';
-import BN from 'bn.js';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem, isAddress } from 'web3-utils';
 import { TransactionReceipt, provider } from 'web3-core';
 import { TransactionConfig } from 'web3-core';
-import { TxFee, TxStatus } from '../../networks/transaction';
-import { convertTransaction } from './utils';
+import { TxFee } from '../../networks/transaction';
 import tokenAbi from './abi/token-abi.json';
 import minterAbi from './abi/minter-abi.json';
 import poolAbi from './abi/pool-abi.json';
