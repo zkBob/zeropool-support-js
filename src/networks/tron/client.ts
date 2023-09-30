@@ -10,8 +10,6 @@ import promiseRetry from 'promise-retry';
 const TronWeb = require('tronweb')
 const bs58 = require('bs58')
 
-const DEFAULT_DECIMALS = 6;
-const DEFAULT_CHAIN_ID = 0x2b6653dc;
 const DEFAULT_ENERGY_FEE = 420;
 const RETRY_COUNT = 5;
 
@@ -75,28 +73,28 @@ export class TronClient extends Client {
         );
     }
 
-    protected async getTokenContract(tokenAddres: string): Promise<any> {
-        let contract = this.tokenContracts.get(tokenAddres);
+    protected async getTokenContract(tokenAddress: string): Promise<any> {
+        let contract = this.tokenContracts.get(tokenAddress);
         if (!contract) {
-            contract = await this.tronWeb.contract(tokenAbi, tokenAddres);
+            contract = await this.tronWeb.contract(tokenAbi, tokenAddress);
             if (contract) {
-                this.tokenContracts.set(tokenAddres, contract);
+                this.tokenContracts.set(tokenAddress, contract);
             } else {
-                throw new Error(`[SupportJS] Cannot initialize a contact object for the token ${tokenAddres}`);
+                throw new Error(`[SupportJS] Cannot initialize a contact object for the token ${tokenAddress}`);
             }
         }
 
         return contract;
     }
 
-    protected async getPoolContract(poolAddres: string): Promise<any> {
-        let contract = this.poolContracts.get(poolAddres);
+    protected async getPoolContract(poolAddress: string): Promise<any> {
+        let contract = this.poolContracts.get(poolAddress);
         if (!contract) {
-            contract = await this.tronWeb.contract(poolAbi, poolAddres);
+            contract = await this.tronWeb.contract(poolAbi, poolAddress);
             if (contract) {
-                this.poolContracts.set(poolAddres, contract);
+                this.poolContracts.set(poolAddress, contract);
             } else {
-                throw new Error(`[SupportJS] Cannot initialize a contact object for the pool ${poolAddres}`);
+                throw new Error(`[SupportJS] Cannot initialize a contact object for the pool ${poolAddress}`);
             }
         }
 
@@ -138,9 +136,7 @@ export class TronClient extends Client {
             }
 
             // unable to fetch
-            console.warn(`[SupportJS] Unable to get actual chainId. Will using default for Tron mainnet (${DEFAULT_CHAIN_ID})`)
-
-            return DEFAULT_CHAIN_ID;
+            throw new Error('[SupportJS] Unable to get actual chainId')
         }
 
         return this.chainId;
@@ -175,16 +171,12 @@ export class TronClient extends Client {
     public async decimals(tokenAddress: string): Promise<number> {
         let res = this.tokenDecimals.get(tokenAddress);
         if (!res) {
-            try {
-                const token = await this.getTokenContract(tokenAddress);
-                res = Number(await this.contractCallRetry(token, 'decimals'));
-                this.tokenDecimals.set(tokenAddress, res);
-            } catch (err) {
-                console.warn(`[SupportJS] Cannot fetch decimals for the token ${tokenAddress}, using default (${DEFAULT_DECIMALS}). Reason: ${err.message}`);
-            }
+            const token = await this.getTokenContract(tokenAddress);
+            res = Number(await this.contractCallRetry(token, 'decimals'));
+            this.tokenDecimals.set(tokenAddress, res);
         }
         
-        return res ?? DEFAULT_DECIMALS;
+        return res;
     }
 
     // ------------------=========< Conversion routines >=========-------------------

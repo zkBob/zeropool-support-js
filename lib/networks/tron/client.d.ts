@@ -17,8 +17,8 @@ export declare class TronClient extends Client {
     haltClient(): void;
     private contractCallRetry;
     private commonRpcRetry;
-    protected getTokenContract(tokenAddres: string): Promise<any>;
-    protected getPoolContract(poolAddres: string): Promise<any>;
+    protected getTokenContract(tokenAddress: string): Promise<any>;
+    protected getPoolContract(poolAddress: string): Promise<any>;
     protected getDdContract(ddQueueAddress: string): Promise<any>;
     getChainId(): Promise<number>;
     getBlockNumber(): Promise<number>;
