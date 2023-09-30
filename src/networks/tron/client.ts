@@ -290,7 +290,7 @@ export class TronClient extends Client {
         }
 
         if (result.message) {
-            throw new Error(`${result.message ? this.tronWeb.toAscii(result.message) : 'no message'}`);    
+            throw new Error(`${this.tronWeb.toAscii(result.message)}`);    
         }
         throw new Error(`${result.code ?? 'TX ERROR'}`);
     }
