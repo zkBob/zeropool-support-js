@@ -1,6 +1,6 @@
 import { TxFee } from './transaction';
 /** Account number or address */
-export type AccountId = number | string;
+export declare type AccountId = number | string;
 export declare abstract class Client {
     transactionUrl: string;
     abstract haltClient(): void;

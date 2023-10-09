@@ -1,9 +1,10 @@
 {
-  "name": "zeropool-support-js",
+  "name": "zkbob-support-js",
   "version": "1.0.0",
+  "description": "zkBob basic web3 client (L1)",
   "license": "MIT",
   "author": "Dmitry Vdovin <voidxnull@gmail.com>",
-  "homepage": "https://github.com/zeropoolnetwork/zeropool-api-js",
+  "homepage": "https://github.com/zkBob/zkbob-support-js",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
