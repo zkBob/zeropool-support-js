@@ -3,46 +3,33 @@ import { TxFee } from './transaction';
 export declare type AccountId = number | string;
 export declare abstract class Client {
     transactionUrl: string;
+    abstract haltClient(): void;
+    getChainId(): Promise<number>;
+    abstract getBlockNumber(): Promise<number>;
+    abstract getTokenName(tokenAddress: string): Promise<string>;
+    abstract decimals(tokenAddress: string): Promise<number>;
+    abstract baseUnit(): string;
+    abstract toBaseUnit(humanAmount: string): bigint;
+    abstract fromBaseUnit(baseAmount: bigint): string;
+    abstract toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint>;
+    abstract fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string>;
+    abstract validateAddress(address: string): boolean;
+    getTransactionUrl(hash: string): string;
     abstract getAddress(): Promise<string>;
     getPublicKey(): Promise<string>;
-    getChainId(): Promise<number>;
-    /**
-     * Get native coin balance.
-     */
-    abstract getBalance(): Promise<string>;
-    getTokenBalance(tokenAddress: string): Promise<string>;
-    getTokenNonce(tokenAddress: string): Promise<string>;
-    getTokenName(tokenAddress: string): Promise<string>;
-    /**
-     * Transfer native coin.
-     * @param to destination address
-     * @param amount as base unit
-     */
-    abstract transfer(to: string, amount: string): Promise<string>;
-    transferToken(tokenAddress: string, to: string, amount: string): Promise<string>;
-    mint(tokenAddres: string, amount: string): Promise<string>;
-    approve(tokenAddress: string, spender: string, amount: string): Promise<string>;
-    increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string>;
+    abstract getBalance(): Promise<bigint>;
+    abstract getTokenBalance(tokenAddress: string): Promise<bigint>;
+    getTokenNonce(tokenAddress: string): Promise<number>;
     allowance(tokenAddress: string, spender: string): Promise<bigint>;
-    getDirectDepositContract(poolAddress: string): Promise<string>;
-    directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string>;
-    getTransactionUrl(hash: string): string;
-    decimals(tokenAddress: string): Promise<number>;
-    /**
-     * Convert human-readable representation of coin to smallest non-divisible (base) representation.
-     * @param amount
-     */
-    abstract toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
-    /**
-    * Convert coin represented with smallest non-divisible units to a human-readable representation.
-    * @param amount
-    */
-    abstract fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
-    /**
-     * Get estimated transaction fee.
-     */
-    estimateTxFee(): Promise<TxFee>;
+    estimateTxFee(txObject?: any): Promise<TxFee>;
+    sendTransaction(to: string, amount: bigint, data: string, selector?: string): Promise<string>;
+    abstract transfer(to: string, amount: bigint): Promise<string>;
+    abstract transferToken(tokenAddress: string, to: string, amount: bigint): Promise<string>;
+    approve(tokenAddress: string, spender: string, amount: bigint): Promise<string>;
+    increaseAllowance(tokenAddress: string, spender: string, additionalAmount: bigint): Promise<string>;
+    mint(tokenAddres: string, amount: bigint): Promise<string>;
     sign(data: string): Promise<string>;
     signTypedData(data: any): Promise<string>;
-    sendTransaction(to: string, amount: bigint, data: string): Promise<string>;
+    getDirectDepositContract(poolAddress: string): Promise<string>;
+    directDeposit(poolAddress: string, amount: bigint, zkAddress: string): Promise<string>;
 }

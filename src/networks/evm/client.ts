@@ -1,24 +1,24 @@
 import Web3 from 'web3';
-import BN from 'bn.js';
 import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
-import { provider } from 'web3-core';
+import { AbiItem, isAddress } from 'web3-utils';
+import { TransactionReceipt, provider } from 'web3-core';
 import { TransactionConfig } from 'web3-core';
-
-import { TxFee, TxStatus } from '../../networks/transaction';
-import { convertTransaction } from './utils';
-import tokenAbi from './token-abi.json';
-import minterAbi from './minter-abi.json';
-import poolAbi from './pool-abi.json';
-import ddAbi from './dd-abi.json';
+import { TxFee } from '../../networks/transaction';
+import tokenAbi from './abi/token-abi.json';
+import minterAbi from './abi/minter-abi.json';
+import poolAbi from './abi/pool-abi.json';
+import ddAbi from './abi/dd-abi.json';
 import { Client } from '../../networks/client';
+import HDWalletProvider from '@truffle/hdwallet-provider';
+import { Config } from '../../index';
+import promiseRetry from 'promise-retry';
 
 const bs58 = require('bs58')
 
-export interface Config {
-  transactionUrl: string;
-}
+const RETRY_COUNT = 5;
+
 export class EthereumClient extends Client {
+  private provider?: HDWalletProvider;
   private web3: Web3;
   private token: Contract;
   private minter: Contract;
@@ -28,86 +28,73 @@ export class EthereumClient extends Client {
   private ddContractAddresses = new Map<string, string>();    // poolContractAddress -> directDepositContractAddress
   private tokenDecimals = new Map<string, number>();  // tokenAddress -> decimals
 
-  public gasMultiplier: number = 1.0;
+  private gasMultiplier: number;
 
-  constructor(provider: provider, config: Config = { transactionUrl: '{{hash}}' }) {
+  constructor(provider: HDWalletProvider, config: Config = { transactionUrl: '{{hash}}' }) {
     super();
+    this.provider = provider;
     this.web3 = new Web3(provider);
     this.token = new this.web3.eth.Contract(tokenAbi as AbiItem[]) as Contract;
     this.minter = new this.web3.eth.Contract(minterAbi as AbiItem[]) as Contract;
     this.pool = new this.web3.eth.Contract(poolAbi as AbiItem[]) as Contract;
     this.dd = new this.web3.eth.Contract(ddAbi as AbiItem[]) as Contract;
     this.transactionUrl = config.transactionUrl;
+    this.gasMultiplier = config.gasMultiplier ?? 1.0;
   }
+
+  public haltClient() {
+    if (this.provider) {
+      this.provider.engine.stop();
+      delete this.provider;
+    }
+  }
+
+  private contractCallRetry(contract: Contract, address: string, method: string, args: any[] = []): Promise<any> {
+    return this.commonRpcRetry(async () => {
+            contract.options.address = address;
+            return await contract.methods[method](...args).call()
+        },
+        `[SupportJS] Contract call (${method}) error`,
+        RETRY_COUNT,
+    );
+  }
+
+  private commonRpcRetry(closure: () => any, errorPattern: string, retriesCnt: number): Promise<any> {
+      return promiseRetry(
+          async (retry, attempt) => {
+            try {
+                return await closure();
+            } catch (e) {
+                console.error(`${errorPattern ?? '[SupportJS] Error occured'} [attempt #${attempt}]: ${e.message}`);
+                retry(e)
+            }
+          },
+          {
+            retries: retriesCnt,
+            minTimeout: 500,
+            maxTimeout: 500,
+          }
+        );
+  }
+
+  // ------------------=========< Getting common data >=========-------------------
+  // | ChainID, token name, token decimals                                        |
+  // ------------------------------------------------------------------------------
 
   public async getChainId(): Promise<number> {
-    return (await this.web3.eth.net.getId());
+    return this.commonRpcRetry(async () => {
+      return this.web3.eth.net.getId();
+    }, '[SupportJS] Cannot get chain ID', RETRY_COUNT);
   }
 
-  public async getAddress(): Promise<string> {
-    return (await this.web3.eth.getAccounts())[0];
-  }
-
-  public async getBalance(): Promise<string> {
-    return await this.web3.eth.getBalance(await this.getAddress());
-  }
-
-  public async getTokenBalance(tokenAddress: string): Promise<string> {
-    const address = await this.getAddress();
-    this.token.options.address = tokenAddress; // TODO: Is it possible to pass the contract address to the `call` method?
-    const balance = this.token.methods.balanceOf(address).call();
-
-    return balance;
-  }
-
-  public async getTokenNonce(tokenAddress: string): Promise<string> {
-    const address = await this.getAddress();
-    this.token.options.address = tokenAddress;
-    const nonce = this.token.methods.nonces(address).call();
-
-    return nonce;
+  public async getBlockNumber(): Promise<number> {
+    return this.commonRpcRetry(async () => {
+      return this.web3.eth.getBlockNumber();
+    }, '[SupportJS] Cannot get block number', RETRY_COUNT);
   }
 
   public async getTokenName(tokenAddress: string): Promise<string> {
-    this.token.options.address = tokenAddress;
-    const name = this.token.methods.name().call();
-
-    return name;
-  }
-
-  public async transfer(to: string, amount: string): Promise<string> {
-    const from = await this.getAddress();
-    const nonce = await this.web3.eth.getTransactionCount(from);
-    const gas = await this.web3.eth.estimateGas({ from, to, value: amount });
-    const gasPrice = await this.web3.eth.getGasPrice();
-    const signed = await this.web3.eth.signTransaction({
-      from,
-      to,
-      value: amount,
-      nonce,
-      gas,
-      gasPrice: BigInt(Math.ceil(Number(gasPrice) * this.gasMultiplier)).toString(),
-    });
-
-    const receipt = await this.web3.eth.sendSignedTransaction(signed.raw);
-    const block = await this.web3.eth.getBlock(receipt.blockNumber);
-
-    let timestamp;
-    if (typeof block.timestamp == 'string') {
-      timestamp = parseInt(block.timestamp);
-    } else {
-      timestamp = block.timestamp;
-    }
-
-    let status = TxStatus.Completed;
-    if (!receipt.status) {
-      status = TxStatus.Error;
-    }
-
-    const nativeTx = await this.web3.eth.getTransaction(receipt.transactionHash);
-    convertTransaction(nativeTx, timestamp, status);
-
-    return receipt.transactionHash;
+    return this.contractCallRetry(this.token, tokenAddress, 'name');
   }
 
   public async decimals(tokenAddress: string): Promise<number> {
@@ -115,89 +102,166 @@ export class EthereumClient extends Client {
     if (!res) {
       try {
         this.token.options.address = tokenAddress;
-        res = Number(await this.token.methods.decimals().call());
+        res = Number(await await this.contractCallRetry(this.token, tokenAddress, 'decimals'));
         this.tokenDecimals.set(tokenAddress, res);
       } catch (err) {
-        console.log(`Cannot fetch decimals for the token ${tokenAddress}, using default (18). Reason: ${err.message}`);
-        res = 18;
+        throw new Error(`[SupportJS] Cannot fetch decimals for the token ${tokenAddress}: ${err.message}`);
       }
     }
     
     return res;
   }
 
-  /**
-   * Converts a token amount to the minimum supported resolution
-   * Resolution depends on token's `decimal` property
-   * @param amount in Ether\tokens
-   */
-  public async toBaseUnit(tokenAddress: string, amount: string): Promise<string> {
+  // ------------------=========< Conversion routines >=========-------------------
+  // | Between base units and human-readable                                      |
+  // ------------------------------------------------------------------------------
+
+  public baseUnit(): string {
+    return 'wei';
+  }
+
+  public toBaseUnit(humanAmount: string): bigint {
+    return BigInt(this.web3.utils.toWei(humanAmount, 'ether'));
+  }
+
+  public fromBaseUnit(baseAmount: bigint): string {
+    return this.web3.utils.fromWei(String(baseAmount), 'ether');
+  }
+  
+  public async toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint> {
     const decimals = BigInt(await this.decimals(tokenAddress));
-    const wei = BigInt(this.web3.utils.toWei(amount, 'ether'));
+    const wei = BigInt(this.toBaseUnit(humanAmount));
 
     const baseDecimals = 18n;
     const baseUnits = (decimals <= baseDecimals) ?
                       wei / (10n ** (baseDecimals - decimals)) :
                       wei * (10n ** (decimals - baseDecimals));
 
-    return baseUnits.toString(10);
+    return baseUnits;
   }
 
-  /**
-   * Converts token native amount to the humah-readable representations
-   * @param amount in minimum supported units
-   */
-  public async fromBaseUnit(tokenAddress: string, amount: string): Promise<string> {
+  public async fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string> {
     const decimals = BigInt(await this.decimals(tokenAddress));
 
     const baseDecimals = 18n;
     const wei = (decimals <= baseDecimals) ?
-                BigInt(amount) * (10n ** (baseDecimals - decimals)) :
-                BigInt(amount) / (10n ** (decimals - baseDecimals));
+                baseAmount * (10n ** (baseDecimals - decimals)) :
+                baseAmount / (10n ** (decimals - baseDecimals));
 
-    return this.web3.utils.fromWei(wei.toString(10), 'ether');
+    return this.fromBaseUnit(wei);
   }
 
-  public async estimateTxFee(): Promise<TxFee> {
+  public validateAddress(address: string): boolean {
+    return isAddress(address);
+  }
+
+
+  // ----------------=========< Fetching address info >=========-------------------
+  // | Native&token balances, nonces, etc                                         |
+  // ------------------------------------------------------------------------------
+
+  public async getAddress(): Promise<string> {
+    return (await this.web3.eth.getAccounts())[0];
+  }
+
+  public async getBalance(): Promise<bigint> {
+    const res = await this.commonRpcRetry(async () => {
+      return Number(await this.web3.eth.getBalance(await this.getAddress()));
+    }, '[SupportJS] Unable to retrieve user balance', RETRY_COUNT);
+    return BigInt(res);
+  }
+
+  public async getTokenBalance(tokenAddress: string): Promise<bigint> {
     const address = await this.getAddress();
-    const gas = await this.web3.eth.estimateGas({
-      from: address,
-      to: address,
-      value: '1',
-    });
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const fee = new BN(gas).mul(new BN(gasPrice));
+    const balance = await this.contractCallRetry(this.token, tokenAddress, 'balanceOf', [address]);
+
+    return BigInt(balance);
+  }
+
+  public async getTokenNonce(tokenAddress: string): Promise<number> {
+    const address = await this.getAddress();
+    const nonce = await this.contractCallRetry(this.token, tokenAddress, 'nonces', [address]);
+
+    return Number(nonce);
+  }
+
+  public async allowance(tokenAddress: string, spender: string): Promise<bigint> {
+    const owner = await this.getAddress();
+    const nonce = await this.contractCallRetry(this.token, tokenAddress, 'allowance', [owner, spender]);
+
+    return BigInt(nonce);
+  }
+
+  // ------------=========< Active blockchain interaction >=========---------------
+  // | All actions related to the transaction sending                             |
+  // ------------------------------------------------------------------------------
+
+  public async estimateTxFee(txObject?: any): Promise<TxFee> {
+    const address = await this.getAddress();
+    
+    const gas = await this.commonRpcRetry(async () => {
+      return Number(await this.web3.eth.estimateGas(txObject ?? {from: address, to: address, value: '1'}));
+    }, '[SupportJS] Unable to estimate gas', RETRY_COUNT);
+    const gasPrice = await this.commonRpcRetry(async () => {
+        return Number(await this.web3.eth.getGasPrice());
+    }, '[SupportJS] Unable to get gas price', RETRY_COUNT);
+    const fee = gas * gasPrice;
 
     return {
-      gas: gas.toString(),
-      gasPrice: BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(),
+      gas: BigInt(gas),
+      gasPrice: BigInt(Math.ceil(gasPrice * this.gasMultiplier)),
       fee: this.web3.utils.fromWei(fee.toString(10), 'ether'),
     };
   }
 
-  public async mint(minterAddress: string, amount: string): Promise<string> {
+  private async getNativeNonce(): Promise<number> {
     const address = await this.getAddress();
-    const encodedTx = await this.token.methods.mint(address, BigInt(amount)).encodeABI();
+    return this.commonRpcRetry(async () => {
+        return Number(await this.web3.eth.getTransactionCount(address))
+    }, '[SupportJS] Cannot get native nonce', RETRY_COUNT);
+  }
+
+  private async signAndSendTx(txObject: TransactionConfig): Promise<TransactionReceipt> {
+    try {
+      const txFee = await this.estimateTxFee(txObject);
+      const nonce = await this.getNativeNonce();
+      txObject.gas = Number(txFee.gas);
+      txObject.gasPrice = `0x${txFee.gasPrice.toString(16)}`;
+      txObject.nonce = nonce;
+
+      const signedTx = await this.web3.eth.signTransaction(txObject);
+
+      return this.web3.eth.sendSignedTransaction(signedTx.raw);
+    } catch (err) {
+      throw new Error(`[SupportJS] Cannot send transaction: ${err.message}`);
+    }
+  }
+
+  public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {
+    const address = await this.getAddress();
     var txObject: TransactionConfig = {
       from: address,
-      to: minterAddress,
-      data: encodedTx,
+      to,
+      value: amount.toString(),
+      data,
     };
 
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
-  public async transferToken(tokenAddress: string, to: string, amount: string): Promise<string> {
+  public async transfer(to: string, amount: bigint): Promise<string> {
+    const txObject: TransactionConfig = {
+      from: await this.getAddress(),
+      to,
+      value: amount.toString(),
+    };
+
+    const receipt = await this.signAndSendTx(txObject);
+    return receipt.transactionHash;
+  }
+
+  public async transferToken(tokenAddress: string, to: string, amount: bigint): Promise<string> {
     const address = await this.getAddress();
     const encodedTx = await this.token.methods.transfer(to, BigInt(amount)).encodeABI();
     var txObject: TransactionConfig = {
@@ -206,42 +270,24 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
-  public async approve(tokenAddress: string, spender: string, amount: string): Promise<string> {
+  public async approve(tokenAddress: string, spender: string, amount: bigint): Promise<string> {
     const address = await this.getAddress();
-    const encodedTx = await this.token.methods.approve(spender, BigInt(amount)).encodeABI();
+    const encodedTx = await this.token.methods.approve(spender, amount).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
       to: tokenAddress,
       data: encodedTx,
     };
 
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
-  public async increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string> {
+  public async increaseAllowance(tokenAddress: string, spender: string, additionalAmount: bigint): Promise<string> {
     const address = await this.getAddress();
     const encodedTx = await this.token.methods.increaseAllowance(spender, BigInt(additionalAmount)).encodeABI();
     var txObject: TransactionConfig = {
@@ -250,68 +296,27 @@ export class EthereumClient extends Client {
       data: encodedTx,
     };
 
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
-  public async allowance(tokenAddress: string, spender: string): Promise<bigint> {
-    const owner = await this.getAddress();
-    this.token.options.address = tokenAddress;
-    const nonce = await this.token.methods.allowance(owner, spender).call();
-
-    return BigInt(nonce);
-  }
-
-  public async getDirectDepositContract(poolAddress: string): Promise<string> {
-    let ddContractAddr = this.ddContractAddresses.get(poolAddress);
-    if (!ddContractAddr) {
-        this.pool.options.address = poolAddress;
-        ddContractAddr = await this.pool.methods.direct_deposit_queue().call();
-        if (ddContractAddr) {
-            this.ddContractAddresses.set(poolAddress, ddContractAddr);
-        } else {
-            throw new Error(`Cannot fetch DD contract address`);
-        }
-    }
-
-    return ddContractAddr;
-  }
-
-
-  public async directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string> {
-    let ddContractAddr = await this.getDirectDepositContract(poolAddress);
-
+  public async mint(minterAddress: string, amount: bigint): Promise<string> {
     const address = await this.getAddress();
-    const zkAddrBytes = `0x${Buffer.from(bs58.decode(zkAddress.substring(zkAddress.indexOf(':') + 1))).toString('hex')}`;
-    const encodedTx = await this.dd.methods["directDeposit(address,uint256,bytes)"](address, BigInt(amount), zkAddrBytes).encodeABI();
+    const encodedTx = await this.token.methods.mint(address, amount).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
-      to: ddContractAddr,
+      to: minterAddress,
       data: encodedTx,
     };
 
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 
+
+  // ------------------=========< Signing routines >=========----------------------
+  // | Signing data and typed data                                                |
+  // ------------------------------------------------------------------------------
 
   public async sign(data: string): Promise<string> {
     const address = await this.getAddress();
@@ -328,7 +333,7 @@ export class EthereumClient extends Client {
 
       if (typeof provider != 'string' && typeof provider?.send != 'undefined') {
         provider.send(
-          { method: 'eth_signTypedData_v4', params: [data, address.toLowerCase()], jsonrpc: '2.0' },
+          { method: 'eth_signTypedData_v4', params: [JSON.stringify(data), address.toLowerCase()], jsonrpc: '2.0' },
           function (error, result) {
             if (error) {
               reject(error);
@@ -348,25 +353,40 @@ export class EthereumClient extends Client {
     return signPromise;
   }
 
-  public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {
+
+  // -----------------=========< High-level routines >=========--------------------
+  // | Direct deposits routines                                                   |
+  // ------------------------------------------------------------------------------
+
+  public async getDirectDepositContract(poolAddress: string): Promise<string> {
+    let ddContractAddr = this.ddContractAddresses.get(poolAddress);
+    if (!ddContractAddr) {
+        this.pool.options.address = poolAddress;
+        ddContractAddr = await this.contractCallRetry(this.pool, poolAddress, 'direct_deposit_queue');
+        if (ddContractAddr) {
+            this.ddContractAddresses.set(poolAddress, ddContractAddr);
+        } else {
+            throw new Error(`Cannot fetch DD contract address`);
+        }
+    }
+
+    return ddContractAddr;
+  }
+
+
+  public async directDeposit(poolAddress: string, amount: bigint, zkAddress: string): Promise<string> {
+    let ddContractAddr = await this.getDirectDepositContract(poolAddress);
+
     const address = await this.getAddress();
+    const zkAddrBytes = `0x${Buffer.from(bs58.decode(zkAddress.substring(zkAddress.indexOf(':') + 1))).toString('hex')}`;
+    const encodedTx = await this.dd.methods["directDeposit(address,uint256,bytes)"](address, amount, zkAddrBytes).encodeABI();
     var txObject: TransactionConfig = {
       from: address,
-      to,
-      value: amount.toString(),
-      data,
+      to: ddContractAddr,
+      data: encodedTx,
     };
 
-    const gas = await this.web3.eth.estimateGas(txObject);
-    const gasPrice = Number(await this.web3.eth.getGasPrice());
-    const nonce = await this.web3.eth.getTransactionCount(address);
-    txObject.gas = gas;
-    txObject.gasPrice = `0x${BigInt(Math.ceil(gasPrice * this.gasMultiplier)).toString(16)}`;
-    txObject.nonce = nonce;
-
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-
+    const receipt = await this.signAndSendTx(txObject);
     return receipt.transactionHash;
   }
 }

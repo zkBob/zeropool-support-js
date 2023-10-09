@@ -6,103 +6,46 @@ export type AccountId = number | string;
 export abstract class Client {
   transactionUrl: string = '{{hash}}';
 
-  abstract getAddress(): Promise<string>;
-  getPublicKey(): Promise<string> {
-    throw new Error('unimplemented');
-  }
+  // lifecycle
+  public abstract haltClient(): void;
 
-  public getChainId(): Promise<number> {
-    throw new Error('unimplemented'); 
-  };
+  // getting neccessary data from the blockchain
+  public getChainId(): Promise<number> { throw new Error('unimplemented'); };
+  public abstract getBlockNumber(): Promise<number>;
+  public abstract getTokenName(tokenAddress: string): Promise<string>;
+  public abstract decimals(tokenAddress: string): Promise<number>;
 
-  /**
-   * Get native coin balance.
-   */
-  public abstract getBalance(): Promise<string>;
+  // informal & conversions
+  public abstract baseUnit(): string;
+  public abstract toBaseUnit(humanAmount: string): bigint;
+  public abstract fromBaseUnit(baseAmount: bigint): string;
+  public abstract toBaseTokenUnit(tokenAddress: string, humanAmount: string): Promise<bigint>;
+  public abstract fromBaseTokenUnit(tokenAddress: string, baseAmount: bigint): Promise<string>;
+  public abstract validateAddress(address: string): boolean;
+  public getTransactionUrl(hash: string): string { return this.transactionUrl.replace('{{hash}}', hash); };
 
-  public getTokenBalance(tokenAddress: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
+  // fetching address info
+  public abstract getAddress(): Promise<string>
+  public getPublicKey(): Promise<string> { throw new Error('unimplemented'); }
+  public abstract getBalance(): Promise<bigint>;
+  public abstract getTokenBalance(tokenAddress: string): Promise<bigint>
+  public getTokenNonce(tokenAddress: string): Promise<number> { throw new Error('unimplemented'); }
+  public allowance(tokenAddress: string, spender: string): Promise<bigint> { throw new Error('unimplemented'); }
 
-  public getTokenNonce(tokenAddress: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
+  // active blockchain interaction
+  public estimateTxFee(txObject?: any): Promise<TxFee> { throw new Error('unimplemented'); }
+  public sendTransaction(to: string, amount: bigint, data: string, selector?: string): Promise<string> { throw new Error('unimplemented'); }
+  public abstract transfer(to: string, amount: bigint): Promise<string>;
+  public abstract transferToken(tokenAddress: string, to: string, amount: bigint): Promise<string>
+  public approve(tokenAddress: string, spender: string, amount: bigint): Promise<string> { throw new Error('unimplemented'); }
+  public increaseAllowance(tokenAddress: string, spender: string, additionalAmount: bigint): Promise<string> { throw new Error('unimplemented'); }
+  public mint(tokenAddres: string, amount: bigint): Promise<string> { throw new Error('unimplemented'); }
 
-  public getTokenName(tokenAddress: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
+  // signatures
+  public sign(data: string): Promise<string> { throw new Error('unimplemented'); }
+  public signTypedData(data: any): Promise<string> { throw new Error('unimplemented'); }
 
-  /**
-   * Transfer native coin.
-   * @param to destination address
-   * @param amount as base unit
-   */
-  abstract transfer(to: string, amount: string): Promise<string>;
-
-  public transferToken(tokenAddress: string, to: string, amount: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
-
-  public mint(tokenAddres: string, amount: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
-
-  public approve(tokenAddress: string, spender: string, amount: string): Promise<string> {
-    throw new Error('unimplemented'); 
-  }
-
-  public increaseAllowance(tokenAddress: string, spender: string, additionalAmount: string): Promise<string> {
-    throw new Error('unimplemented'); 
-  }
-
-  public allowance(tokenAddress: string, spender: string): Promise<bigint> {
-    throw new Error('unimplemented'); 
-  }
-
-  public async getDirectDepositContract(poolAddress: string): Promise<string> {
-    throw new Error('unimplemented'); 
-  }
-
-  public directDeposit(poolAddress: string, amount: string, zkAddress: string): Promise<string> {
-    throw new Error('unimplemented'); 
-  }
-
-  public getTransactionUrl(hash: string): string {
-    return this.transactionUrl.replace('{{hash}}', hash);
-  }
-
-  public async decimals(tokenAddress: string): Promise<number> {
-    throw new Error('unimplemented');
-  }
-
-  /**
-   * Convert human-readable representation of coin to smallest non-divisible (base) representation.
-   * @param amount
-   */
-  public abstract toBaseUnit(tokenAddress: string, amount: string): Promise<string>;
-
-  /**
-  * Convert coin represented with smallest non-divisible units to a human-readable representation.
-  * @param amount
-  */
-  public abstract fromBaseUnit(tokenAddress: string, amount: string): Promise<string>;
-
-  /**
-   * Get estimated transaction fee.
-   */
-  public estimateTxFee(): Promise<TxFee> {
-    throw new Error('unimplemented');
-  }
-
-  public async sign(data: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
-
-  public async signTypedData(data: any): Promise<string> {
-    throw new Error('unimplemented');
-  }
-
-  public async sendTransaction(to: string, amount: bigint, data: string): Promise<string> {
-    throw new Error('unimplemented');
-  }
+  // high-level routines
+  public getDirectDepositContract(poolAddress: string): Promise<string> { throw new Error('unimplemented'); }
+  public directDeposit(poolAddress: string, amount: bigint, zkAddress: string): Promise<string> { throw new Error('unimplemented'); }
 }
