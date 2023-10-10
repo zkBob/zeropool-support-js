@@ -4,6 +4,7 @@ import { TxFee } from "../transaction";
 import tokenAbi from './abi/usdt-abi.json';
 import poolAbi from '../evm/abi/pool-abi.json';
 import ddAbi from '../evm/abi/dd-abi.json';
+import minterAbi from '../evm/abi/minter-abi.json';
 import { hexToBytes } from "web3-utils";
 import promiseRetry from 'promise-retry';
 
@@ -18,9 +19,10 @@ export class TronClient extends Client {
     protected tronWeb;
     protected address: string;
     // We need to cache a contract object for the each token address separately
-    private tokenContracts = new Map<string, object>();  // tokenAddress -> contact object
-    private poolContracts = new Map<string, object>();  // tokenAddress -> contact object
-    private ddContracts = new Map<string, object>();  // tokenAddress -> contact object
+    private tokenContracts = new Map<string, object>();   // tokenAddress -> contract object
+    private poolContracts = new Map<string, object>();    // poolAddress -> contract object
+    private ddContracts = new Map<string, object>();      // ddQueueAddress -> contract object
+    private minterContracts = new Map<string, object>();  // minterAddress -> contract object
 
     // blockchain long-lived cached parameters
     private chainId: number | undefined = undefined;
@@ -80,7 +82,7 @@ export class TronClient extends Client {
             if (contract) {
                 this.tokenContracts.set(tokenAddress, contract);
             } else {
-                throw new Error(`[SupportJS] Cannot initialize a contact object for the token ${tokenAddress}`);
+                throw new Error(`[SupportJS] Cannot initialize a contract object for the token ${tokenAddress}`);
             }
         }
 
@@ -94,7 +96,7 @@ export class TronClient extends Client {
             if (contract) {
                 this.poolContracts.set(poolAddress, contract);
             } else {
-                throw new Error(`[SupportJS] Cannot initialize a contact object for the pool ${poolAddress}`);
+                throw new Error(`[SupportJS] Cannot initialize a contract object for the pool ${poolAddress}`);
             }
         }
 
@@ -108,7 +110,21 @@ export class TronClient extends Client {
             if (contract) {
                 this.ddContracts.set(ddQueueAddress, contract);
             } else {
-                throw new Error(`[SupportJS] Cannot initialize a contact object for the DD queue ${ddQueueAddress}`);
+                throw new Error(`[SupportJS] Cannot initialize a contract object for the DD queue ${ddQueueAddress}`);
+            }
+        }
+
+        return contract;
+    }
+
+    protected async getMinterContract(minterAddress: string): Promise<any> {
+        let contract = this.minterContracts.get(minterAddress);
+        if (!contract) {
+            contract = await this.tronWeb.contract(minterAbi, minterAddress);
+            if (contract) {
+                this.minterContracts.set(minterAddress, contract);
+            } else {
+                throw new Error(`[SupportJS] Cannot initialize a contact object for the minter ${minterAddress}`);
             }
         }
 
@@ -315,6 +331,14 @@ export class TronClient extends Client {
         
         return this.verifyAndSendTx(tokenAddress, selector, parameters)
     }
+
+    public async mint(minterAddress: string, amount: bigint): Promise<string> {
+        const selector = 'mint(address,uint256)';
+        const to = await this.getAddress();
+        const parameters = [{type: 'address', value: to}, {type: 'uint256', value: amount.toString(10)}];
+
+        return this.verifyAndSendTx(minterAddress, selector, parameters)
+      }
 
 
     // ------------------=========< Signing routines >=========----------------------

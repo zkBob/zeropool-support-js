@@ -8,6 +8,7 @@ export declare class TronClient extends Client {
     private tokenContracts;
     private poolContracts;
     private ddContracts;
+    private minterContracts;
     private chainId;
     private energyFee;
     private tokenSymbols;
@@ -20,6 +21,7 @@ export declare class TronClient extends Client {
     protected getTokenContract(tokenAddress: string): Promise<any>;
     protected getPoolContract(poolAddress: string): Promise<any>;
     protected getDdContract(ddQueueAddress: string): Promise<any>;
+    protected getMinterContract(minterAddress: string): Promise<any>;
     getChainId(): Promise<number>;
     getBlockNumber(): Promise<number>;
     getTokenName(tokenAddress: string): Promise<string>;
@@ -41,6 +43,7 @@ export declare class TronClient extends Client {
     transferToken(tokenAddress: string, to: string, amount: bigint): Promise<string>;
     approve(tokenAddress: string, spender: string, amount: bigint): Promise<string>;
     increaseAllowance(tokenAddress: string, spender: string, additionalAmount: bigint): Promise<string>;
+    mint(minterAddress: string, amount: bigint): Promise<string>;
     sign(data: string): Promise<string>;
     signTypedData(data: any): Promise<string>;
     getDirectDepositContract(poolAddress: string): Promise<string>;

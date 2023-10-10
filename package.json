@@ -1,6 +1,6 @@
 {
   "name": "zkbob-support-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "zkBob basic web3 client (L1)",
   "license": "MIT",
   "author": "Dmitry Vdovin <voidxnull@gmail.com>",
