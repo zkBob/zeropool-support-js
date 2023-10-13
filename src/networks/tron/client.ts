@@ -30,6 +30,7 @@ export class TronClient extends Client {
     private tokenSymbols = new Map<string, string>();  // tokenAddress -> token_symbol
     private tokenDecimals = new Map<string, number>();  // tokenAddress -> decimals
     private ddContractAddresses = new Map<string, string>();  // poolAddress -> ddQueueAddress
+    private supportedMethods = new Map<string, boolean>(); // contractAddress+method => isSupport
 
     constructor(rpc: string, privateKey: string, config: Config) {
         super();
@@ -129,6 +130,25 @@ export class TronClient extends Client {
         }
 
         return contract;
+    }
+
+    private async isMethodSupportedByContract(contractAddress: string, methodName: string): Promise<boolean> {
+        const mapKey = contractAddress + methodName;
+        let isSupport = this.supportedMethods.get(mapKey);
+        if (isSupport === undefined) {
+            const contract = await this.commonRpcRetry(() => {
+                return this.tronWeb.trx.getContract(contractAddress);
+            }, 'Unable to retrieve smart contract object', RETRY_COUNT);
+            const methods = contract.abi.entrys;
+            if (Array.isArray(methods)) {
+                isSupport = methods.find((val) => val.name == methodName) !== undefined;
+                this.supportedMethods.set(mapKey, isSupport);
+            } else {
+                isSupport = false;
+            }
+        }
+
+        return isSupport;
     }
 
     // ------------------=========< Getting common data >=========-------------------
@@ -326,10 +346,14 @@ export class TronClient extends Client {
     }
     
     public async increaseAllowance(tokenAddress: string, spender: string, additionalAmount: bigint): Promise<string> {
-        const selector = 'increaseAllowance(address,uint256)';
         const parameters = [{type: 'address', value: spender}, {type: 'uint256', value: additionalAmount.toString(10)}]
-        
-        return this.verifyAndSendTx(tokenAddress, selector, parameters)
+        if (await this.isMethodSupportedByContract(tokenAddress, 'increaseAllowance')) {
+            return this.verifyAndSendTx(tokenAddress, 'increaseAllowance(address,uint256)', parameters);
+        } else if (await this.isMethodSupportedByContract(tokenAddress, 'increaseApproval')) {
+            return this.verifyAndSendTx(tokenAddress, 'increaseApproval(address,uint256)', parameters);
+        } else {
+            throw new Error('Cannot find a way to increase allowance of the token');
+        }
     }
 
     public async mint(minterAddress: string, amount: bigint): Promise<string> {

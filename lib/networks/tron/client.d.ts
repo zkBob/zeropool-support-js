@@ -14,6 +14,7 @@ export declare class TronClient extends Client {
     private tokenSymbols;
     private tokenDecimals;
     private ddContractAddresses;
+    private supportedMethods;
     constructor(rpc: string, privateKey: string, config: Config);
     haltClient(): void;
     private contractCallRetry;
@@ -22,6 +23,7 @@ export declare class TronClient extends Client {
     protected getPoolContract(poolAddress: string): Promise<any>;
     protected getDdContract(ddQueueAddress: string): Promise<any>;
     protected getMinterContract(minterAddress: string): Promise<any>;
+    private isMethodSupportedByContract;
     getChainId(): Promise<number>;
     getBlockNumber(): Promise<number>;
     getTokenName(tokenAddress: string): Promise<string>;
